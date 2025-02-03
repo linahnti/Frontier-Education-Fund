@@ -1,0 +1,52 @@
+/* Adjust animation duration for text */
+.animate__animated.animate__fadeInDown,
+.animate__animated.animate__fadeInUp {
+  --animate-duration: 3s; /* Reduce animation duration to 1 second */
+}
+
+/* Ensure the carousel caption has enough space */
+.carousel-caption {
+  height: auto; /* Allow the height to adjust based on content */
+  padding: 20px; /* Add padding for better spacing */
+  overflow: visible; /* Prevent text from being clipped */
+}
+
+
+/* Ensure the carousel caption has enough space */
+.carousel-caption {
+  height: auto; /* Allow the height to adjust based on content */
+  padding: 20px; /* Add padding for better spacing */
+  overflow: visible; /* Prevent text from being clipped */
+}
+
+/* Word-by-word animation */
+.word-by-word {
+    display: inline-block;
+    overflow: hidden;
+    white-space: normal;
+    animation: revealWords 2s ease-in-out forwards;
+    max-width: 100%;
+  }
+  
+  @keyframes revealWords {
+    from {
+      width: 0;
+    }
+    to {
+      width: 100%;
+    }
+  }
+  
+  .word-by-word span {
+    display: inline-block;
+    opacity: 0;
+    animation: fadeInWord 0.8s ease-in-out forwards;
+    animation-delay: calc(0.4s * var(--word-index));
+  }
+  
+  @keyframes fadeInWord {
+    to {
+      opacity: 1;
+    }
+  }
+

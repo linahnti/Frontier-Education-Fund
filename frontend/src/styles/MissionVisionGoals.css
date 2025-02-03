@@ -1,0 +1,39 @@
+/* Add custom styling for the layout */
+.container {
+    max-width: 1200px;
+  }
+  
+  h2 {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #004080; /* Deep blue for headings */
+  }
+  
+  p {
+    font-size: 1.2rem;
+    line-height: 1.8;
+    color: #333; /* Neutral text color */
+  }
+  
+  .img-fluid {
+    max-height: 400px; /* Ensure consistent image height */
+    object-fit: cover;
+  }
+  
+  /* Add some space between sections */
+  .row {
+    margin-bottom: 2rem;
+  }
+  
+  /* Shadow for images */
+  img.shadow {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Adjust padding for larger screens */
+  @media (min-width: 992px) {
+    .container {
+      padding: 2rem 0;
+    }
+  }
+  
