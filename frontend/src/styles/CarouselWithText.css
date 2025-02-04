@@ -1,7 +1,7 @@
 /* Adjust animation duration for text */
 .animate__animated.animate__fadeInDown,
 .animate__animated.animate__fadeInUp {
-  --animate-duration: 3s; /* Reduce animation duration to 1 second */
+  --animate-duration: 5s; /* Reduce animation duration to 1 second */
 }
 
 /* Ensure the carousel caption has enough space */

@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import assets from "../assets/images/assets";
 
 const Navbar = () => {
@@ -48,13 +49,18 @@ const Navbar = () => {
         </div>
 
         {/* Sign-Up Button */}
-        <a
-          href="#signup"
-          className="bg-primary text-white text-decoration-none px-4 py-1 
-          rounded-pill ms-3 hover:bg-primary-dark"
-        >
-          Sign Up
-        </a>
+        <li className="ms-3 d-flex align-items-center">
+          <Link
+            to="/signup"
+            className="btn btn-primary rounded-pill px-4 py-2 text-white text-decoration-none"
+            style={{
+              fontSize: "1rem",
+              fontWeight: "bold",
+            }}
+          >
+            Sign Up
+          </Link>
+        </li>
       </div>
     </header>
   );
