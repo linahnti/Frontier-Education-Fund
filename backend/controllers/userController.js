@@ -4,7 +4,13 @@ const jwt = require("jsonwebtoken");
 
 // Register User
 const registerUser = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, role } = req.body;
+
+  // Validate role
+  const validRoles = ["admin", "donor", "school"];
+  if (!validRoles.includes(role)) {
+    return res.status(400).json({ message: "Invalid role provided." });
+  }
 
   // Validation for email format
   const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -38,6 +44,7 @@ const registerUser = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      role,
     });
 
     // Send success response
@@ -45,6 +52,7 @@ const registerUser = async (req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
+      role: user.role,
     });
   } catch (error) {
     // Handle server errors

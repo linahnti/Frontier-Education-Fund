@@ -18,9 +18,13 @@ const requestPasswordReset = async (req, res) => {
     }
 
     // Create a password reset token
-    const resetToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    const resetToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "1h",
+      }
+    );
 
     // Create a reset link to send in the email
     const resetLink = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
@@ -30,7 +34,7 @@ const requestPasswordReset = async (req, res) => {
       service: "gmail",
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
+        // pass: process.env.EMAIL_PASSWORD,
       },
     });
 

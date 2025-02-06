@@ -1,6 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Import the useNavigate hook from react-router-dom
-import axios from "axios"; //  for making HTTP requests
+import { useNavigate } from "react-router-dom";
+import axios from "axios"; // For making HTTP requests
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // Import the CSS
 import assets from "../assets/images/assets";
 
 const Login = () => {
@@ -39,26 +41,47 @@ const Login = () => {
       localStorage.setItem("token", response.data.token); // Save the token in localStorage
       localStorage.setItem("userRole", response.data.user.role); // Store user role in localStorage
 
-      // Redirect based on user role
-      const userRole = response.data.user.role; // Save the user role to a variable
-      if (userRole === "admin") {
-        navigate("/admin-dashboard"); // Redirect to admin dashboard
-      } else if (userRole === "school") {
-        navigate("/school-dashboard"); // Redirect to school dashboard
-      } else if (userRole === "donor") {
-        navigate("/donor-dashboard"); // Redirect to donor dashboard
-      } else {
-        navigate("/dashboard"); // Default redirect (if needed)
-      }
+      // Show success toast
+      toast.success("Login successful!", {
+        position: "top-center",
+        autoClose: 3000, // Close after 3 seconds
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: { backgroundColor: "#ffc107", color: "#000" }, // Custom yellow toast
+      });
 
-      alert("Login successful!");
+      // Delay navigation by 3 seconds
+      setTimeout(() => {
+        const userRole = response.data.user.role;
+        if (userRole === "admin") {
+          navigate("/admin-dashboard"); // Redirect to admin dashboard
+        } else if (userRole === "school") {
+          navigate("/school-dashboard"); // Redirect to school dashboard
+        } else if (userRole === "donor") {
+          navigate("/donor-dashboard"); // Redirect to donor dashboard
+        } else {
+          navigate("/dashboard"); // Default redirect (if needed)
+        }
+      }, 2000); // 2-second delay
     } catch (err) {
-      // Handle errors from the backend
       if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message); // Display the error message from backend
+        setError(err.response.data.message);
       } else {
         setError("Login failed. Please try again.");
       }
+
+      // Show error toast
+      toast.error("Login failed. Please check your credentials.", {
+        position: "top-center",
+        autoClose: 3000, // Close after 3 seconds
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: { backgroundColor: "#ffc107", color: "#000" }, // Yellow background
+      });
     }
   };
 
@@ -172,6 +195,19 @@ const Login = () => {
           </p>
         </div>
       </div>
+
+      {/* Toast Container */}
+      <ToastContainer
+        position="top-center" // Position the toast in the center
+        autoClose={3000} // Close after 3 seconds
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 };

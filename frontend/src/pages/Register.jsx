@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import assets from "../assets/images/assets";
+//import "../styles/Toast.css"
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -9,7 +12,7 @@ const Register = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "donor", // Default role
+    role: "",
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -31,6 +34,12 @@ const Register = () => {
     // Clear previous errors
     setError("");
 
+    // Check if role is selected
+    if (!formData.role) {
+      alert("Please select your role!");
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
@@ -46,15 +55,25 @@ const Register = () => {
           name: formData.name,
           email: formData.email,
           password: formData.password,
+          role: formData.role,
         }
       );
 
-      // Handle successful registration
-      console.log("Registration successful:", response.data);
-      alert("Registration successful! You can now log in.");
+      // Show success toast in the center of the screen
+      toast.success("Registration successful! Redirecting to login...", {
+        position: "top-center", // Position the toast in the center
+        autoClose: 3000, // Close after 3 seconds
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: { backgroundColor: "#ffc107", color: "#000" },
+      });
 
       // Redirect to the login page
-      navigate("/login");
+      setTimeout(() => {
+        navigate("/login");
+      }, 3000);
     } catch (err) {
       // Handle errors from the backend
       console.error("Registration error:", err.response?.data);
@@ -182,6 +201,9 @@ const Register = () => {
                 {showConfirmPassword ? "Hide" : "Show"}
               </button>
             </div>
+            {error === "Passwords do not match!" && (
+              <div className="text-danger mt-2">Passwords do not match!</div>
+            )}
           </div>
 
           {/* Role Selection */}
@@ -196,9 +218,15 @@ const Register = () => {
               onChange={handleChange}
               className="form-select"
             >
+              <option value="" disabled>
+                Select your role
+              </option>
               <option value="donor">Donor</option>
               <option value="school">School</option>
             </select>
+            {error === "Please select a role" && (
+              <div className="text-danger mt-2">Please select a role.</div>
+            )}
           </div>
 
           {/* Submit Button */}
@@ -224,6 +252,19 @@ const Register = () => {
           </p>
         </div>
       </div>
+
+      {/* Toast Container */}
+      <ToastContainer
+        position="top-center" // Position the toast in the center
+        autoClose={2000} // Close after 2 seconds
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 };

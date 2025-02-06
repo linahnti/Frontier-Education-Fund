@@ -1,31 +1,28 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { useParams, useNavigate } from "react-router-dom";
 
-const ForgotPassword = () => {
-  const [email, setEmail] = useState("");
+const ResetPassword = () => {
+  const { token } = useParams(); // Extract token from URL
+  const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-
-  const handleChange = (e) => {
-    setEmail(e.target.value);
-  };
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/forgot-password/request", // Correct endpoint
-        { email }
+        `http://localhost:5000/api/forgot-password/reset/${token}`,
+        { password }
       );
       setMessage(response.data.message); // Set success message
       setError(""); // Clear error message
+      setTimeout(() => navigate("/login"), 3000); // Redirect to login after 3 seconds
     } catch (err) {
-      console.error("Error:", err); // Log the error for debugging
       setMessage(""); // Clear success message
-      if (err.response) {
-        setError(err.response.data.message || "An error occurred.");
-      } else if (err.request) {
-        setError("No response from the server. Please try again.");
+      if (err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message); // Display error message from backend
       } else {
         setError("An error occurred. Please try again.");
       }
@@ -44,7 +41,7 @@ const ForgotPassword = () => {
       }}
     >
       <h2 className="text-center mb-4" style={{ color: "#ffc107" }}>
-        Forgot Password
+        Reset Password
       </h2>
 
       {message && <div className="alert alert-success">{message}</div>}
@@ -52,26 +49,26 @@ const ForgotPassword = () => {
 
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
-          <label htmlFor="email" className="form-label">
-            Enter your email address
+          <label htmlFor="password" className="form-label">
+            New Password
           </label>
           <input
-            type="email"
-            id="email"
-            name="email"
-            value={email}
-            onChange={handleChange}
+            type="password"
+            id="password"
+            name="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="form-control"
             required
           />
         </div>
 
         <button type="submit" className="btn btn-primary w-100">
-          Send Reset Link
+          Reset Password
         </button>
       </form>
     </div>
   );
 };
 
-export default ForgotPassword;
+export default ResetPassword;

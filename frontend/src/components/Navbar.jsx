@@ -1,66 +1,147 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import assets from "../assets/images/assets";
 
 const Navbar = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Default to false for testing
+  const [notifications, setNotifications] = useState([]); // Empty notifications array
+
+  const handleLogout = () => {
+    setIsLoggedIn(false); // Replace with actual logout logic
+    console.log("User logged out");
+  };
+
   return (
-    <header className="bg-dark bg-gradient shadow-md py-4 px-4 px-md-5">
+    <header
+      className="shadow-sm py-2"
+      style={{
+        background: "linear-gradient(to right, #6b7280, #4b5563)", // Darker gray gradient
+      }}
+    >
       <div className="container-fluid d-flex justify-content-between align-items-center">
         {/* Logo and Text */}
-        <div className="d-flex align-items-center ms-0">
+        <div className="d-flex align-items-center">
           <img
             src={assets.favicon} // Logo
             alt="Frontier Education Fund Logo"
-            className="h-8 w-8 mr-2" // Adjust size with 'h-10' and 'w-10'
+            className="h-8 w-8 me-2" // Adjust size with custom CSS if needed
           />
-          <span className="h5 text-white">Frontier Education Fund</span>
+          <span className="h5 text-white mb-0">Frontier Education Fund</span>
         </div>
 
         {/* Navbar Links */}
-        <div className="bg-indigo-600 p-2 rounded d-flex">
+        <div className="d-flex align-items-center">
           <a
             href="#about"
-            className="text-white ms-3 
-          text-decoration-none hover:text-indigo-200"
+            className="text-white text-decoration-none me-3"
+            style={{ fontSize: "0.9rem" }}
           >
             About
           </a>
           <a
             href="#schools"
-            className="text-white ms-3
-          text-decoration-none hover:text-indigo-200"
+            className="text-white text-decoration-none me-3"
+            style={{ fontSize: "0.9rem" }}
           >
             Schools
           </a>
           <a
             href="#donations"
-            className="text-white ms-3
-          text-decoration-none hover:text-indigo-200"
+            className="text-white text-decoration-none me-3"
+            style={{ fontSize: "0.9rem" }}
           >
             Donations
           </a>
           <a
             href="#testimonials"
-            className="text-white ms-3
-          text-decoration-none hover:text-indigo-200"
+            className="text-white text-decoration-none me-3"
+            style={{ fontSize: "0.9rem" }}
           >
             Testimonials
           </a>
         </div>
 
-        {/* Sign-Up Button */}
-        <li className="ms-3 d-flex align-items-center">
-          <Link
-            to="/signup"
-            className="btn btn-primary rounded-pill px-4 py-2 text-white text-decoration-none"
-            style={{
-              fontSize: "1rem",
-              fontWeight: "bold",
-            }}
-          >
-            Sign Up
-          </Link>
-        </li>
+        {/* Right Side: Profile, Notifications, and Sign-Up/Logout */}
+        <div className="d-flex align-items-center">
+          {isLoggedIn ? (
+            <>
+              {/* Notifications Dropdown */}
+              <div className="dropdown me-3">
+                <button
+                  className="btn btn-link text-white p-0 dropdown-toggle"
+                  type="button"
+                  id="notificationsDropdown"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  <i className="fas fa-bell" style={{ fontSize: "1rem" }}></i>
+                  {notifications.length > 0 && (
+                    <span className="badge bg-danger rounded-pill ms-1">
+                      {notifications.length}
+                    </span>
+                  )}
+                </button>
+                <ul
+                  className="dropdown-menu dropdown-menu-end"
+                  aria-labelledby="notificationsDropdown"
+                >
+                  {notifications.length > 0 ? (
+                    notifications.map((notification) => (
+                      <li key={notification.id}>
+                        <a className="dropdown-item" href="#">
+                          {notification.message}
+                        </a>
+                      </li>
+                    ))
+                  ) : (
+                    <li>
+                      <a className="dropdown-item" href="#">
+                        No new notifications
+                      </a>
+                    </li>
+                  )}
+                </ul>
+              </div>
+
+              {/* Profile Dropdown */}
+              <div className="dropdown">
+                <button
+                  className="btn btn-link text-white p-0 dropdown-toggle"
+                  type="button"
+                  id="profileDropdown"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  <i className="fas fa-user-circle" style={{ fontSize: "1.2rem" }}></i>
+                </button>
+                <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                  <li>
+                    <Link to="/profile" className="dropdown-item">
+                      Profile
+                    </Link>
+                  </li>
+                  <li>
+                    <button className="dropdown-item" onClick={handleLogout}>
+                      Logout
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </>
+          ) : (
+            // Sign-Up Button (Visible when not logged in)
+            <Link
+              to="/signup"
+              className="btn btn-warning rounded-pill px-3 py-1 text-dark text-decoration-none"
+              style={{
+                fontSize: "0.9rem",
+                fontWeight: "bold",
+              }}
+            >
+              Sign Up
+            </Link>
+          )}
+        </div>
       </div>
     </header>
   );
