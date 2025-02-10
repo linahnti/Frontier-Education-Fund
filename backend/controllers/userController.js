@@ -129,4 +129,85 @@ const getUserProfile = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getUserProfile };
+// Check Profile Completion
+const checkProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Role-based profile requirements
+    const requiredFields = {
+      donor: ["phoneNumber", "address"],
+      school: ["schoolName", "schoolAddress"],
+    };
+
+    const missingFields = requiredFields[user.role]?.filter(
+      (field) => !user[field]
+    );
+
+    if (missingFields && missingFields.length > 0) {
+      return res.status(400).json({
+        message: "Profile incomplete",
+        missingFields,
+      });
+    }
+
+    res.status(200).json({ message: "Profile complete" });
+  } catch (error) {
+    console.error("Check profile error:", error);
+    res.status(500).json({ message: "Server error. Please try again later." });
+  }
+};
+
+// Update Profile
+const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const updates = req.body;
+
+    // Role-based validation for allowed fields
+    const allowedFields = {
+      donor: ["name", "email", "phoneNumber", "address"],
+      school: ["name", "email", "schoolName", "schoolAddress"],
+      admin: ["name", "email"], // Adjust for admin as needed
+    };
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Filter out disallowed fields
+    const filteredUpdates = Object.keys(updates).reduce((acc, key) => {
+      if (allowedFields[user.role]?.includes(key)) {
+        acc[key] = updates[key];
+      }
+      return acc;
+    }, {});
+
+    // Perform the update
+    const updatedUser = await User.findByIdAndUpdate(userId, filteredUpdates, {
+      new: true,
+    }).select("-password"); // Exclude password field
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ message: "Server error. Please try again later." });
+  }
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
+  getUserProfile,
+  checkProfile,
+  updateProfile,
+};

@@ -1,19 +1,15 @@
 import React from "react";
-import { Container, Row, Col, Button } from "react-bootstrap";
+import Navbar from "../components/Navbar";
 
 const SchoolDashboard = () => {
   return (
-    <Container className="mt-5">
-      <Row>
-        <Col className="text-center">
-          <h1>School Dashboard</h1>
-          <p>Welcome, School Admin! Here you can view and update your needs.</p>
-          <Button variant="success" className="mt-3">
-            Update Donation Needs
-          </Button>
-        </Col>
-      </Row>
-    </Container>
+    <div>
+      <Navbar userRole="school" />
+      <div className="container">
+        <h1>Welcome to the School Dashboard</h1>
+        {/* School-specific content */}
+      </div>
+    </div>
   );
 };
 

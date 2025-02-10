@@ -2,13 +2,12 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import assets from "../assets/images/assets";
 
-const Navbar = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Default to false for testing
+const Navbar = ({ isLoggedIn, userRole }) => {
   const [notifications, setNotifications] = useState([]); // Empty notifications array
 
   const handleLogout = () => {
-    setIsLoggedIn(false); // Replace with actual logout logic
     console.log("User logged out");
+    // Add logout logic here (e.g., clear session, redirect to login page)
   };
 
   return (
@@ -61,7 +60,7 @@ const Navbar = () => {
           </a>
         </div>
 
-        {/* Right Side: Profile, Notifications, and Sign-Up/Logout */}
+        {/* Right Side: Conditional Rendering */}
         <div className="d-flex align-items-center">
           {isLoggedIn ? (
             <>
@@ -73,6 +72,7 @@ const Navbar = () => {
                   id="notificationsDropdown"
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
+                  aria-label="Notifications"
                 >
                   <i className="fas fa-bell" style={{ fontSize: "1rem" }}></i>
                   {notifications.length > 0 && (
@@ -111,15 +111,29 @@ const Navbar = () => {
                   id="profileDropdown"
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
+                  aria-label="Profile"
                 >
-                  <i className="fas fa-user-circle" style={{ fontSize: "1.2rem" }}></i>
+                  <i
+                    className="fas fa-user-circle"
+                    style={{ fontSize: "1.2rem" }}
+                  ></i>
                 </button>
-                <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                <ul
+                  className="dropdown-menu dropdown-menu-end"
+                  aria-labelledby="profileDropdown"
+                >
                   <li>
                     <Link to="/profile" className="dropdown-item">
                       Profile
                     </Link>
                   </li>
+                  {userRole === "admin" && (
+                    <li>
+                      <Link to="/admin-settings" className="dropdown-item">
+                        Admin Settings
+                      </Link>
+                    </li>
+                  )}
                   <li>
                     <button className="dropdown-item" onClick={handleLogout}>
                       Logout
