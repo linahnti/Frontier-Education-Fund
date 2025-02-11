@@ -1,17 +1,18 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import Navbar from "../components/Navbar";
+import Navbar from "../components/AuthenticatedNavbar";
 import CarouselWithText from "../components/CarouselWithText";
 import MissionVisionGoals from "../components/MissionVisionGoals";
 import CallToAction from "../components/CallToAction";
 import PartnerSection from "../components/PartnerSection";
 import KeyStats from "../components/KeyStats";
 import Footer from "../components/Footer";
+//import HomepageNavbar from "../components/HomepageNavbar";
 
 const Home = () => {
   return (
     <div>
-      <Navbar />
+      {/* <HomepageNavbar /> */}
       <CarouselWithText />
       <CallToAction />
       {/* <div className="auth-links">
@@ -21,7 +22,7 @@ const Home = () => {
       <MissionVisionGoals />
       <PartnerSection />
       <KeyStats />
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 };

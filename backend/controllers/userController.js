@@ -55,9 +55,12 @@ const registerUser = async (req, res) => {
       role: user.role,
     });
   } catch (error) {
-    // Handle server errors
-    console.error("Registration error:", error);
-    res.status(500).json({ message: "Server error. Please try again later." });
+    // Detailed logging for debugging purposes (remove or reduce logging in production)
+    console.error("Registration error:", error.stack);
+    // Return the error message during development for more details.
+    res.status(500).json({
+      message: error.message || "Server error. Please try again later.",
+    });
   }
 };
 
@@ -97,9 +100,13 @@ const loginUser = async (req, res) => {
         role: user.role,
       },
     });
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ message: "Server error. Please try again later." });
+  } catch (err) {
+    console.log(err.response);
+    if (err.response && err.response.data && err.response.data.message) {
+      setError(err.response.data.message);
+    } else {
+      setError("Login failed. Please try again.");
+    }
   }
 };
 

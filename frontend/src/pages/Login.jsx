@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
+import { AuthContext } from "../components/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios"; // For making HTTP requests
 import { ToastContainer, toast } from "react-toastify";
@@ -6,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css"; // Import the CSS
 import assets from "../assets/images/assets";
 
 const Login = () => {
+  const { login } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -26,7 +28,6 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      // Send a POST request to the backend
       const response = await axios.post(
         "http://localhost:5000/api/users/login",
         {
@@ -35,52 +36,46 @@ const Login = () => {
         }
       );
 
-      // Handle successful login
-      console.log("Login successful:", response.data);
-      setError(""); // Clear any previous errors
-      localStorage.setItem("token", response.data.token); // Save the token in localStorage
-      localStorage.setItem("userRole", response.data.user.role); // Store user role in localStorage
+      const { token, user } = response.data;
 
-      // Show success toast
+      // Save token and role to localStorage
+      localStorage.setItem("token", token);
+      localStorage.setItem("userRole", user.role);
+
+      // Call login function from AuthContext
+      login(user.role, token);
+
+      // Success toast
       toast.success("Login successful!", {
         position: "top-center",
-        autoClose: 3000, // Close after 3 seconds
+        autoClose: 3000,
         hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        style: { backgroundColor: "#ffc107", color: "#000" }, // Custom yellow toast
+        style: { backgroundColor: "#ffc107", color: "#000" },
       });
 
-      // Delay navigation by 3 seconds
+      // Redirect based on user role
       setTimeout(() => {
-        const userRole = response.data.user.role;
-        if (userRole === "admin") {
-          navigate("/admin-dashboard"); // Redirect to admin dashboard
-        } else if (userRole === "school") {
-          navigate("/school-dashboard"); // Redirect to school dashboard
-        } else if (userRole === "donor") {
-          navigate("/donor-dashboard"); // Redirect to donor dashboard
-        } else {
-          navigate("/dashboard"); // Default redirect (if needed)
-        }
-      }, 2000); // 2-second delay
+        if (user.role === "admin") navigate("/admin-dashboard");
+        else if (user.role === "school") navigate("/school-dashboard");
+        else if (user.role === "donor") navigate("/donor-dashboard");
+        else navigate("/dashboard");
+      }, 2000);
     } catch (err) {
+      console.log(err.response); // Debugging step
+
+      // Set error message
       if (err.response && err.response.data && err.response.data.message) {
         setError(err.response.data.message);
       } else {
         setError("Login failed. Please try again.");
       }
 
-      // Show error toast
+      // Error toast
       toast.error("Login failed. Please check your credentials.", {
         position: "top-center",
-        autoClose: 3000, // Close after 3 seconds
+        autoClose: 3000,
         hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        style: { backgroundColor: "#ffc107", color: "#000" }, // Yellow background
+        style: { backgroundColor: "#ffc107", color: "#000" },
       });
     }
   };

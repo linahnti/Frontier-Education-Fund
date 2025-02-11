@@ -1,0 +1,10 @@
+.centered-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    text-align: center;
+    flex-direction: column; /* Stack items vertically */
+  }
+  
+  

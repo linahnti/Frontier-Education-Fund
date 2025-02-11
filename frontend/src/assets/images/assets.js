@@ -7,6 +7,9 @@ import sunrise1 from "../images/sunrise1.jpg";
 import sunrise2 from "../images/sunrise2.jpg";
 import favicon from "../images/favicon.png";
 import favicon1 from "../images/favicon1.png";
+import footer1 from "../images/Footer1.jpg";
+import footer2 from "../images/Footer2.jpg";
+import footer3 from "../images/Footer3.jpg";
 
 const assets = {
   picture1,
@@ -18,6 +21,9 @@ const assets = {
   sunrise2,
   favicon,
   favicon1,
+  footer1,
+  footer2,
+  footer3,
 };
 
 export default assets;

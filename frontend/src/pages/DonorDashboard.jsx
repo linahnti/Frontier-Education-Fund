@@ -1,55 +1,49 @@
 import React, { useEffect, useState } from "react";
-import WelcomeBanner from "../components/WelcomeBanner";
+import axios from "axios";
+import ProfileStatusBanner from "../components/ProfileStatusBanner";
 
 const DonorDashboard = () => {
-  const [donor, setDonor] = useState(null); // Initial state is null
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [profileStatus, setProfileStatus] = useState({
+    profileCompleted: false,
+    missingFields: [],
+  });
 
   useEffect(() => {
-    const fetchDonorData = async () => {
-      const token = localStorage.getItem("token"); // Retrieve the token from localStorage
-
+    const fetchProfileStatus = async () => {
       try {
-        const response = await fetch(
-          "http://localhost:5000/api/donor/profile",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`, // Include the token in the request headers
-            },
-          }
+        const { data } = await axios.get(
+          "http://localhost:5000/api/users/profile/check",
+          { withCredentials: true } // Ensures cookies are sent for authentication.
         );
-
-        const data = await response.json();
-
-        if (response.ok) {
-          setDonor(data); // Set the donor data
-        } else {
-          console.error("Failed to fetch donor data:", data.message);
-          setError(data.message || "Error loading donor data");
-        }
+        setProfileStatus({ profileCompleted: true, missingFields: [] });
       } catch (error) {
-        console.error("Error fetching donor data:", error);
-        setError("An unexpected error occurred while fetching donor data");
-      } finally {
-        setLoading(false); // Stop the loading state
+        if (error.response && error.response.status === 400) {
+          setProfileStatus({
+            profileCompleted: false,
+            missingFields: error.response.data.missingFields,
+          });
+        }
       }
     };
 
-    fetchDonorData();
+    fetchProfileStatus();
   }, []);
 
-  if (loading) return <div>Loading...</div>; // Show loading indicator
-  if (error) return <div>{error}</div>; // Show error message if an error occurs
-
   return (
-    <div>
-      <WelcomeBanner
-        donor={donor}
-        onProfileUpdate={() => window.location.reload()} // Refresh on profile update
+    <div className="container mt-5">
+      <ProfileStatusBanner
+        profileCompleted={profileStatus.profileCompleted}
+        missingFields={profileStatus.missingFields}
       />
-      <h1>Welcome, {donor?.name}!</h1>
-      {/* Rest of the dashboard */}
+      <h2>Welcome to the Donor Dashboard</h2>
+      <p>Here you can manage your donations and explore schools in need.</p>
+      {profileStatus.profileCompleted ? (
+        <button className="btn btn-primary">Make a Donation</button>
+      ) : (
+        <button className="btn btn-secondary" disabled>
+          Complete Your Profile to Donate
+        </button>
+      )}
     </div>
   );
 };

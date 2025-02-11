@@ -38,29 +38,53 @@ const userSchema = new mongoose.Schema(
       default: [],
     },
     contactNumber: {
-      type: String, // We use String to handle leading zeros
+      type: String,
       validate: {
         validator: function (value) {
-          // Regular expression to match exactly 10 digits
+          // Allow empty if not completing the profile
+          if (!value) return this.role !== "donor" && this.role !== "school";
           return /^\d{10}$/.test(value);
         },
         message:
           "Phone number must be exactly 10 digits and contain only numbers.",
       },
-      required: [true, "Phone number is required"], // Optional but recommended
     },
 
     // Fields for school profile completion
     schoolName: {
-      type: String, // Required for schools
+      type: String,
+      validate: {
+        validator: function (value) {
+          return this.role !== "school" || (this.role === "school" && value);
+        },
+        message: "School name is required for school accounts.",
+      },
     },
     location: {
-      type: String, // Required for schools
+      type: String,
+      validate: {
+        validator: function (value) {
+          return this.role !== "school" || (this.role === "school" && value);
+        },
+        message: "Location is required for school accounts.",
+      },
     },
     needs: {
-      type: [String], // List of needs, e.g., "books", "uniforms"
-      default: [],
+  type: [String],
+  default: [],
+  validate: {
+    validator: function (value) {
+      // Only require non-empty "needs" if the school account's profile is marked as complete.
+      // For registration, when profileCompleted is false, allow an empty array.
+      if (this.role === "school" && !this.profileCompleted) {
+        return true;
+      }
+      return this.role !== "school" || (this.role === "school" && value.length > 0);
     },
+    message: "Needs must be specified for school accounts when completing the profile.",
+  },
+},
+
     // Common field for profile completion status
     profileCompleted: {
       type: Boolean,
