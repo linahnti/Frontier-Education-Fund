@@ -1,10 +1,20 @@
-import React, { useContext } from "react";
-import { Link } from "react-router-dom";
-import { AuthContext } from "./AuthContext";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 import assets from "../assets/images/assets";
 
 const AuthenticatedNavbar = () => {
-  const { userRole, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  // Get user role from localStorage
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userRole = user ? user.role : null;
+
+  // Logout function
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login");
+  };
 
   return (
     <header

@@ -1,49 +1,31 @@
-import React, { lazy, Suspense, useContext } from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
-import { AuthContext } from "./components/AuthContext"; // Import context
+import React, { lazy, Suspense } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import PublicLayout from "./components/PublicLayout";
 import GeneralLayout from "./components/GeneralLayout";
+import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 
-// Lazy load components
+// Lazy load pages
 const Home = lazy(() => import("./pages/Home"));
 const Signup = lazy(() => import("./pages/Register"));
 const Login = lazy(() => import("./pages/Login"));
 const Logout = lazy(() => import("./components/Logout"));
 const ForgotPassword = lazy(() => import("./components/ForgotPassword"));
 const ResetPassword = lazy(() => import("./components/ResetPassword"));
+//const CompleteProfile = lazy(() => import("./components/CompleteProfile"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const DonorDashboard = lazy(() => import("./pages/DonorDashboard"));
 const SchoolDashboard = lazy(() => import("./pages/SchoolDashboard"));
+const Dashboard = lazy(() => import("./components/Dashboard"));
 
-// Protected Route Component (Updated)
-const ProtectedRoute = ({ element, allowedRole }) => {
-  const { isLoggedIn, userRole } = useContext(AuthContext);
-
-  if (!isLoggedIn) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (userRole !== allowedRole) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return element;
-};
-
-// Custom Loading Component
+// Loading Component
 const Loading = () => (
   <div className="centered-container">
     <h1 className="text-warning">Loading...</h1>
   </div>
 );
 
-// Custom 404 Page
+// 404 Page
 const NotFound = () => (
   <div className="centered-container">
     <div>
@@ -60,7 +42,7 @@ const App = () => {
     <Router>
       <Suspense fallback={<Loading />}>
         <Routes>
-          {/* Public Routes */}
+          {/* ✅ Public Routes - No protection needed */}
           <Route element={<PublicLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
@@ -70,38 +52,34 @@ const App = () => {
             <Route path="/logout" element={<Logout />} />
           </Route>
 
-          {/* Protected Routes */}
+          {/* ✅ Protected Routes - Require authentication */}
           <Route element={<GeneralLayout />}>
-            <Route
-              path="/admin-dashboard"
-              element={
-                <ProtectedRoute
-                  element={<AdminDashboard />}
-                  allowedRole="admin"
-                />
-              }
-            />
-            <Route
-              path="/donor-dashboard"
-              element={
-                <ProtectedRoute
-                  element={<DonorDashboard />}
-                  allowedRole="donor"
-                />
-              }
-            />
-            <Route
-              path="/school-dashboard"
-              element={
-                <ProtectedRoute
-                  element={<SchoolDashboard />}
-                  allowedRole="school"
-                />
-              }
-            />
+            {/* Dashboard */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+            </Route>
+            {/* Admin Dashboard */}
+            <Route element={<ProtectedRoute allowedRole="admin" />}>
+              <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            </Route>
+
+            {/* Donor Dashboard */}
+            <Route element={<ProtectedRoute allowedRole="donor" />}>
+              <Route path="/donor-dashboard" element={<DonorDashboard />} />
+            </Route>
+
+            {/* School Dashboard */}
+            <Route element={<ProtectedRoute allowedRole="school" />}>
+              <Route path="/school-dashboard" element={<SchoolDashboard />} />
+            </Route>
+
+            {/* Complete Profile */}
+            {/* <Route element={<ProtectedRoute />}>
+              <Route path="/complete-profile" element={<CompleteProfile />} />
+            </Route> */}
           </Route>
 
-          {/* 404 Page */}
+          {/* ✅ Catch-All 404 Page */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

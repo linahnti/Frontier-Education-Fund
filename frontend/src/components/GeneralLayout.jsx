@@ -1,11 +1,11 @@
-import React, { useContext } from "react";
+import React from "react";
 import { Outlet } from "react-router-dom";
-import Navbar from "./AuthenticatedNavbar"; // Authenticated Navbar
-import Footer from "./Footer"; // Footer
-import { AuthContext } from "./AuthContext"; // Ensure AuthContext is working properly
+import Navbar from "./AuthenticatedNavbar";
+import Footer from "./Footer";
 
 const GeneralLayout = () => {
-  const { isLoggedIn } = useContext(AuthContext);
+  // Check authentication from localStorage
+  const isLoggedIn = !!localStorage.getItem("token");
 
   return (
     <div>

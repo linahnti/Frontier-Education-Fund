@@ -30,23 +30,23 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     // Clear previous errors
     setError("");
-
+  
     // Check if role is selected
     if (!formData.role) {
       alert("Please select your role!");
       return;
     }
-
+  
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
-
+  
     setIsSubmitting(true); // Set submitting state to true
-
+  
     try {
       // Send a POST request to the backend
       const response = await axios.post(
@@ -58,7 +58,7 @@ const Register = () => {
           role: formData.role,
         }
       );
-
+  
       // Show success toast in the center of the screen
       toast.success("Registration successful! Redirecting to login...", {
         position: "top-center", // Position the toast in the center
@@ -69,7 +69,7 @@ const Register = () => {
         draggable: true,
         style: { backgroundColor: "#ffc107", color: "#000" },
       });
-
+  
       // Redirect to the login page
       setTimeout(() => {
         navigate("/login");
@@ -77,7 +77,7 @@ const Register = () => {
     } catch (err) {
       // Handle errors from the backend
       console.error("Registration error:", err.response?.data);
-
+  
       // Extract the specific error message from the backend response
       const errorMessage =
         err.response?.data?.message || "Registration failed. Please try again.";

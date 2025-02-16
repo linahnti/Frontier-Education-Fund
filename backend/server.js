@@ -7,7 +7,12 @@ dotenv.config(); // Load environment variables from .env file
 connectDB(); // Connect to MongoDB
 
 const app = express(); // Initialize the Express app
-app.use(cors()); // Enable CORS for all routes
+app.use(
+  cors({
+    origin: "http://localhost:5173", // Allow only your frontend origin
+    credentials: true, // Allow cookies & authentication headers
+  })
+);
 app.use(express.json()); // Middleware to parse incoming JSON data
 
 const userRoutes = require("./routes/userRoutes.js");
@@ -15,8 +20,6 @@ app.use("/api/users", userRoutes); // All user-related APIs will start with /api
 
 // const forgotPasswordRoutes = require("./routes/forgotPasswordRoutes.js");
 // app.use("/api/forgot-password", forgotPasswordRoutes);
-
-
 
 const PORT = process.env.PORT || 5000; // Define the server's port
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`)); // Start the server

@@ -1,4 +1,6 @@
 const User = require("../models/user.js");
+const Donor = require("../models/donorDiscriminator.js");
+const School = require("../models/schoolDiscriminator.js");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -12,7 +14,7 @@ const registerUser = async (req, res) => {
     return res.status(400).json({ message: "Invalid role provided." });
   }
 
-  // Validation for email format
+  // Validate email format
   const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   if (!emailRegex.test(email)) {
     return res
@@ -20,7 +22,7 @@ const registerUser = async (req, res) => {
       .json({ message: "Please provide a valid email address" });
   }
 
-  // Password validation
+  // Validate password
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/;
   if (!passwordRegex.test(password)) {
     return res.status(400).json({
@@ -39,13 +41,30 @@ const registerUser = async (req, res) => {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create the user
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      role,
-    });
+    // Create the user based on role
+    let user;
+    if (role === "donor") {
+      user = new Donor({
+        name,
+        email,
+        password: hashedPassword,
+      });
+    } else if (role === "school") {
+      user = new School({
+        name,
+        email,
+        password: hashedPassword,
+      });
+    } else {
+      user = new User({
+        name,
+        email,
+        password: hashedPassword,
+        role,
+      });
+    }
+
+    await user.save();
 
     // Send success response
     res.status(201).json({
@@ -55,9 +74,7 @@ const registerUser = async (req, res) => {
       role: user.role,
     });
   } catch (error) {
-    // Detailed logging for debugging purposes (remove or reduce logging in production)
     console.error("Registration error:", error.stack);
-    // Return the error message during development for more details.
     res.status(500).json({
       message: error.message || "Server error. Please try again later.",
     });
@@ -87,7 +104,7 @@ const loginUser = async (req, res) => {
 
     // Generate a JWT token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
-      expiresIn: "1h",
+      expiresIn: "3h",
     });
 
     // Send success response
@@ -97,16 +114,15 @@ const loginUser = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        role: user.role.toLowerCase(), // Normalize role to lowercase
+        // profileCompleted: user.profileCompleted, // Temporarily exclude this field
       },
     });
-  } catch (err) {
-    console.log(err.response);
-    if (err.response && err.response.data && err.response.data.message) {
-      setError(err.response.data.message);
-    } else {
-      setError("Login failed. Please try again.");
-    }
+  } catch (error) {
+    console.error("Login error:", error.stack); // Log the full error stack
+    res.status(500).json({
+      message: error.message || "Login failed. Please try again.",
+    });
   }
 };
 
@@ -136,85 +152,8 @@ const getUserProfile = async (req, res) => {
   }
 };
 
-// Check Profile Completion
-const checkProfile = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found." });
-    }
-
-    // Role-based profile requirements
-    const requiredFields = {
-      donor: ["phoneNumber", "address"],
-      school: ["schoolName", "schoolAddress"],
-    };
-
-    const missingFields = requiredFields[user.role]?.filter(
-      (field) => !user[field]
-    );
-
-    if (missingFields && missingFields.length > 0) {
-      return res.status(400).json({
-        message: "Profile incomplete",
-        missingFields,
-      });
-    }
-
-    res.status(200).json({ message: "Profile complete" });
-  } catch (error) {
-    console.error("Check profile error:", error);
-    res.status(500).json({ message: "Server error. Please try again later." });
-  }
-};
-
-// Update Profile
-const updateProfile = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const updates = req.body;
-
-    // Role-based validation for allowed fields
-    const allowedFields = {
-      donor: ["name", "email", "phoneNumber", "address"],
-      school: ["name", "email", "schoolName", "schoolAddress"],
-      admin: ["name", "email"], // Adjust for admin as needed
-    };
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found." });
-    }
-
-    // Filter out disallowed fields
-    const filteredUpdates = Object.keys(updates).reduce((acc, key) => {
-      if (allowedFields[user.role]?.includes(key)) {
-        acc[key] = updates[key];
-      }
-      return acc;
-    }, {});
-
-    // Perform the update
-    const updatedUser = await User.findByIdAndUpdate(userId, filteredUpdates, {
-      new: true,
-    }).select("-password"); // Exclude password field
-
-    res.status(200).json({
-      message: "Profile updated successfully",
-      user: updatedUser,
-    });
-  } catch (error) {
-    console.error("Update profile error:", error);
-    res.status(500).json({ message: "Server error. Please try again later." });
-  }
-};
-
 module.exports = {
   registerUser,
   loginUser,
   getUserProfile,
-  checkProfile,
-  updateProfile,
 };

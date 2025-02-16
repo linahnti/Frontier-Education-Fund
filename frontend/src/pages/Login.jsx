@@ -1,87 +1,60 @@
-import React, { useState, useContext } from "react";
-import { AuthContext } from "../components/AuthContext";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios"; // For making HTTP requests
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css"; // Import the CSS
+import axios from "axios";
+import "bootstrap/dist/css/bootstrap.min.css";
 import assets from "../assets/images/assets";
 
 const Login = () => {
-  const { login } = useContext(AuthContext);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState(""); // To display error message if login fails
-  const navigate = useNavigate(); // Hook to handle navigation
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
     try {
       const response = await axios.post(
         "http://localhost:5000/api/users/login",
         {
-          email: formData.email,
-          password: formData.password,
+          email,
+          password,
         }
       );
 
       const { token, user } = response.data;
+      console.log("API Response:", response.data); // Debugging
+      console.log("User Role:", user.role); // Debugging
 
-      // Save token and role to localStorage
       localStorage.setItem("token", token);
-      localStorage.setItem("userRole", user.role);
+      localStorage.setItem("user", JSON.stringify(user));
 
-      // Call login function from AuthContext
-      login(user.role, token);
-
-      // Success toast
-      toast.success("Login successful!", {
-        position: "top-center",
-        autoClose: 3000,
-        hideProgressBar: false,
-        style: { backgroundColor: "#ffc107", color: "#000" },
-      });
-
-      // Redirect based on user role
-      setTimeout(() => {
-        if (user.role === "admin") navigate("/admin-dashboard");
-        else if (user.role === "school") navigate("/school-dashboard");
-        else if (user.role === "donor") navigate("/donor-dashboard");
-        else navigate("/dashboard");
-      }, 2000);
+      // Redirect user based on role
+      const role = user.role.toLowerCase();
+      if (role === "admin") {
+        navigate("/admin-dashboard");
+      } else if (role === "donor") {
+        navigate("/donor-dashboard");
+      } else if (role === "school") {
+        navigate("/school-dashboard");
+      } else {
+        console.error("Unknown role:", user.role); // Debugging
+      }
     } catch (err) {
-      console.log(err.response); // Debugging step
-
-      // Set error message
       if (err.response && err.response.data && err.response.data.message) {
         setError(err.response.data.message);
       } else {
         setError("Login failed. Please try again.");
       }
-
-      // Error toast
-      toast.error("Login failed. Please check your credentials.", {
-        position: "top-center",
-        autoClose: 3000,
-        hideProgressBar: false,
-        style: { backgroundColor: "#ffc107", color: "#000" },
-      });
+      console.error("Login error:", err); // Debugging
     }
   };
 
   return (
     <div
+      className="auth-container d-flex justify-content-center align-items-center min-vh-100"
       style={{
         backgroundImage: `url(${assets.sunrise2})`, // Use the imported image
         backgroundSize: "cover",
@@ -93,59 +66,36 @@ const Login = () => {
       }}
     >
       <div
-        className="container"
+        className="card p-4 shadow-lg text-white "
         style={{
+          maxWidth: "400px",
+          width: "100%",
           backgroundColor: "rgba(255, 255, 255, 0.8)",
-          borderRadius: "10px",
-          padding: "20px",
-          maxWidth: "500px",
         }}
       >
-        <h2
-          className="text-center mb-4"
-          style={{
-            fontFamily: "cursive",
-            fontSize: "2.5rem",
-            color: "#ffc107",
-          }}
-        >
+        <h3 className="text-center mb-4" style={{ color: "#ffc107" }}>
           Login
-        </h2>
+        </h3>
+        {error && <div className="alert alert-danger">{error}</div>}
         <form onSubmit={handleSubmit}>
-          {error && (
-            <div className="alert alert-danger" role="alert">
-              {error}
-            </div>
-          )}
-          {/* Email */}
           <div className="mb-3">
-            <label htmlFor="email" className="form-label">
-              Email
-            </label>
+            <label className="form-label text-black">Email</label>
             <input
               type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
               className="form-control"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
-
-          {/* Password */}
           <div className="mb-3">
-            <label htmlFor="password" className="form-label">
-              Password
-            </label>
+            <label className="form-label text-black">Password</label>
             <div className="input-group">
               <input
                 type={showPassword ? "text" : "password"}
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
                 className="form-control"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
               />
               <button
@@ -157,52 +107,30 @@ const Login = () => {
               </button>
             </div>
           </div>
-
-          {/* Submit Button */}
           <button type="submit" className="btn btn-primary w-100">
             Login
           </button>
         </form>
-
-        {/* Forgot Password Section */}
-        <div className="text-center mt-3">
-          <p>
-            Forgot your password?{" "}
-            <a
-              href="/forgot-password"
-              style={{ color: "#ffc107", textDecoration: "none" }}
-            >
-              Click here
-            </a>
-          </p>
-        </div>
-
-        {/* Sign Up Section */}
-        <div className="text-center mt-3">
-          <p>
-            Don't have an account?{" "}
-            <a
-              href="/signup"
-              style={{ color: "#ffc107", textDecoration: "none" }}
-            >
-              Sign Up
-            </a>
-          </p>
-        </div>
+        <p className="text-center mt-3 text-black">
+          <a
+            href="/forgot-password"
+            className="text-warning"
+            style={{ color: "#ffc107" }}
+          >
+            Forgot Password?
+          </a>
+        </p>
+        <p className="text-center text-black">
+          Don't have an account?{" "}
+          <a
+            href="/register"
+            className="text-warning"
+            style={{ color: "#ffc107" }}
+          >
+            Register here
+          </a>
+        </p>
       </div>
-
-      {/* Toast Container */}
-      <ToastContainer
-        position="top-center" // Position the toast in the center
-        autoClose={3000} // Close after 3 seconds
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
     </div>
   );
 };
