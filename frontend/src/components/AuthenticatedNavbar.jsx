@@ -4,8 +4,6 @@ import assets from "../assets/images/assets";
 
 const AuthenticatedNavbar = () => {
   const navigate = useNavigate();
-
-  // Get user role from localStorage
   const user = JSON.parse(localStorage.getItem("user"));
   const userRole = user ? user.role : null;
 
@@ -43,10 +41,7 @@ const AuthenticatedNavbar = () => {
           <a href="#donations" className="text-white text-decoration-none me-3">
             Donations
           </a>
-          <a
-            href="#testimonials"
-            className="text-white text-decoration-none me-3"
-          >
+          <a href="#testimonials" className="text-white text-decoration-none me-3">
             Testimonials
           </a>
         </div>
@@ -69,6 +64,7 @@ const AuthenticatedNavbar = () => {
             </ul>
           </div>
 
+          {/* Profile Dropdown */}
           <div className="dropdown">
             <button
               className="btn btn-link text-white p-0 dropdown-toggle"
@@ -77,6 +73,15 @@ const AuthenticatedNavbar = () => {
               data-bs-toggle="dropdown"
             >
               <i className="fas fa-user-circle"></i>
+              {/* Notification text if profile is incomplete */}
+              {user?.isProfileComplete === false && (
+                <span
+                  className="badge bg-warning text-dark ms-2"
+                  style={{ fontSize: "0.8rem" }}
+                >
+                  Complete Profile First
+                </span>
+              )}
             </button>
             <ul className="dropdown-menu dropdown-menu-end">
               <li>
@@ -84,6 +89,15 @@ const AuthenticatedNavbar = () => {
                   Profile
                 </Link>
               </li>
+              {user?.isProfileComplete ? (
+                <li>
+                  <Link to="/profile" className="dropdown-item">
+                    Profile Completed
+                  </Link>
+                </li>
+              ) : (
+                <></>
+              )}
               {userRole === "admin" && (
                 <li>
                   <Link to="/admin-settings" className="dropdown-item">

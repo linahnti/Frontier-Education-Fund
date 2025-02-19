@@ -1,6 +1,6 @@
-const User = require("../models/user.js");
-const Donor = require("../models/donorDiscriminator.js");
-const School = require("../models/schoolDiscriminator.js");
+const User = require("../models/user");
+const Donor = require("../models/donorDiscriminator");
+const School = require("../models/schoolDiscriminator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
@@ -126,10 +126,9 @@ const loginUser = async (req, res) => {
   }
 };
 
-// Get User Profile (Authenticated)
+// Check if Profile is Complete
 const getUserProfile = async (req, res) => {
   try {
-    // Get the user ID from the token payload (provided by the 'protect' middleware)
     const userId = req.user.id;
 
     // Find the user in the database by their ID
@@ -138,17 +137,86 @@ const getUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
-    // Return the user profile data
-    res.status(200).json({
+    // Construct the response
+    const userProfile = {
       id: user._id,
       name: user.name,
       email: user.email,
-      role: user.role,
+      role: user.role, // Ensure role is included
       createdAt: user.createdAt,
-    });
+    };
+
+    // Add discriminator-specific fields based on the user's role
+    if (user.role.toLowerCase() === "donor") {
+      userProfile.donorDetails = {
+        contactNumber: user.contactNumber || null,
+        donorType: user.donorType || null,
+        organizationName: user.organizationName || null,
+        registrationNumber: user.registrationNumber || null,
+        taxExemptStatus: user.taxExemptStatus || null,
+        occupation: user.occupation || null,
+        donationCategories: user.donationCategories || [],
+        annualBudget: user.annualBudget || null,
+        donationFrequency: user.donationFrequency || null,
+        organizationAffiliation: user.organizationAffiliation || null,
+      };
+    } else if (user.role.toLowerCase() === "school") {
+      userProfile.schoolDetails = {
+        schoolName: user.schoolName || null,
+        location: user.location || null,
+        needs: user.needs || [],
+        principalName: user.principalName || null,
+        schoolType: user.schoolType || null,
+        numStudents: user.numStudents || null,
+        accreditation: user.accreditation || null,
+        website: user.website || null,
+        missionStatement: user.missionStatement || null,
+      };
+    }
+
+    // Log the profile for debugging
+    console.log("User profile:", userProfile);
+
+    // Return the complete user profile
+    res.status(200).json(userProfile);
   } catch (error) {
     console.error("Get user profile error:", error);
     res.status(500).json({ message: "Server error. Please try again later." });
+  }
+};
+
+// Update User Profile
+const updateUserProfile = async (req, res) => {
+  const userId = req.user.id;
+  const updatedData = req.body;
+
+  console.log("Received update data:", JSON.stringify(updatedData, null, 2));
+
+  try {
+    let user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Update the user profile with the provided data
+    user.name = updatedData.name;
+    user.email = updatedData.email;
+    user.role = updatedData.role; // Ensure role is a string
+
+    if (user.role === "school") {
+      user = await School.findByIdAndUpdate(userId, updatedData, { new: true });
+    } else if (user.role === "donor") {
+      user = await Donor.findByIdAndUpdate(userId, updatedData, { new: true });
+    }
+
+    console.log("Updated user profile:", user);
+
+    return res
+      .status(200)
+      .json({ message: "Profile updated successfully", user });
+  } catch (err) {
+    console.error("Error updating profile:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -156,4 +224,5 @@ module.exports = {
   registerUser,
   loginUser,
   getUserProfile,
+  updateUserProfile,
 };

@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import assets from "../assets/images/assets";
 
@@ -30,6 +32,16 @@ const Login = () => {
 
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
+
+      toast.success("Login successful! Redirecting to dashboard...", {
+        position: "top-center", // Position the toast in the center
+        autoClose: 3000, // Close after 3 seconds
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: { backgroundColor: "#ffc107", color: "#000" },
+      });
 
       // Redirect user based on role
       const role = user.role.toLowerCase();
@@ -131,6 +143,18 @@ const Login = () => {
           </a>
         </p>
       </div>
+
+      <ToastContainer
+        position="top-center" // Position the toast in the center
+        autoClose={2000} // Close after 2 seconds
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 };

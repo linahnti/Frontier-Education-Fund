@@ -3,6 +3,8 @@ const {
   registerUser,
   loginUser,
   getUserProfile,
+  checkUserProfile,
+  updateUserProfile,
 } = require("../controllers/userController.js");
 const { protect } = require("../middleware/authMiddleware.js");
 
@@ -21,5 +23,7 @@ router.get("/validate-token", protect, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+//router.get("/profile/check", protect, checkUserProfile);
+router.put("/profile/update", protect, updateUserProfile);
 
 module.exports = router;

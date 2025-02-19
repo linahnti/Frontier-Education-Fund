@@ -12,7 +12,7 @@ const Login = lazy(() => import("./pages/Login"));
 const Logout = lazy(() => import("./components/Logout"));
 const ForgotPassword = lazy(() => import("./components/ForgotPassword"));
 const ResetPassword = lazy(() => import("./components/ResetPassword"));
-//const CompleteProfile = lazy(() => import("./components/CompleteProfile"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const DonorDashboard = lazy(() => import("./pages/DonorDashboard"));
 const SchoolDashboard = lazy(() => import("./pages/SchoolDashboard"));
@@ -73,10 +73,10 @@ const App = () => {
               <Route path="/school-dashboard" element={<SchoolDashboard />} />
             </Route>
 
-            {/* Complete Profile */}
-            {/* <Route element={<ProtectedRoute />}>
-              <Route path="/complete-profile" element={<CompleteProfile />} />
-            </Route> */}
+            {/* Profile Page */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/profile" element={<ProfilePage />} />
+            </Route>
           </Route>
 
           {/* ✅ Catch-All 404 Page */}
