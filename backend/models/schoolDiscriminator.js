@@ -9,19 +9,18 @@ const schoolSchema = new mongoose.Schema({
   needs: { type: [String], default: [] },
   principalName: { type: String, default: "" },
   schoolType: { type: String, enum: ["public", "private"], default: "" },
-  numStudents: { type: Number, min: 1, default: "" },
+  numStudents: { type: String,  default: "" },
   accreditation: { type: Boolean, default: false },
   website: { type: String, default: "" },
   missionStatement: { type: String, maxlength: 500, default: "" },
   contactNumber: {
     type: String,
     validate: {
-      validator: function (value) {
-        if (!value) return true;
-        return /^\d{10}$/.test(value);
+      validator: function (v) {
+        // Allow numbers with a '+' and up to 15 digits
+        return /^\+?\d{10,15}$/.test(v);
       },
-      message:
-        "Phone number must be exactly 10 digits and contain only numbers.",
+      message: (props) => `${props.value} is not a valid phone number!`,
     },
   },
 });

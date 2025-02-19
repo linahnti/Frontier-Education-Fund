@@ -68,13 +68,18 @@ const ProfilePage = () => {
             location: fetchedUserInfo.schoolDetails?.location || "",
             needs: fetchedUserInfo.schoolDetails?.needs || [],
             principalName: fetchedUserInfo.schoolDetails?.principalName || "",
-            schoolType: fetchedUserInfo.schoolDetails?.schoolType || "",
+            schoolType: ["public", "private"].includes(
+              fetchedUserInfo.schoolDetails?.schoolType
+            )
+              ? fetchedUserInfo.schoolDetails.schoolType
+              : null,
             numStudents: fetchedUserInfo.schoolDetails?.numStudents || "",
-            accreditation: fetchedUserInfo.schoolDetails?.accreditation || "",
+            accreditation:
+              fetchedUserInfo.schoolDetails?.accreditation || false,
             website: fetchedUserInfo.schoolDetails?.website || "",
             missionStatement:
               fetchedUserInfo.schoolDetails?.missionStatement || "",
-            contactNumber: fetchedUserInfo.schoolDetails?.contactNumber || "",
+            contactNumber: fetchedUserInfo.schoolDetails?.contactNumber || "", // Do not normalize
           };
         } else if (fetchedUserInfo.role === "donor") {
           fetchedUserInfo.donorDetails = {

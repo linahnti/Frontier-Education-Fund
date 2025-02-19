@@ -7,12 +7,11 @@ const donorSchema = new mongoose.Schema({
   contactNumber: {
     type: String,
     validate: {
-      validator: function (value) {
-        if (!value) return true;
-        return /^\d{10}$/.test(value);
+      validator: function (v) {
+        // Allow numbers with a '+' and up to 15 digits
+        return /^\+?\d{10,15}$/.test(v);
       },
-      message:
-        "Phone number must be exactly 10 digits and contain only numbers.",
+      message: (props) => `${props.value} is not a valid phone number!`,
     },
   },
   donorType: {
@@ -47,7 +46,7 @@ const donorSchema = new mongoose.Schema({
   taxExemptStatus: { type: Boolean, default: null },
   occupation: { type: String, default: "" },
   donationCategories: { type: [String], default: [] },
-  annualBudget: { type: Number, min: 0, default: null },
+  annualBudget: { type: String, default: null },
   donationFrequency: {
     type: String,
     enum: ["one-time", "monthly", "quarterly", "annually"],

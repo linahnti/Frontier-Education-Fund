@@ -10,7 +10,7 @@ const registerUser = async (req, res) => {
 
   // Validate role
   const validRoles = ["admin", "donor", "school"];
-  if (!validRoles.includes(role)) {
+  if (!validRoles.includes(role.toLowerCase())) {
     return res.status(400).json({ message: "Invalid role provided." });
   }
 
@@ -43,24 +43,26 @@ const registerUser = async (req, res) => {
 
     // Create the user based on role
     let user;
-    if (role === "donor") {
+    if (role.toLowerCase() === "donor") {
       user = new Donor({
         name,
         email,
         password: hashedPassword,
+        role: role.toLowerCase(),
       });
-    } else if (role === "school") {
+    } else if (role.toLowerCase() === "school") {
       user = new School({
         name,
         email,
         password: hashedPassword,
+        role: role.toLowerCase(),
       });
     } else {
       user = new User({
         name,
         email,
         password: hashedPassword,
-        role,
+        role: role.toLowerCase(),
       });
     }
 
@@ -115,7 +117,6 @@ const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role.toLowerCase(), // Normalize role to lowercase
-        // profileCompleted: user.profileCompleted, // Temporarily exclude this field
       },
     });
   } catch (error) {
@@ -200,32 +201,65 @@ const updateUserProfile = async (req, res) => {
     }
 
     // Update the user profile with the provided data
-    user.name = updatedData.name;
-    user.email = updatedData.email;
-    //user.role = updatedData.role; // Ensure role is a string
+    user.name = updatedData.name || user.name;
+    user.email = updatedData.email || user.email;
 
-    if (user.role === "school") {
-      user = await School.findByIdAndUpdate(userId, updatedData, { new: true });
+    if (user.role.toLowerCase() === "school" && updatedData.schoolDetails) {
+      // Update school-specific fields
+      user.schoolName = updatedData.schoolDetails.schoolName || user.schoolName;
+      user.location = updatedData.schoolDetails.location || user.location;
+      user.needs = updatedData.schoolDetails.needs || user.needs;
+      user.principalName =
+        updatedData.schoolDetails.principalName || user.principalName;
 
-      // Ensure all fields are updated
-      if (updatedData.schoolDetails) {
-        user.schoolDetails = {
-          ...user.schoolDetails,
-          ...updatedData.schoolDetails,
-        };
+      // Handle schoolType (ensure it's a valid enum value)
+      if (
+        ["public", "private"].includes(updatedData.schoolDetails.schoolType)
+      ) {
+        user.schoolType = updatedData.schoolDetails.schoolType;
+      } else {
+        user.schoolType = undefined; // Set to default or handle invalid values
       }
-    } else if (user.role === "donor") {
-      user = await Donor.findByIdAndUpdate(userId, updatedData, { new: true });
 
-      // Ensure all fields are updated
-      if (updatedData.donorDetails) {
-        user.donorDetails = {
-          ...user.donorDetails,
-          ...updatedData.donorDetails,
-        };
+      // Handle numStudents
+      user.numStudents =
+        updatedData.schoolDetails.numStudents || user.numStudents;
+
+      // Handle accreditation (ensure it's a boolean)
+      if (updatedData.schoolDetails.accreditation !== undefined) {
+        user.accreditation = Boolean(updatedData.schoolDetails.accreditation);
       }
-    } else {
-      user = await User.findByIdAndUpdate(userId, updatedData, { new: true });
+
+      user.website = updatedData.schoolDetails.website || user.website;
+      user.missionStatement =
+        updatedData.schoolDetails.missionStatement || user.missionStatement;
+      user.contactNumber =
+        updatedData.schoolDetails.contactNumber || user.contactNumber;
+    } else if (
+      user.role.toLowerCase() === "donor" &&
+      updatedData.donorDetails
+    ) {
+      // Update donor-specific fields
+      user.contactNumber = updatedData.donorDetails.contactNumber
+        ? updatedData.donorDetails.contactNumber.replace(/\D/g, "").slice(0, 10)
+        : user.contactNumber;
+      user.donorType = updatedData.donorDetails.donorType || user.donorType;
+      user.organizationName =
+        updatedData.donorDetails.organizationName || user.organizationName;
+      user.registrationNumber =
+        updatedData.donorDetails.registrationNumber || user.registrationNumber;
+      user.taxExemptStatus =
+        updatedData.donorDetails.taxExemptStatus || user.taxExemptStatus;
+      user.occupation = updatedData.donorDetails.occupation || user.occupation;
+      user.donationCategories =
+        updatedData.donorDetails.donationCategories || user.donationCategories;
+      user.annualBudget =
+        updatedData.donorDetails.annualBudget || user.annualBudget;
+      user.donationFrequency =
+        updatedData.donorDetails.donationFrequency || user.donationFrequency;
+      user.organizationAffiliation =
+        updatedData.donorDetails.organizationAffiliation ||
+        user.organizationAffiliation;
     }
 
     await user.save();
@@ -237,7 +271,7 @@ const updateUserProfile = async (req, res) => {
       .json({ message: "Profile updated successfully", user });
   } catch (err) {
     console.error("Error updating profile:", err);
-    return res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error: " + err.message });
   }
 };
 
