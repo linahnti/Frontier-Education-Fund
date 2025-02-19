@@ -212,23 +212,35 @@ const updateUserProfile = async (req, res) => {
       user.principalName =
         updatedData.schoolDetails.principalName || user.principalName;
 
-      // Handle schoolType (ensure it's a valid enum value)
+      // Update schoolType
       if (
-        ["public", "private"].includes(updatedData.schoolDetails.schoolType)
+        ["public", "private"].includes(
+          updatedData.schoolDetails.schoolType?.toLowerCase()
+        )
       ) {
-        user.schoolType = updatedData.schoolDetails.schoolType;
-      } else {
-        user.schoolType = undefined; // Set to default or handle invalid values
+        user.schoolType = updatedData.schoolDetails.schoolType.toLowerCase();
       }
 
-      // Handle numStudents
+      // Log the received and updated schoolType
+      console.log("Received schoolType:", updatedData.schoolDetails.schoolType);
+      console.log("Updated schoolType:", user.schoolType);
+
+      // Update numStudents
       user.numStudents =
         updatedData.schoolDetails.numStudents || user.numStudents;
 
       // Handle accreditation (ensure it's a boolean)
       if (updatedData.schoolDetails.accreditation !== undefined) {
-        user.accreditation = Boolean(updatedData.schoolDetails.accreditation);
+        user.accreditation =
+          updatedData.schoolDetails.accreditation === "Yes" ? true : false;
       }
+
+      // Log the received and updated accreditation
+      console.log(
+        "Received accreditation:",
+        updatedData.schoolDetails.accreditation
+      );
+      console.log("Updated accreditation:", user.accreditation);
 
       user.website = updatedData.schoolDetails.website || user.website;
       user.missionStatement =

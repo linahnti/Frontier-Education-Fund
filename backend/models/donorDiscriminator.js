@@ -49,7 +49,7 @@ const donorSchema = new mongoose.Schema({
   annualBudget: { type: String, default: null },
   donationFrequency: {
     type: String,
-    enum: ["one-time", "monthly", "quarterly", "annually"],
+    enum: ["one-time", "Weekly", "Monthly", "Quarterly", "Annually"],
     default: null,
   },
   organizationAffiliation: { type: String, default: "" },

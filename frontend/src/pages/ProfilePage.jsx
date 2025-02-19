@@ -529,10 +529,11 @@ const ProfilePage = () => {
                   required
                 />
               </div>
-              <div className="mb-3">
-                <label htmlFor="taxExemptStatus" className="form-check-label">
-                  Tax Exempt Status
-                </label>
+              <div className="mb-3 row align-items-center">
+              <label htmlFor="taxExemptStatus" className="col-sm-4 col-form-label">
+                Tax Exempt Status
+              </label>
+              <div className="col-sm-8">
                 <input
                   type="checkbox"
                   className="form-check-input"
@@ -541,6 +542,7 @@ const ProfilePage = () => {
                   checked={updatedUserInfo.donorDetails.taxExemptStatus}
                   onChange={handleChange}
                 />
+              </div>
               </div>
               <div className="mb-3">
                 <label htmlFor="occupation" className="form-label">
@@ -697,7 +699,6 @@ const ProfilePage = () => {
                   onChange={handleChange}
                   required
                 >
-                  <option value="Individual">Individual</option>
                   <option value="NGO">NGO</option>
                   <option value="Corporate">Corporate</option>
                   <option value="Government">Government</option>
