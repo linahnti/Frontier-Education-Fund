@@ -1,4 +1,3 @@
-// models/Donor.js
 const mongoose = require("mongoose");
 const User = require("./user"); // Import the base User model
 
@@ -19,7 +18,7 @@ const donorSchema = new mongoose.Schema({
   donorType: {
     type: String,
     enum: ["NGO", "Government", "Individual", "Corporate"],
-    default: null,
+    default: "",
   },
   organizationName: {
     type: String,
@@ -46,7 +45,7 @@ const donorSchema = new mongoose.Schema({
     },
   },
   taxExemptStatus: { type: Boolean, default: null },
-  occupation: { type: String, default: null },
+  occupation: { type: String, default: "" },
   donationCategories: { type: [String], default: [] },
   annualBudget: { type: Number, min: 0, default: null },
   donationFrequency: {
@@ -54,7 +53,7 @@ const donorSchema = new mongoose.Schema({
     enum: ["one-time", "monthly", "quarterly", "annually"],
     default: null,
   },
-  organizationAffiliation: { type: String, default: null },
+  organizationAffiliation: { type: String, default: "" },
 });
 
 // Create Donor discriminator

@@ -19,6 +19,7 @@ const ProfilePage = () => {
       accreditation: "",
       website: "",
       missionStatement: "",
+      contactNumber: "",
     },
     donorDetails: {
       contactNumber: "",
@@ -37,6 +38,7 @@ const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [updatedUserInfo, setUpdatedUserInfo] = useState(userInfo);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
   // Fetch user details from the backend
   useEffect(() => {
@@ -72,6 +74,7 @@ const ProfilePage = () => {
             website: fetchedUserInfo.schoolDetails?.website || "",
             missionStatement:
               fetchedUserInfo.schoolDetails?.missionStatement || "",
+            contactNumber: fetchedUserInfo.schoolDetails?.contactNumber || "",
           };
         } else if (fetchedUserInfo.role === "donor") {
           fetchedUserInfo.donorDetails = {
@@ -157,8 +160,10 @@ const ProfilePage = () => {
         const { user } = response.data;
         console.log("Updated user data:", user);
         setUserInfo(user); // Ensure the updated user data is set correctly
+        setUpdatedUserInfo(user); // Update the form data as well
         setIsEditing(false); // Exit edit mode to display the updated data
         setError(null); // Clear any previous errors
+        setSuccess("Profile updated successfully!");
       })
       .catch((error) => {
         const errorMessage = error.response
@@ -166,6 +171,7 @@ const ProfilePage = () => {
           : error.message;
         console.error("Error updating profile:", errorMessage);
         setError("Error updating profile. Please try again later.");
+        setSuccess(null);
       });
   };
 
@@ -175,6 +181,7 @@ const ProfilePage = () => {
     <div className="container mt-5">
       <h2>Your Profile</h2>
       {error && <div className="alert alert-danger">{error}</div>}
+      {success && <div className="alert alert-success">{success}</div>}
       {isEditing ? (
         <form onSubmit={handleSubmit}>
           {/* Common Fields */}
@@ -219,6 +226,7 @@ const ProfilePage = () => {
                   className="form-control"
                   id="schoolName"
                   name="schoolDetails.schoolName"
+                  placeholder="Official School Name, e.g. ABC Primary School"
                   value={updatedUserInfo.schoolDetails.schoolName}
                   onChange={handleChange}
                   required
@@ -303,6 +311,25 @@ const ProfilePage = () => {
                   />
                   <label className="form-check-label" htmlFor="needsUniforms">
                     Uniforms
+                  </label>
+                </div>
+                <div className="form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="needsSanitaryTowels"
+                    name="schoolDetails.needs"
+                    value="Sanitary Towels"
+                    checked={updatedUserInfo.schoolDetails.needs.includes(
+                      "Sanitary Towels"
+                    )}
+                    onChange={handleChange}
+                  />
+                  <label
+                    className="form-check-label"
+                    htmlFor="needsSanitary Towels"
+                  >
+                    Sanitary Towels
                   </label>
                 </div>
                 <div className="form-check">
@@ -413,6 +440,21 @@ const ProfilePage = () => {
                   id="missionStatement"
                   name="schoolDetails.missionStatement"
                   value={updatedUserInfo.schoolDetails.missionStatement}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label htmlFor="contactNumber" className="form-label">
+                  Contact Number
+                </label>
+                <textarea
+                  type="text"
+                  className="form-control"
+                  id="contactNumber"
+                  name="schoolDetails.contactNumber"
+                  placeholder="Start with +254"
+                  value={updatedUserInfo.schoolDetails.contactNumber}
                   onChange={handleChange}
                   required
                 />
@@ -709,6 +751,10 @@ const ProfilePage = () => {
               <p>
                 <strong>Mission Statement:</strong>{" "}
                 {userInfo.schoolDetails.missionStatement}
+              </p>
+              <p>
+                <strong>Contact Number:</strong>{" "}
+                {userInfo.schoolDetails.contactNumber}
               </p>
             </>
           )}

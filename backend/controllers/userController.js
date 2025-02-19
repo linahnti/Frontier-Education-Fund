@@ -149,28 +149,29 @@ const getUserProfile = async (req, res) => {
     // Add discriminator-specific fields based on the user's role
     if (user.role.toLowerCase() === "donor") {
       userProfile.donorDetails = {
-        contactNumber: user.contactNumber || null,
-        donorType: user.donorType || null,
-        organizationName: user.organizationName || null,
-        registrationNumber: user.registrationNumber || null,
-        taxExemptStatus: user.taxExemptStatus || null,
-        occupation: user.occupation || null,
+        contactNumber: user.contactNumber || "",
+        donorType: user.donorType || "",
+        organizationName: user.organizationName || "",
+        registrationNumber: user.registrationNumber || "",
+        taxExemptStatus: user.taxExemptStatus || "",
+        occupation: user.occupation || "",
         donationCategories: user.donationCategories || [],
-        annualBudget: user.annualBudget || null,
-        donationFrequency: user.donationFrequency || null,
-        organizationAffiliation: user.organizationAffiliation || null,
+        annualBudget: user.annualBudget || "",
+        donationFrequency: user.donationFrequency || "",
+        organizationAffiliation: user.organizationAffiliation || "",
       };
     } else if (user.role.toLowerCase() === "school") {
       userProfile.schoolDetails = {
-        schoolName: user.schoolName || null,
-        location: user.location || null,
+        schoolName: user.schoolName || "",
+        location: user.location || "",
         needs: user.needs || [],
-        principalName: user.principalName || null,
-        schoolType: user.schoolType || null,
-        numStudents: user.numStudents || null,
-        accreditation: user.accreditation || null,
-        website: user.website || null,
-        missionStatement: user.missionStatement || null,
+        principalName: user.principalName || "",
+        schoolType: user.schoolType || "",
+        numStudents: user.numStudents || "",
+        accreditation: user.accreditation || "",
+        website: user.website || "",
+        missionStatement: user.missionStatement || "",
+        contactNumber: user.contactNumber || "",
       };
     }
 
@@ -201,13 +202,33 @@ const updateUserProfile = async (req, res) => {
     // Update the user profile with the provided data
     user.name = updatedData.name;
     user.email = updatedData.email;
-    user.role = updatedData.role; // Ensure role is a string
+    //user.role = updatedData.role; // Ensure role is a string
 
     if (user.role === "school") {
       user = await School.findByIdAndUpdate(userId, updatedData, { new: true });
+
+      // Ensure all fields are updated
+      if (updatedData.schoolDetails) {
+        user.schoolDetails = {
+          ...user.schoolDetails,
+          ...updatedData.schoolDetails,
+        };
+      }
     } else if (user.role === "donor") {
       user = await Donor.findByIdAndUpdate(userId, updatedData, { new: true });
+
+      // Ensure all fields are updated
+      if (updatedData.donorDetails) {
+        user.donorDetails = {
+          ...user.donorDetails,
+          ...updatedData.donorDetails,
+        };
+      }
+    } else {
+      user = await User.findByIdAndUpdate(userId, updatedData, { new: true });
     }
+
+    await user.save();
 
     console.log("Updated user profile:", user);
 
