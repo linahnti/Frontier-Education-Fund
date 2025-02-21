@@ -75,7 +75,9 @@ const ProfilePage = () => {
               : null,
             numStudents: fetchedUserInfo.schoolDetails?.numStudents || "",
             accreditation:
-              fetchedUserInfo.schoolDetails?.accreditation || false,
+              fetchedUserInfo.schoolDetails?.accreditation !== undefined
+                ? Boolean(fetchedUserInfo.schoolDetails.accreditation) // Ensure boolean
+                : false,
             website: fetchedUserInfo.schoolDetails?.website || "",
             missionStatement:
               fetchedUserInfo.schoolDetails?.missionStatement || "",
@@ -374,15 +376,16 @@ const ProfilePage = () => {
                   School Type
                 </label>
                 <select
+                  className="form-control"
                   id="schoolType"
                   name="schoolDetails.schoolType"
-                  className="form-control"
-                  value={updatedUserInfo.schoolDetails.schoolType}
+                  value={updatedUserInfo.schoolDetails.schoolType || ""}
                   onChange={handleChange}
                   required
                 >
-                  <option value="Public">Public</option>
-                  <option value="Private">Private</option>
+                  <option value="">Select School Type</option>
+                  <option value="public">Public</option>
+                  <option value="private">Private</option>
                 </select>
               </div>
               <div className="mb-3">
@@ -405,21 +408,26 @@ const ProfilePage = () => {
                   <option value="2001-5000">2,001 - 5,000</option>
                 </select>
               </div>
-              <div className="mb-3">
-                <label htmlFor="accreditation" className="form-label">
+              <div className="mb-3 row align-items-center">
+                <label
+                  htmlFor="accreditation"
+                  className="col-sm-4 col-form-label mb-0"
+                >
                   Accreditation
                 </label>
-                <select
-                  id="accreditation"
-                  name="schoolDetails.accreditation"
-                  className="form-control"
-                  value={updatedUserInfo.schoolDetails.accreditation}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
+                <div className="col-sm-8">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="accreditation"
+                    name="schoolDetails.accreditation"
+                    checked={
+                      updatedUserInfo.schoolDetails.accreditation || false
+                    }
+                    onChange={handleChange}
+                    style={{ transform: "scale(1.5)", marginLeft: "0.5rem" }}
+                  />
+                </div>
               </div>
               <div className="mb-3">
                 <label htmlFor="website" className="form-label">
@@ -530,19 +538,23 @@ const ProfilePage = () => {
                 />
               </div>
               <div className="mb-3 row align-items-center">
-              <label htmlFor="taxExemptStatus" className="col-sm-4 col-form-label">
-                Tax Exempt Status
-              </label>
-              <div className="col-sm-8">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="taxExemptStatus"
-                  name="donorDetails.taxExemptStatus"
-                  checked={updatedUserInfo.donorDetails.taxExemptStatus}
-                  onChange={handleChange}
-                />
-              </div>
+                <label
+                  htmlFor="taxExemptStatus"
+                  className="col-sm-4 col-form-label"
+                >
+                  Tax Exempt Status
+                </label>
+                <div className="col-sm-8">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="taxExemptStatus"
+                    name="donorDetails.taxExemptStatus"
+                    checked={updatedUserInfo.donorDetails.taxExemptStatus}
+                    onChange={handleChange}
+                    style={{ transform: "scale(1.5)" }} // Increase size of checkbox
+                  />
+                </div>
               </div>
               <div className="mb-3">
                 <label htmlFor="occupation" className="form-label">
@@ -699,6 +711,7 @@ const ProfilePage = () => {
                   onChange={handleChange}
                   required
                 >
+                  <option value="">Select Organization Affiliation </option>
                   <option value="NGO">NGO</option>
                   <option value="Corporate">Corporate</option>
                   <option value="Government">Government</option>
@@ -749,7 +762,7 @@ const ProfilePage = () => {
               </p>
               <p>
                 <strong>Accreditation:</strong>{" "}
-                {userInfo.schoolDetails.accreditation}
+                {userInfo.schoolDetails.accreditation ? "Yes" : "No"}
               </p>
               <p>
                 <strong>Website:</strong> {userInfo.schoolDetails.website}

@@ -17,7 +17,7 @@ const donorSchema = new mongoose.Schema({
   donorType: {
     type: String,
     enum: ["NGO", "Government", "Individual", "Corporate"],
-    default: "",
+    default: null,
   },
   organizationName: {
     type: String,

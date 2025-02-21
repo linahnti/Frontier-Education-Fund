@@ -48,14 +48,15 @@ const registerUser = async (req, res) => {
         name,
         email,
         password: hashedPassword,
-        role: role.toLowerCase(),
+        // role: role.toLowerCase(),
+        // donorType: req.body.donorType || "", // Ensure donorType is provided or set to an empty string
       });
     } else if (role.toLowerCase() === "school") {
       user = new School({
         name,
         email,
         password: hashedPassword,
-        role: role.toLowerCase(),
+        //role: role.toLowerCase(),
       });
     } else {
       user = new User({
@@ -116,11 +117,11 @@ const loginUser = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role.toLowerCase(), // Normalize role to lowercase
+        role: user.role.toLowerCase(),
       },
     });
   } catch (error) {
-    console.error("Login error:", error.stack); // Log the full error stack
+    console.error("Login error:", error.stack);
     res.status(500).json({
       message: error.message || "Login failed. Please try again.",
     });
@@ -230,17 +231,10 @@ const updateUserProfile = async (req, res) => {
         updatedData.schoolDetails.numStudents || user.numStudents;
 
       // Handle accreditation (ensure it's a boolean)
-      if (updatedData.schoolDetails.accreditation !== undefined) {
-        user.accreditation =
-          updatedData.schoolDetails.accreditation === "Yes" ? true : false;
-      }
-
-      // Log the received and updated accreditation
-      console.log(
-        "Received accreditation:",
-        updatedData.schoolDetails.accreditation
-      );
-      console.log("Updated accreditation:", user.accreditation);
+      user.accreditation =
+        typeof updatedData.schoolDetails.accreditation === "string"
+          ? updatedData.schoolDetails.accreditation === "true"
+          : Boolean(updatedData.schoolDetails.accreditation);
 
       user.website = updatedData.schoolDetails.website || user.website;
       user.missionStatement =
@@ -260,8 +254,14 @@ const updateUserProfile = async (req, res) => {
         updatedData.donorDetails.organizationName || user.organizationName;
       user.registrationNumber =
         updatedData.donorDetails.registrationNumber || user.registrationNumber;
-      user.taxExemptStatus =
-        updatedData.donorDetails.taxExemptStatus || user.taxExemptStatus;
+
+      // Handle taxExemptStatus (ensure it's a boolean)
+      if (updatedData.donorDetails.taxExemptStatus !== undefined) {
+        user.taxExemptStatus = Boolean(
+          updatedData.donorDetails.taxExemptStatus
+        );
+      }
+
       user.occupation = updatedData.donorDetails.occupation || user.occupation;
       user.donationCategories =
         updatedData.donorDetails.donationCategories || user.donationCategories;
