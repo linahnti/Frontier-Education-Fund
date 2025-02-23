@@ -41,7 +41,10 @@ const AuthenticatedNavbar = () => {
           <a href="#donations" className="text-white text-decoration-none me-3">
             Donations
           </a>
-          <a href="#testimonials" className="text-white text-decoration-none me-3">
+          <a
+            href="#testimonials"
+            className="text-white text-decoration-none me-3"
+          >
             Testimonials
           </a>
         </div>
@@ -73,15 +76,6 @@ const AuthenticatedNavbar = () => {
               data-bs-toggle="dropdown"
             >
               <i className="fas fa-user-circle"></i>
-              {/* Notification text if profile is incomplete */}
-              {user?.isProfileComplete === false && (
-                <span
-                  className="badge bg-warning text-dark ms-2"
-                  style={{ fontSize: "0.8rem" }}
-                >
-                  Complete Profile First
-                </span>
-              )}
             </button>
             <ul className="dropdown-menu dropdown-menu-end">
               <li>

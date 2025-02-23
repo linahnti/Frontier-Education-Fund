@@ -48,15 +48,12 @@ const registerUser = async (req, res) => {
         name,
         email,
         password: hashedPassword,
-        // role: role.toLowerCase(),
-        // donorType: req.body.donorType || "", // Ensure donorType is provided or set to an empty string
       });
     } else if (role.toLowerCase() === "school") {
       user = new School({
         name,
         email,
         password: hashedPassword,
-        //role: role.toLowerCase(),
       });
     } else {
       user = new User({
@@ -144,8 +141,11 @@ const getUserProfile = async (req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
-      role: user.role, // Ensure role is included
+      role: user.role,
       createdAt: user.createdAt,
+      isProfileComplete: user.isProfileComplete,
+      donorDetails: {},
+      schoolDetails: {},
     };
 
     // Add discriminator-specific fields based on the user's role
@@ -187,7 +187,6 @@ const getUserProfile = async (req, res) => {
     res.status(500).json({ message: "Server error. Please try again later." });
   }
 };
-
 // Update User Profile
 const updateUserProfile = async (req, res) => {
   const userId = req.user.id;
@@ -201,7 +200,7 @@ const updateUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Update the user profile with the provided data
+    // Update common fields
     user.name = updatedData.name || user.name;
     user.email = updatedData.email || user.email;
 
@@ -213,7 +212,6 @@ const updateUserProfile = async (req, res) => {
       user.principalName =
         updatedData.schoolDetails.principalName || user.principalName;
 
-      // Update schoolType
       if (
         ["public", "private"].includes(
           updatedData.schoolDetails.schoolType?.toLowerCase()
@@ -222,15 +220,9 @@ const updateUserProfile = async (req, res) => {
         user.schoolType = updatedData.schoolDetails.schoolType.toLowerCase();
       }
 
-      // Log the received and updated schoolType
-      console.log("Received schoolType:", updatedData.schoolDetails.schoolType);
-      console.log("Updated schoolType:", user.schoolType);
-
-      // Update numStudents
       user.numStudents =
         updatedData.schoolDetails.numStudents || user.numStudents;
 
-      // Handle accreditation (ensure it's a boolean)
       user.accreditation =
         typeof updatedData.schoolDetails.accreditation === "string"
           ? updatedData.schoolDetails.accreditation === "true"
@@ -255,7 +247,6 @@ const updateUserProfile = async (req, res) => {
       user.registrationNumber =
         updatedData.donorDetails.registrationNumber || user.registrationNumber;
 
-      // Handle taxExemptStatus (ensure it's a boolean)
       if (updatedData.donorDetails.taxExemptStatus !== undefined) {
         user.taxExemptStatus = Boolean(
           updatedData.donorDetails.taxExemptStatus
@@ -274,9 +265,21 @@ const updateUserProfile = async (req, res) => {
         user.organizationAffiliation;
     }
 
+    // 🔍 Check profile completeness
+    const isProfileComplete = checkProfileCompleteness(user);
+
+    console.log("Profile completeness before saving:", isProfileComplete);
+    if (!isProfileComplete) {
+      const missingFields = getMissingFields(user);
+      console.log("Missing fields preventing completion:", missingFields);
+    }
+
+    user.isProfileComplete = isProfileComplete;
+    user.profileCompleted = isProfileComplete; // Ensure both fields are updated
+
     await user.save();
 
-    console.log("Updated user profile:", user);
+    console.log("Updated user after saving:", user);
 
     return res
       .status(200)
@@ -285,6 +288,83 @@ const updateUserProfile = async (req, res) => {
     console.error("Error updating profile:", err);
     return res.status(500).json({ message: "Server error: " + err.message });
   }
+};
+
+// Function to check profile completeness
+const checkProfileCompleteness = (user) => {
+  let requiredFields = [];
+
+  if (user.role === "school") {
+    requiredFields = [
+      "schoolName",
+      "location",
+      "principalName",
+      "schoolType",
+      "numStudents",
+      "accreditation",
+      "website",
+      "missionStatement",
+      "contactNumber",
+    ];
+  } else if (user.role === "donor") {
+    requiredFields = [
+      "contactNumber",
+      "donorType",
+      "organizationName",
+      "registrationNumber",
+      "taxExemptStatus",
+      "occupation",
+      "donationCategories",
+      "annualBudget",
+      "donationFrequency",
+      "organizationAffiliation",
+    ];
+
+    if (user.donorType === "Individual") {
+      requiredFields = requiredFields.filter(
+        (field) => field !== "organizationAffiliation"
+      );
+    }
+  }
+
+  return requiredFields.every((field) => user[field] && user[field] !== "");
+};
+
+// Function to log missing fields
+const getMissingFields = (user) => {
+  let requiredFields =
+    user.role === "school"
+      ? [
+          "schoolName",
+          "location",
+          "principalName",
+          "schoolType",
+          "numStudents",
+          "accreditation",
+          "website",
+          "missionStatement",
+          "contactNumber",
+        ]
+      : [
+          "contactNumber",
+          "donorType",
+          "organizationName",
+          "registrationNumber",
+          "taxExemptStatus",
+          "occupation",
+          "donationCategories",
+          "annualBudget",
+          "donationFrequency",
+          "organizationAffiliation",
+        ];
+
+  if (user.role === "donor" && user.donorType === "Individual") {
+    requiredFields = requiredFields.filter(
+      (field) => field !== "organizationAffiliation"
+    );
+  }
+
+  return requiredFields.filter((field) => !user[field] || user[field] === "");
 };
 
 module.exports = {

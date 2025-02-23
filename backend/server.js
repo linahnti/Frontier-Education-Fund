@@ -9,7 +9,8 @@ connectDB(); // Connect to MongoDB
 const app = express(); // Initialize the Express app
 app.use(
   cors({
-    origin: "http://localhost:5173", // Allow only your frontend origin
+    origin: "http://localhost:5173", 
+    methods: ["GET", "POST", "PUT", "DELETE"], 
     credentials: true, // Allow cookies & authentication headers
   })
 );

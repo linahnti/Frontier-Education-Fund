@@ -1,0 +1,35 @@
+
+.modal-header-custom {
+    background-color: #4b5563; /* Dark background for the header */
+    color: white; /* White text */
+    border-bottom: none; /* Remove default border */
+  }
+  
+  .modal-title-custom {
+    font-size: 1.5rem; /* Larger title */
+    font-weight: bold; /* Bold text */
+  }
+  
+  .modal-body-custom {
+    font-size: 1.1rem; /* Slightly larger body text */
+    color: #333; /* Dark text */
+    padding: 20px; /* Add padding */
+  }
+  
+  .modal-footer-custom {
+    border-top: none; /* Remove default border */
+    padding: 15px 20px; /* Add padding */
+  }
+  
+  .modal-button-custom {
+    background-color: #ffc107; /* Yellow button */
+    border: none; /* Remove border */
+    color: #333; /* Dark text */
+    font-weight: bold; /* Bold text */
+    padding: 10px 20px; /* Add padding */
+    border-radius: 5px; /* Rounded corners */
+  }
+  
+  .modal-button-custom:hover {
+    background-color: #e0a800; /* Darker yellow on hover */
+  }

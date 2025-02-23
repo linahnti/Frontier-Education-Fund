@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import "../styles/ProfilePage.css";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -39,6 +40,9 @@ const ProfilePage = () => {
   const [updatedUserInfo, setUpdatedUserInfo] = useState(userInfo);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [donorType, setDonorType] = useState(
+    userInfo.donorDetails.donorType || ""
+  ); // Track donor type
 
   // Fetch user details from the backend
   useEffect(() => {
@@ -53,7 +57,7 @@ const ProfilePage = () => {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
-        console.log("Fetched user data:", response.data);
+        console.log("Backend response:", response.data);
         const fetchedUserInfo = response.data;
 
         // Normalize role to lowercase if role is present
@@ -61,7 +65,7 @@ const ProfilePage = () => {
           fetchedUserInfo.role = fetchedUserInfo.role.toLowerCase();
         }
 
-        // Initialize missing fields with empty values
+        // Initialize schoolDetails and donorDetails based on the user's role
         if (fetchedUserInfo.role === "school") {
           fetchedUserInfo.schoolDetails = {
             schoolName: fetchedUserInfo.schoolDetails?.schoolName || "",
@@ -72,17 +76,19 @@ const ProfilePage = () => {
               fetchedUserInfo.schoolDetails?.schoolType
             )
               ? fetchedUserInfo.schoolDetails.schoolType
-              : null,
+              : "",
             numStudents: fetchedUserInfo.schoolDetails?.numStudents || "",
             accreditation:
               fetchedUserInfo.schoolDetails?.accreditation !== undefined
-                ? Boolean(fetchedUserInfo.schoolDetails.accreditation) // Ensure boolean
+                ? Boolean(fetchedUserInfo.schoolDetails.accreditation)
                 : false,
             website: fetchedUserInfo.schoolDetails?.website || "",
             missionStatement:
               fetchedUserInfo.schoolDetails?.missionStatement || "",
-            contactNumber: fetchedUserInfo.schoolDetails?.contactNumber || "", // Do not normalize
+            contactNumber: fetchedUserInfo.schoolDetails?.contactNumber || "",
           };
+          // Ensure donorDetails is an empty object for school users
+          fetchedUserInfo.donorDetails = {};
         } else if (fetchedUserInfo.role === "donor") {
           fetchedUserInfo.donorDetails = {
             contactNumber: fetchedUserInfo.donorDetails?.contactNumber || "",
@@ -102,10 +108,23 @@ const ProfilePage = () => {
             organizationAffiliation:
               fetchedUserInfo.donorDetails?.organizationAffiliation || "",
           };
+          // Ensure schoolDetails is an empty object for donor users
+          fetchedUserInfo.schoolDetails = {};
+        } else {
+          // Handle other roles (if any) or default case
+          fetchedUserInfo.schoolDetails = {};
+          fetchedUserInfo.donorDetails = {};
         }
 
+        // Ensure isProfileComplete is properly interpreted as a boolean
+        fetchedUserInfo.isProfileComplete = Boolean(
+          fetchedUserInfo.isProfileComplete
+        );
+
+        // Set user info and updated user info
         setUserInfo(fetchedUserInfo);
-        setUpdatedUserInfo(fetchedUserInfo);
+        setUpdatedUserInfo(fetchedUserInfo); // Update updatedUserInfo with fetched data
+
         setIsLoading(false);
       })
       .catch((error) => {
@@ -118,6 +137,11 @@ const ProfilePage = () => {
   // Handle form field changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+    // Update the donorType state if the donorType field changes
+    if (name === "donorDetails.donorType") {
+      setDonorType(value);
+    }
 
     setUpdatedUserInfo((prevState) => {
       if (name.includes(".")) {
@@ -157,6 +181,12 @@ const ProfilePage = () => {
     e.preventDefault();
     const token = localStorage.getItem("token");
 
+    // Check if all required fields are filled out
+    const isProfileComplete = checkProfileCompleteness(updatedUserInfo);
+
+    // Update the isProfileComplete field
+    updatedUserInfo.isProfileComplete = isProfileComplete;
+
     console.log("Submitting updated user info:", updatedUserInfo);
 
     axios
@@ -164,12 +194,15 @@ const ProfilePage = () => {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
-        const { user } = response.data;
+        const { user } = response.data; // Destructure the updated user object from the response
         console.log("Updated user data:", user);
-        setUserInfo(user); // Ensure the updated user data is set correctly
-        setUpdatedUserInfo(user); // Update the form data as well
-        setIsEditing(false); // Exit edit mode to display the updated data
-        setError(null); // Clear any previous errors
+
+        // Update the frontend state with the updated user object
+        setUserInfo(user);
+        setUpdatedUserInfo(user);
+
+        setIsEditing(false);
+        setError(null);
         setSuccess("Profile updated successfully!");
       })
       .catch((error) => {
@@ -180,6 +213,58 @@ const ProfilePage = () => {
         setError("Error updating profile. Please try again later.");
         setSuccess(null);
       });
+  };
+  // Function to check profile completeness
+  const checkProfileCompleteness = (userInfo) => {
+    if (userInfo.role === "school") {
+      const requiredFields = [
+        "name",
+        "email",
+        "schoolDetails.schoolName",
+        "schoolDetails.location",
+        "schoolDetails.needs",
+        "schoolDetails.principalName",
+        "schoolDetails.schoolType",
+        "schoolDetails.numStudents",
+        "schoolDetails.accreditation",
+        "schoolDetails.website",
+        "schoolDetails.missionStatement",
+        "schoolDetails.contactNumber",
+      ];
+      return requiredFields.every((field) => {
+        const value = field
+          .split(".")
+          .reduce((obj, key) => obj?.[key], userInfo);
+        return value !== "" && value !== null && value !== undefined;
+      });
+    } else if (userInfo.role === "donor") {
+      const requiredFields = [
+        "name",
+        "email",
+        "donorDetails.contactNumber",
+        "donorDetails.donorType",
+        "donorDetails.organizationName",
+        "donorDetails.registrationNumber",
+        "donorDetails.taxExemptStatus",
+        "donorDetails.occupation",
+        "donorDetails.donationCategories",
+        "donorDetails.annualBudget",
+        "donorDetails.donationFrequency",
+      ];
+
+      // Add organizationAffiliation to required fields only if donorType is not "Individual"
+      if (userInfo.donorDetails.donorType !== "Individual") {
+        requiredFields.push("donorDetails.organizationAffiliation");
+      }
+
+      return requiredFields.every((field) => {
+        const value = field
+          .split(".")
+          .reduce((obj, key) => obj?.[key], userInfo);
+        return value !== "" && value !== null && value !== undefined;
+      });
+    }
+    return false;
   };
 
   if (isLoading) return <div>Loading...</div>;
@@ -699,24 +784,28 @@ const ProfilePage = () => {
                   </option>
                 </select>
               </div>
-              <div className="mb-3">
-                <label htmlFor="organizationAffiliation" className="form-label">
-                  Organization Affiliation
-                </label>
-                <select
-                  id="organizationAffiliation"
-                  name="donorDetails.organizationAffiliation"
-                  className="form-control"
-                  value={updatedUserInfo.donorDetails.organizationAffiliation}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Select Organization Affiliation </option>
-                  <option value="NGO">NGO</option>
-                  <option value="Corporate">Corporate</option>
-                  <option value="Government">Government</option>
-                </select>
-              </div>
+              {donorType !== "Individual" && (
+                <div className="mb-3">
+                  <label
+                    htmlFor="organizationAffiliation"
+                    className="form-label"
+                  >
+                    Organization Affiliation
+                  </label>
+                  <select
+                    id="organizationAffiliation"
+                    name="donorDetails.organizationAffiliation"
+                    className="form-control"
+                    value={updatedUserInfo.donorDetails.organizationAffiliation}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select Organization Affiliation</option>
+                    <option value="NGO">NGO</option>
+                    <option value="Corporate">Corporate</option>
+                    <option value="Government">Government</option>
+                  </select>
+                </div>
+              )}
             </>
           )}
           <button
@@ -813,10 +902,12 @@ const ProfilePage = () => {
                 <strong>Donation Frequency:</strong>{" "}
                 {userInfo.donorDetails.donationFrequency}
               </p>
-              <p>
-                <strong>Organization Affiliation:</strong>{" "}
-                {userInfo.donorDetails.organizationAffiliation}
-              </p>
+              {donorType !== "Individual" && (
+                <p>
+                  <strong>Organization Affiliation:</strong>{" "}
+                  {userInfo.donorDetails.organizationAffiliation}
+                </p>
+              )}
             </>
           )}
           <button

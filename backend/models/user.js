@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema(
       enum: ["donor", "admin", "school"],
       required: true,
     },
-    profileCompleted: { type: Boolean, default: false },
+    isProfileComplete: { type: Boolean, default: false },
     verified: { type: Boolean, default: false },
   },
   {

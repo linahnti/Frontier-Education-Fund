@@ -10,6 +10,8 @@ import favicon1 from "../images/favicon1.png";
 import footer1 from "../images/Footer1.jpg";
 import footer2 from "../images/Footer2.jpg";
 import footer3 from "../images/Footer3.jpg";
+import school1 from "../images/School1.jpg";
+import school2 from "../images/School2.jpg";
 
 const assets = {
   picture1,
@@ -24,6 +26,8 @@ const assets = {
   footer1,
   footer2,
   footer3,
+  school1,
+  school2,
 };
 
 export default assets;
