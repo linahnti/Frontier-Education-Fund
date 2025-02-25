@@ -1,5 +1,6 @@
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import assets from "../assets/images/assets";
 import "../styles/MissionVisionGoals.css"; // Custom CSS
 
 const MissionVisionGoals = () => {
@@ -7,21 +8,21 @@ const MissionVisionGoals = () => {
     {
       title: "Our Mission",
       text: "To ensure quality education for every child by bridging the gap between donors and underpriviledged schools, by providing a transparent platform that fosters impactful change fostering a brighter future.",
-      imgSrc: "path_to_your_image1.jpg",
+      imgSrc: assets.mvg6,
       imgAlt: "Mission Image",
       reverse: false, // Text on the left, image on the right
     },
     {
       title: "Our Vision",
       text: "To see every child learning in a safe, equipped environment, with access to resources that unlock their full potential. To eliminate educational disparities by connecting schools with the resources they need to flourish.",
-      imgSrc: "path_to_your_image2.jpg",
+      imgSrc: assets.mvg4,
       imgAlt: "Vision Image",
       reverse: true, // Text on the right, image on the left
     },
     {
       title: "Our Goals",
       text: "To provide resources, build infrastructure, and empower communities to prioritize education for future generations. Foster trust and accountability by offering detailed project tracking and personalized impact updates. Offer a seamless and secure donation experience to maximize user engagement.",
-      imgSrc: "path_to_your_image3.jpg",
+      imgSrc: assets.mvg7,
       imgAlt: "Goals Image",
       reverse: false, // Text on the left, image on the right
     },

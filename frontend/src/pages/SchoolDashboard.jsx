@@ -20,6 +20,7 @@ const SchoolDashboard = () => {
         // Ensure isProfileComplete is a boolean
         parsedUser.isProfileComplete = Boolean(parsedUser.isProfileComplete);
 
+        console.log("Backend response:", storedUser); // Log the raw data from localStorage
         console.log("Parsed User:", parsedUser); // Debugging log
         setUser(parsedUser);
       } catch (error) {

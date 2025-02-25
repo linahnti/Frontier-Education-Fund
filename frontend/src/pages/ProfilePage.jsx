@@ -41,8 +41,8 @@ const ProfilePage = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [donorType, setDonorType] = useState(
-    userInfo.donorDetails.donorType || ""
-  ); // Track donor type
+    userInfo.donorDetails?.donorType || ""
+  );
 
   // Fetch user details from the backend
   useEffect(() => {

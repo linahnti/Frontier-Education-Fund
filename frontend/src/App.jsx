@@ -17,6 +17,10 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const DonorDashboard = lazy(() => import("./pages/DonorDashboard"));
 const SchoolDashboard = lazy(() => import("./pages/SchoolDashboard"));
 const Dashboard = lazy(() => import("./components/Dashboard"));
+const About = lazy(() => import("./pages/About"));
+const Schools = lazy(() => import("./pages/Schools"));
+const Donations = lazy(() => import("./pages/Donations"));
+const Testimonials = lazy(() => import("./pages/Testimonials"));
 
 // Loading Component
 const Loading = () => (
@@ -76,6 +80,26 @@ const App = () => {
             {/* Profile Page */}
             <Route element={<ProtectedRoute />}>
               <Route path="/profile" element={<ProfilePage />} />
+            </Route>
+
+            {/* Authenticated About */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/about" element={<About />} />
+            </Route>
+
+            {/* Authenticated Schools */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/schools" element={<Schools />} />
+            </Route>
+
+            {/* Authenticated Donations */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/donations" element={<Donations />} />
+            </Route>
+
+            {/* Authenticated Testimonials */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/testimonials" element={<Testimonials />} />
             </Route>
           </Route>
 

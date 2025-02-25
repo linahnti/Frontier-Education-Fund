@@ -1,13 +1,14 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const CallToAction = () => {
   return (
-    <section className="bg-dark bg-gradient text-light py-4 mt-5">
+    <section className="text-light py-4 mt-5" style={{ background: "#005f8f" }}>
       <div className="container text-center">
         <h3
           className="mb-4"
-          style={{ fontWeight: "bold", fontSize: "2.3rem", color: " #004080" }}
+          style={{ fontWeight: "bold", fontSize: "2.3rem", color: "#FFC107" }}
         >
           Join Us in Transforming Education
         </h3>
@@ -16,18 +17,30 @@ const CallToAction = () => {
           resources, inspire learning, and empower communities.
         </p>
         <div>
-          <button
-            className="btn btn-primary btn-lg mx-2"
-            style={{ borderRadius: "20px" }}
+          <Link
+            to="/login"
+            className="btn btn-lg mx-2"
+            style={{
+              background: "#FFC107",
+              color: "black",
+              borderRadius: "20px",
+              fontWeight: "bold",
+            }}
           >
             Donate Now
-          </button>
-          <button
-            className="btn btn-outline-light btn-lg mx-2"
-            style={{ borderRadius: "20px" }}
+          </Link>
+          <Link
+            to="/signup"
+            className="btn btn-lg mx-2"
+            style={{
+              background: "#FFC107",
+              color: "black",
+              borderRadius: "20px",
+              fontWeight: "bold",
+            }}
           >
             Learn More
-          </button>
+          </Link>
         </div>
       </div>
     </section>

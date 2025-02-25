@@ -6,6 +6,7 @@ import assets from "../assets/images/assets";
 const Footer = () => {
   return (
     <footer
+      id="footer-section"
       className="text-white py-4 position-relative"
       style={{
         backgroundImage: `url(${assets.footer3})`, // Add your background image path here

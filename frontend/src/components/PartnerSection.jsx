@@ -21,19 +21,21 @@ const partners = [
 const PartnerSection = () => {
   return (
     <div className="bg-light py-5">
-      <h2 className="text-center text-primary mb-4">People We Partner With</h2>
+      <h2 className="text-center mb-4" style={{ color: "#ffc107" }}>
+        People We Partner With
+      </h2>
       <div className="overflow-hidden">
         <div className="d-flex animate-scroll">
-          {partners.map((partner, index) => (
+          {/* Render the partners twice for seamless scrolling */}
+          {[...partners, ...partners].map((partner, index) => (
             <div
               key={index}
-              className="d-flex justify-content-center align-items-center bg-white rounded shadow-lg mx-3"
-              style={{ width: "12rem", height: "12rem" }}
+              className="partner-card d-flex justify-content-center align-items-center bg-white rounded-4 shadow-lg mx-3"
             >
               <img
                 src={partner.logo}
                 alt={`${partner.name} logo`}
-                className="w-100 h-100 object-contain"
+                className="partner-logo"
               />
             </div>
           ))}

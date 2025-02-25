@@ -6,13 +6,13 @@
   h2 {
     font-size: 2rem;
     font-weight: bold;
-    color: #004080; /* Deep blue for headings */
+    color: #ffc107; /* Deep blue for headings */
   }
   
   p {
     font-size: 1.2rem;
     line-height: 1.8;
-    color: #333; /* Neutral text color */
+    color: #0a0909; /* Neutral text color */
   }
   
   .img-fluid {

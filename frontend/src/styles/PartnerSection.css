@@ -1,13 +1,35 @@
+/* Animation for continuous scrolling */
 @keyframes scroll {
-    0% {
-      transform: translateX(100%);
-    }
-    100% {
-      transform: translateX(-100%);
-    }
+  0% {
+    transform: translateX(0);
   }
-  
-  .animate-scroll {
-    animation: scroll 25s linear infinite;
+  100% {
+    transform: translateX(-50%);
   }
-  
+}
+
+.animate-scroll {
+  display: flex;
+  animation: scroll 15s linear infinite; 
+}
+
+/* Styling for partner cards */
+.partner-card {
+  width: 12rem; /* Adjust size as needed */
+  height: 12rem; /* Adjust size as needed */
+  border-radius: 20px; /* Rounded corners */
+  padding: 1.5rem; /* Adds some padding inside the card */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.partner-card:hover {
+  transform: scale(1.05); /* Slightly enlarges the card on hover */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Adds a shadow on hover */
+}
+
+/* Styling for logos */
+.partner-logo {
+  max-width: 100%; /* Ensures the logo fits within the card */
+  max-height: 100%; /* Ensures the logo fits within the card */
+  object-fit: contain; /* Ensures the logo maintains its aspect ratio */
+}

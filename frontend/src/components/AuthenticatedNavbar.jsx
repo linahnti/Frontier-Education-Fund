@@ -17,7 +17,7 @@ const AuthenticatedNavbar = () => {
   return (
     <header
       className="shadow-sm py-2"
-      style={{ background: "linear-gradient(to right, #6b7280, #4b5563)" }}
+      style={{ background: "#005f8f" }} // Deep blue background
     >
       <div className="container-fluid d-flex justify-content-between align-items-center">
         {/* Logo and Title */}
@@ -32,21 +32,24 @@ const AuthenticatedNavbar = () => {
 
         {/* Navbar Links */}
         <div className="d-flex align-items-center">
-          <a href="#about" className="text-white text-decoration-none me-3">
+          <Link to="/about" className="text-white text-decoration-none me-3">
             About
-          </a>
-          <a href="#schools" className="text-white text-decoration-none me-3">
+          </Link>
+          <Link to="/schools" className="text-white text-decoration-none me-3">
             Schools
-          </a>
-          <a href="#donations" className="text-white text-decoration-none me-3">
+          </Link>
+          <Link
+            to="/donations"
+            className="text-white text-decoration-none me-3"
+          >
             Donations
-          </a>
-          <a
-            href="#testimonials"
+          </Link>
+          <Link
+            to="/testimonials"
             className="text-white text-decoration-none me-3"
           >
             Testimonials
-          </a>
+          </Link>
         </div>
 
         {/* Profile and Notifications */}
@@ -62,7 +65,7 @@ const AuthenticatedNavbar = () => {
             </button>
             <ul className="dropdown-menu dropdown-menu-end">
               <li>
-                <a className="dropdown-item">No new notifications</a>
+                <span className="dropdown-item">No new notifications</span>
               </li>
             </ul>
           </div>
@@ -83,14 +86,12 @@ const AuthenticatedNavbar = () => {
                   Profile
                 </Link>
               </li>
-              {user?.isProfileComplete ? (
+              {user?.isProfileComplete && (
                 <li>
                   <Link to="/profile" className="dropdown-item">
                     Profile Completed
                   </Link>
                 </li>
-              ) : (
-                <></>
               )}
               {userRole === "admin" && (
                 <li>
