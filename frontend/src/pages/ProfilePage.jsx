@@ -195,11 +195,15 @@ const ProfilePage = () => {
       })
       .then((response) => {
         const { user } = response.data; // Destructure the updated user object from the response
-        console.log("Updated user data:", user);
+        console.log("Updated user data from backend:", user);
 
         // Update the frontend state with the updated user object
         setUserInfo(user);
         setUpdatedUserInfo(user);
+
+        // Update localStorage with the new user data
+        localStorage.setItem("user", JSON.stringify(user)); // <-- Add this line
+        console.log("Updated localStorage with user:", user);
 
         setIsEditing(false);
         setError(null);
@@ -214,6 +218,7 @@ const ProfilePage = () => {
         setSuccess(null);
       });
   };
+
   // Function to check profile completeness
   const checkProfileCompleteness = (userInfo) => {
     if (userInfo.role === "school") {

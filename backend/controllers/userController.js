@@ -281,15 +281,16 @@ const updateUserProfile = async (req, res) => {
 
     console.log("Updated user after saving:", user);
 
+    // Return the full user object, including discriminator-specific fields
+    const fullUser = await User.findById(userId).lean(); // Use .lean() to get a plain JavaScript object
     return res
       .status(200)
-      .json({ message: "Profile updated successfully", user });
+      .json({ message: "Profile updated successfully", user: fullUser });
   } catch (err) {
     console.error("Error updating profile:", err);
     return res.status(500).json({ message: "Server error: " + err.message });
   }
 };
-
 // Function to check profile completeness
 const checkProfileCompleteness = (user) => {
   let requiredFields = [];
