@@ -1,50 +1,58 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { ProgressBar } from "react-bootstrap";
+import axios from "axios";
+import { calculateProfileCompletion } from "./ProfileUtils";
 
-const ProfileCompletionProgress = ({ user }) => {
-  console.log("User Object in Progress Component:", user); // <-- Add this line
+const ProfileCompletionProgress = ({ user, setCompletionPercentage }) => {
+  const [profileData, setProfileData] = useState(null);
+  const [completionPercentage, setLocalCompletionPercentage] = useState(0); // Define local state
 
-  // Calculate profile completion percentage
-  const calculateProfileCompletion = (userData) => {
-    if (!userData) return 0; // Handle case where userData is null or undefined
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(
+          "http://localhost:5000/api/users/profile",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
-    // List all required fields for a complete profile
-    const requiredFields = [
-      "name",
-      "email",
-      "schoolDetails.schoolName",
-      "schoolDetails.location",
-      "schoolDetails.needs",
-      "schoolDetails.principalName",
-      "schoolDetails.schoolType",
-      "schoolDetails.numStudents",
-      "schoolDetails.accreditation",
-      "schoolDetails.website",
-      "schoolDetails.missionStatement",
-      "schoolDetails.contactNumber",
-    ];
+        console.log("Fetched Profile Data:", response.data);
+        setProfileData(response.data);
+      } catch (error) {
+        console.error("Error fetching profile data:", error);
+      }
+    };
 
-    // Count how many required fields are filled
-    const completedFields = requiredFields.filter((field) => {
-      const value = field.split(".").reduce((obj, key) => obj?.[key], userData);
-      return value !== "" && value !== null && value !== undefined;
-    }).length;
+    fetchProfileData();
+  }, []);
 
-    // Calculate the completion percentage
-    return Math.round((completedFields / requiredFields.length) * 100);
-  };
+  useEffect(() => {
+    if (!user || !profileData) return;
 
-  const completionPercentage = calculateProfileCompletion(user);
+    // Use the shared function to calculate completion
+    const { completionPercentage, isProfileComplete } =
+      calculateProfileCompletion(user, profileData);
+    setLocalCompletionPercentage(completionPercentage); // Update local state
+    setCompletionPercentage(completionPercentage); // Update parent state
+
+    // Update the user object if the profile is complete
+    if (isProfileComplete) {
+      const updatedUser = { ...user, isProfileComplete: true };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    }
+  }, [user, profileData, setCompletionPercentage]);
 
   return (
     <div>
-      <h4>School Profile</h4>
+      <h4>{user.role === "school" ? "School Profile" : "Donor Profile"}</h4>
       <ProgressBar
-        now={completionPercentage}
+        now={completionPercentage} // Use local state
         label={`${completionPercentage}%`}
         className="mb-3"
       />
-      <p>Click the button below to update your school profile.</p>
+      <p>Click the button below to update your profile.</p>
     </div>
   );
 };

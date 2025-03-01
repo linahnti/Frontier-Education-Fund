@@ -14,6 +14,7 @@ import {
   Col,
 } from "react-bootstrap";
 import "../styles/Modal.css";
+import ProfileCompletionProgress from "../components/ProfileCompletionProgress"; // Import the component
 
 const DonorDashboard = () => {
   const navigate = useNavigate();
@@ -26,11 +27,10 @@ const DonorDashboard = () => {
     "Thank you for your donation to Green Valley High School.",
     "Your donation for textbooks has been accepted.",
   ]);
-  const [profileCompletion, setProfileCompletion] = useState(80); // Example completion %
   const [activeTab, setActiveTab] = useState("donations");
 
-  // Fetch user data from localStorage on component mount
-  useEffect(() => {
+  // Function to refresh the user object from localStorage
+  const refreshUser = () => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
@@ -41,7 +41,20 @@ const DonorDashboard = () => {
         console.error("Failed to parse user data from localStorage:", error);
       }
     }
+  };
+
+  // Fetch user data from localStorage on component mount
+  useEffect(() => {
+    refreshUser(); // Fetch user data on mount
     setLoading(false);
+
+    // Listen for the profileUpdated event
+    window.addEventListener("profileUpdated", refreshUser);
+
+    // Clean up the event listener
+    return () => {
+      window.removeEventListener("profileUpdated", refreshUser);
+    };
   }, []);
 
   // Example data for donations and schools
@@ -209,11 +222,8 @@ const DonorDashboard = () => {
         <Tab eventKey="profile" title="Manage Profile">
           <div className="mt-4">
             <h4>Donor Profile</h4>
-            <ProgressBar
-              now={profileCompletion}
-              label={`${profileCompletion}%`}
-              className="mb-3"
-            />
+            {/* Use ProfileCompletionProgress component */}
+            <ProfileCompletionProgress user={user} />
             <p>Click the button below to update your donor profile.</p>
             <Button
               variant="primary"

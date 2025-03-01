@@ -15,20 +15,18 @@ import {
 } from "react-bootstrap";
 import "../styles/Modal.css";
 import ProfileCompletionProgress from "../components/ProfileCompletionProgress";
+import DonationRequest from "../components/DonationRequest"; // Correct import
 
 const SchoolDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showDonationModal, setShowDonationModal] = useState(false);
-  const [selectedNeeds, setSelectedNeeds] = useState([]);
-  const [donations, setDonations] = useState([]);
-  const [requests, setRequests] = useState([]);
   const [notifications, setNotifications] = useState([
     "New donation received from John Doe.",
     "Your request for textbooks has been approved.",
   ]);
   const [activeTab, setActiveTab] = useState("donations");
+  const [completionPercentage, setCompletionPercentage] = useState(0);
 
   // Function to refresh the user object from localStorage
   const refreshUser = () => {
@@ -58,70 +56,6 @@ const SchoolDashboard = () => {
     };
   }, []);
 
-  // Example data for donations and requests
-  useEffect(() => {
-    setDonations([
-      { id: 1, donor: "John Doe", item: "Books", status: "Pending" },
-      {
-        id: 2,
-        donor: "Jane Smith",
-        item: "Sanitary Towels",
-        status: "Accepted",
-      },
-      { id: 3, donor: "Alice Johnson", item: "Desks", status: "Completed" },
-    ]);
-
-    setRequests([
-      {
-        id: 1,
-        category: "Learning Materials",
-        description: "Textbooks for Grade 10",
-        status: "Pending",
-      },
-      {
-        id: 2,
-        category: "Infrastructure",
-        description: "New Classroom Construction",
-        status: "Approved",
-      },
-      {
-        id: 3,
-        category: "Health & Hygiene",
-        description: "Sanitary Towels",
-        status: "Completed",
-      },
-    ]);
-  }, []);
-
-  // Handle navigation with profile completion check
-  const handleLinkClick = (e, path) => {
-    if (loading || !user) return;
-    if (!user.isProfileComplete) {
-      e.preventDefault();
-      alert("Please complete your profile to access this feature.");
-      return;
-    }
-    navigate(path);
-  };
-
-  // Handle donation request submission
-  const handleDonationRequest = () => {
-    if (selectedNeeds.length === 0) {
-      alert("Please select at least one need.");
-      return;
-    }
-    console.log("Selected Needs:", selectedNeeds);
-    setShowDonationModal(false);
-    setSelectedNeeds([]);
-  };
-
-  // Handle selection of needs
-  const handleNeedSelection = (need) => {
-    setSelectedNeeds((prev) =>
-      prev.includes(need) ? prev.filter((n) => n !== need) : [...prev, need]
-    );
-  };
-
   if (loading) {
     return <p>Loading...</p>;
   }
@@ -129,8 +63,7 @@ const SchoolDashboard = () => {
   return (
     <div className="container mt-5">
       <h2 className="text-warning">Welcome to the School Dashboard</h2>
-      <h3 className="text-dark">{user?.name || "School"}</h3>{" "}
-      {/* Display user's name */}
+      <h3 className="text-dark">{user?.name || "School"}</h3>
       <p className="text-dark">
         Manage your school profile, post donation requests, and more.
       </p>
@@ -149,91 +82,27 @@ const SchoolDashboard = () => {
         className="mb-4"
       >
         <Tab eventKey="donations" title="Donations">
-          <div className="mt-4">
-            <Button
-              variant="warning"
-              className="text-white shadow-sm mb-4"
-              onClick={() => setShowDonationModal(true)}
-            >
-              Post a Donation Request
-            </Button>
-
-            {/* Donation Summary Cards */}
-            <Row className="mb-4">
-              <Col md={4}>
-                <Card className="shadow-sm text-center">
-                  <Card.Body>
-                    <Card.Title>Total Donations Received</Card.Title>
-                    <h3>10</h3>
-                  </Card.Body>
-                </Card>
-              </Col>
-              <Col md={4}>
-                <Card className="shadow-sm text-center">
-                  <Card.Body>
-                    <Card.Title>Pending Requests</Card.Title>
-                    <h3>5</h3>
-                  </Card.Body>
-                </Card>
-              </Col>
-              <Col md={4}>
-                <Card className="shadow-sm text-center">
-                  <Card.Body>
-                    <Card.Title>Active Donors</Card.Title>
-                    <h3>3</h3>
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Row>
-
-            {/* Recent Donation Requests Table */}
-            <Card className="shadow-sm mb-4">
-              <Card.Body>
-                <Card.Title>Recent Donation Requests</Card.Title>
-                <Table striped bordered hover>
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Category</th>
-                      <th>Description</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {requests.length > 0 ? (
-                      requests.map((req, index) => (
-                        <tr key={index}>
-                          <td>{index + 1}</td>
-                          <td>{req.category}</td>
-                          <td>{req.description}</td>
-                          <td>{req.status}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="4" className="text-center">
-                          No requests yet
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </Table>
-              </Card.Body>
-            </Card>
-          </div>
+          <DonationRequest // Use the correct component name
+            user={user}
+            loading={loading}
+            completionPercentage={completionPercentage} // Pass completion percentage
+            setActiveTab={setActiveTab} // Pass function to switch tabs
+          />
         </Tab>
         <Tab eventKey="profile" title="Manage Profile">
-          <div className="mt-4">
-            <ProfileCompletionProgress user={user} />
-            <Button
-              variant="primary"
-              as={Link}
-              to="/profile"
-              onClick={() => navigate("/profile")}
-            >
-              Go to Profile
-            </Button>
-          </div>
+          <ProfileCompletionProgress
+            user={user}
+            setCompletionPercentage={setCompletionPercentage} // Pass setter function
+          />
+          <Button
+            variant="primary"
+            as={Link}
+            to="/profile"
+            onClick={() => navigate("/profile")}
+            className="mt-3"
+          >
+            Go to Profile
+          </Button>
         </Tab>
         <Tab eventKey="reports" title="Reports & Analytics">
           <div className="mt-4">
@@ -278,109 +147,6 @@ const SchoolDashboard = () => {
           </div>
         </Tab>
       </Tabs>
-      {/* Donation Request Modal */}
-      <Modal
-        show={showDonationModal}
-        onHide={() => setShowDonationModal(false)}
-        centered
-        size="lg"
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Post a Donation Request</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            {/* Grouped Needs by Categories */}
-            <h5>📚 Learning Materials</h5>
-            {["Books", "Stationery", "Desks", "Chairs"].map((need) => (
-              <Form.Check
-                key={need}
-                type="checkbox"
-                label={need}
-                checked={selectedNeeds.includes(need)}
-                onChange={() => handleNeedSelection(need)}
-              />
-            ))}
-
-            <h5 className="mt-4">🏫 Infrastructure</h5>
-            {["Classrooms", "Toilets", "Water Tanks"].map((need) => (
-              <Form.Check
-                key={need}
-                type="checkbox"
-                label={need}
-                checked={selectedNeeds.includes(need)}
-                onChange={() => handleNeedSelection(need)}
-              />
-            ))}
-
-            <h5 className="mt-4">💰 Financial Aid</h5>
-            {["School Fees Support", "Sponsorships"].map((need) => (
-              <Form.Check
-                key={need}
-                type="checkbox"
-                label={need}
-                checked={selectedNeeds.includes(need)}
-                onChange={() => handleNeedSelection(need)}
-              />
-            ))}
-
-            <h5 className="mt-4">💡 Utilities & Services</h5>
-            {["Electricity", "Internet", "Security"].map((need) => (
-              <Form.Check
-                key={need}
-                type="checkbox"
-                label={need}
-                checked={selectedNeeds.includes(need)}
-                onChange={() => handleNeedSelection(need)}
-              />
-            ))}
-
-            <h5 className="mt-4">🏥 Health & Hygiene</h5>
-            {["Sanitary Towels", "First Aid Kits", "Clean Drinking Water"].map(
-              (need) => (
-                <Form.Check
-                  key={need}
-                  type="checkbox"
-                  label={need}
-                  checked={selectedNeeds.includes(need)}
-                  onChange={() => handleNeedSelection(need)}
-                />
-              )
-            )}
-
-            <h5 className="mt-4">🍛 Food Supplies</h5>
-            {["Lunch Programs", "Clean Water"].map((need) => (
-              <Form.Check
-                key={need}
-                type="checkbox"
-                label={need}
-                checked={selectedNeeds.includes(need)}
-                onChange={() => handleNeedSelection(need)}
-              />
-            ))}
-
-            <Form.Group className="mt-4">
-              <Form.Label>Custom Request</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={2}
-                placeholder="Add other needs"
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => setShowDonationModal(false)}
-          >
-            Close
-          </Button>
-          <Button variant="primary" onClick={handleDonationRequest}>
-            Submit Request
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 };

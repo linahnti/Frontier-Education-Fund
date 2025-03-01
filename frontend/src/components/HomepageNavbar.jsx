@@ -10,7 +10,11 @@ const HomepageNavbar = () => {
     >
       <div className="container-fluid d-flex justify-content-between align-items-center">
         {/* Logo and Title */}
-        <div className="d-flex align-items-center">
+        <Link
+          to="/" // Navigate to the home page
+          className="d-flex align-items-center text-decoration-none"
+          style={{ cursor: "pointer" }} // Add pointer cursor
+        >
           <img
             src={assets.favicon}
             alt="Frontier Education Fund Logo"
@@ -19,7 +23,7 @@ const HomepageNavbar = () => {
           <span className="h5 text-white mb-0 d-flex flex-column fw-bold">
             Frontier Education <br /> Fund
           </span>
-        </div>
+        </Link>
 
         {/* Navbar Links */}
         <div className="d-flex align-items-center">

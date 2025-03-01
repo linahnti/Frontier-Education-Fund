@@ -14,6 +14,19 @@ const AuthenticatedNavbar = () => {
     navigate("/login");
   };
 
+  // Handle logo and title click
+  const handleLogoClick = () => {
+    if (userRole === "admin") {
+      navigate("/admin-dashboard");
+    } else if (userRole === "school") {
+      navigate("/school-dashboard");
+    } else if (userRole === "donor") {
+      navigate("/donor-dashboard");
+    } else {
+      navigate("/dashboard");
+    }
+  };
+
   return (
     <header
       className="shadow-sm py-2"
@@ -21,7 +34,11 @@ const AuthenticatedNavbar = () => {
     >
       <div className="container-fluid d-flex justify-content-between align-items-center">
         {/* Logo and Title */}
-        <div className="d-flex align-items-center">
+        <div
+          className="d-flex align-items-center"
+          style={{ cursor: "pointer" }} // Add pointer cursor
+          onClick={handleLogoClick} // Add click handler
+        >
           <img
             src={assets.favicon}
             alt="Frontier Education Fund Logo"
