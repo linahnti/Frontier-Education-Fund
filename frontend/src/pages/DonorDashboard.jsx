@@ -4,7 +4,6 @@ import {
   Modal,
   Button,
   Card,
-  Form,
   ProgressBar,
   Tab,
   Tabs,
@@ -13,7 +12,7 @@ import {
   Row,
   Col,
 } from "react-bootstrap";
-import "../styles/Modal.css";
+import "../styles/Modal.css"; // Ensure this file contains the necessary styles
 import ProfileCompletionProgress from "../components/ProfileCompletionProgress"; // Import the component
 
 const DonorDashboard = () => {
@@ -28,6 +27,7 @@ const DonorDashboard = () => {
     "Your donation for textbooks has been accepted.",
   ]);
   const [activeTab, setActiveTab] = useState("donations");
+  const [completionPercentage, setCompletionPercentage] = useState(0);
 
   // Function to refresh the user object from localStorage
   const refreshUser = () => {
@@ -221,10 +221,12 @@ const DonorDashboard = () => {
         </Tab>
         <Tab eventKey="profile" title="Manage Profile">
           <div className="mt-4">
-            <h4>Donor Profile</h4>
+            {/* <h4>Donor Profile</h4> */}
             {/* Use ProfileCompletionProgress component */}
-            <ProfileCompletionProgress user={user} />
-            <p>Click the button below to update your donor profile.</p>
+            <ProfileCompletionProgress
+              user={user}
+              setCompletionPercentage={setCompletionPercentage}
+            />
             <Button
               variant="primary"
               as={Link}
@@ -247,11 +249,13 @@ const DonorDashboard = () => {
 
       {/* Modal for Incomplete Profile */}
       <Modal show={showModal} onHide={handleCloseModal} centered>
-        <Modal.Header closeButton>
+        <Modal.Header closeButton className="bg-warning text-white">
           <Modal.Title>Profile Incomplete</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>Please complete your profile to access all features.</p>
+          <p className="text-dark">
+            Please complete your profile to access all features.
+          </p>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseModal}>

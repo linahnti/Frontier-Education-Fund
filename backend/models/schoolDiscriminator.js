@@ -3,10 +3,10 @@ const User = require("./user"); // Import the base User model
 
 // School schema
 const schoolSchema = new mongoose.Schema({
-  // School-specific fields
+  // Existing fields
   schoolName: { type: String, default: "" },
   location: { type: String, default: "" },
-  needs: { type: [String], default: [] },
+  needs: { type: [String], default: [] }, 
   principalName: { type: String, default: "" },
   schoolType: { type: String, enum: ["public", "private"] },
   numStudents: { type: String },
@@ -17,12 +17,43 @@ const schoolSchema = new mongoose.Schema({
     type: String,
     validate: {
       validator: function (v) {
-        // Allow numbers with a '+' and up to 15 digits
         return /^\+?\d{10,15}$/.test(v);
       },
       message: (props) => `${props.value} is not a valid phone number!`,
     },
   },
+
+  // Updated fields for donations and requests
+  donationsReceived: [
+    {
+      donorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Reference to the donor
+      item: { type: String }, // Item donated (e.g., books, desks)
+      status: {
+        type: String,
+        enum: ["Pending", "Approved", "Completed"],
+        default: "Pending",
+      }, // Status of the donation
+      date: { type: Date, default: Date.now }, // Date of the donation
+    },
+  ],
+  donationRequests: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "DonationRequest", // Reference to the DonationRequest schema
+    },
+  ],
+  activeDonors: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // List of donors who have donated to the school
+
+  // New field for notifications
+  notifications: [
+    {
+      donorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Reference to the donor
+      item: { type: String }, // Item donated (e.g., books, desks)
+      status: { type: String, enum: ["Pending", "Approved", "Completed"] }, // Status of the donation
+      date: { type: Date, default: Date.now }, // Date of the notification
+      read: { type: Boolean, default: false }, // Whether the notification has been read
+    },
+  ],
 });
 
 // Create School discriminator

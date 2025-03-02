@@ -3,12 +3,11 @@ const User = require("./user"); // Import the base User model
 
 // Donor schema
 const donorSchema = new mongoose.Schema({
-  // Donor-specific fields
+  // Existing fields
   contactNumber: {
     type: String,
     validate: {
       validator: function (v) {
-        // Allow numbers with a '+' and up to 15 digits
         return /^\+?\d{10,15}$/.test(v);
       },
       message: (props) => `${props.value} is not a valid phone number!`,
@@ -53,8 +52,35 @@ const donorSchema = new mongoose.Schema({
     default: null,
   },
   organizationAffiliation: { type: String, default: "" },
-});
 
+  // Updated fields for donations and notifications
+  donationsMade: [
+    {
+      schoolId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Reference to the school
+      item: { type: String }, // Item donated (e.g., books, desks)
+      status: {
+        type: String,
+        enum: ["Pending", "Approved", "Completed"],
+        default: "Pending",
+      }, // Status of the donation
+      date: { type: Date, default: Date.now }, // Date of the donation
+    },
+  ],
+  donationRequests: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "DonationRequest", // Reference to the DonationRequest schema
+    },
+  ],
+  notifications: [
+    {
+      schoolId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Reference to the school
+      item: { type: String }, // Item requested (e.g., books, desks)
+      date: { type: Date, default: Date.now }, // Date of the notification
+      read: { type: Boolean, default: false }, // Whether the notification has been read
+    },
+  ],
+});
 // Create Donor discriminator
 const Donor = User.discriminator("Donor", donorSchema);
 

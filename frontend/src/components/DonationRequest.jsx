@@ -1,15 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Button,
-  Card,
-  Table,
-  Row,
-  Col,
-  Modal,
-  Form,
-  Alert,
-} from "react-bootstrap";
+import { Button, Card, Table, Row, Col, Modal, Form } from "react-bootstrap";
 import { calculateProfileCompletion } from "./ProfileUtils";
 
 const DonationRequest = ({
@@ -18,9 +9,11 @@ const DonationRequest = ({
   completionPercentage,
   profileData,
 }) => {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const [showDonationModal, setShowDonationModal] = useState(false);
   const [showProfileWarningModal, setShowProfileWarningModal] = useState(false);
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [message, setMessage] = useState("");
   const [selectedNeeds, setSelectedNeeds] = useState([]);
   const [requests, setRequests] = useState([
     {
@@ -47,14 +40,53 @@ const DonationRequest = ({
   const { isProfileComplete } = calculateProfileCompletion(user, profileData);
 
   // Handle donation request submission
-  const handleDonationRequest = () => {
+  const handleDonationRequest = async () => {
+    if (!user || !user._id) {
+      setMessage("User not found. Please log in again.");
+      setShowMessageModal(true);
+      return; // Do not redirect to login
+    }
+
+    // Convert user._id to a string if it's an object
+    const userId = typeof user._id === "object" ? user._id.$oid : user._id;
+
     if (selectedNeeds.length === 0) {
-      alert("Please select at least one need.");
+      setMessage("Please select at least one need.");
+      setShowMessageModal(true);
       return;
     }
-    console.log("Selected Needs:", selectedNeeds);
-    setShowDonationModal(false);
-    setSelectedNeeds([]);
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/schools/${userId}/donation-needs`, // Use userId here
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ donationNeeds: selectedNeeds }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Backend error:", errorData);
+        throw new Error(errorData.message || "Failed to update donation needs");
+      }
+
+      const data = await response.json();
+      console.log("Donation needs updated:", data);
+
+      setMessage("Donation needs updated successfully!");
+      setShowMessageModal(true);
+
+      setShowDonationModal(false);
+      setSelectedNeeds([]);
+    } catch (error) {
+      console.error("Error updating donation needs:", error);
+      setMessage(error.message);
+      setShowMessageModal(true);
+    }
   };
 
   // Handle selection of needs
@@ -219,6 +251,29 @@ const DonationRequest = ({
           </Button>
           <Button variant="primary" onClick={handleDonationRequest}>
             Submit Request
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Message Modal */}
+      <Modal
+        show={showMessageModal}
+        onHide={() => setShowMessageModal(false)}
+        centered
+      >
+        <Modal.Header closeButton className="bg-warning text-white">
+          <Modal.Title>Message</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>{message}</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="warning"
+            className="text-white"
+            onClick={() => setShowMessageModal(false)}
+          >
+            Close
           </Button>
         </Modal.Footer>
       </Modal>

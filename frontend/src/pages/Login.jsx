@@ -98,6 +98,7 @@ const Login = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
             />
           </div>
           <div className="mb-3">
@@ -135,7 +136,7 @@ const Login = () => {
         <p className="text-center text-black">
           Don't have an account?{" "}
           <a
-            href="/register"
+            href="/signup"
             className="text-warning"
             style={{ color: "#ffc107" }}
           >
