@@ -8,6 +8,7 @@ const ProfilePage = () => {
   const [userInfo, setUserInfo] = useState({
     name: "",
     email: "",
+    contactNumber: "",
     role: "", // Will be 'school' or 'donor'
     isProfileComplete: false,
     schoolDetails: {
@@ -20,10 +21,8 @@ const ProfilePage = () => {
       accreditation: "",
       website: "",
       missionStatement: "",
-      contactNumber: "",
     },
     donorDetails: {
-      contactNumber: "",
       donorType: "",
       organizationName: "",
       registrationNumber: "",
@@ -85,13 +84,11 @@ const ProfilePage = () => {
             website: fetchedUserInfo.schoolDetails?.website || "",
             missionStatement:
               fetchedUserInfo.schoolDetails?.missionStatement || "",
-            contactNumber: fetchedUserInfo.schoolDetails?.contactNumber || "",
           };
           // Ensure donorDetails is an empty object for school users
           fetchedUserInfo.donorDetails = {};
         } else if (fetchedUserInfo.role === "donor") {
           fetchedUserInfo.donorDetails = {
-            contactNumber: fetchedUserInfo.donorDetails?.contactNumber || "",
             donorType: fetchedUserInfo.donorDetails?.donorType || "",
             organizationName:
               fetchedUserInfo.donorDetails?.organizationName || "",
@@ -225,6 +222,7 @@ const ProfilePage = () => {
       const requiredFields = [
         "name",
         "email",
+        "contactNumber",
         "schoolDetails.schoolName",
         "schoolDetails.location",
         "schoolDetails.needs",
@@ -234,7 +232,6 @@ const ProfilePage = () => {
         "schoolDetails.accreditation",
         "schoolDetails.website",
         "schoolDetails.missionStatement",
-        "schoolDetails.contactNumber",
       ];
       return requiredFields.every((field) => {
         const value = field
@@ -246,7 +243,7 @@ const ProfilePage = () => {
       const requiredFields = [
         "name",
         "email",
-        "donorDetails.contactNumber",
+        "contactNumber",
         "donorDetails.donorType",
         "donorDetails.organizationName",
         "donorDetails.registrationNumber",
@@ -310,6 +307,20 @@ const ProfilePage = () => {
               disabled
             />
           </div>
+          <div className="mb-3">
+            <label htmlFor="contactNumber" className="form-label">
+              Contact Number
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="contactNumber"
+              name="contactNumber"
+              value={updatedUserInfo.contactNumber}
+              onChange={handleChange}
+              required
+            />
+          </div>
 
           {/* Conditional Fields based on Role */}
           {userInfo.role === "school" && (
@@ -350,64 +361,76 @@ const ProfilePage = () => {
                   <input
                     type="checkbox"
                     className="form-check-input"
-                    id="needsBooks"
+                    id="needslearningMaterials"
                     name="schoolDetails.needs"
-                    value="Books"
+                    value="learningMaterials"
                     checked={updatedUserInfo.schoolDetails.needs.includes(
-                      "Books"
+                      "learningMaterials"
                     )}
                     onChange={handleChange}
                   />
-                  <label className="form-check-label" htmlFor="needsBooks">
-                    Books
+                  <label
+                    className="form-check-label"
+                    htmlFor="needslearningMaterials"
+                  >
+                    learningMaterials
                   </label>
                 </div>
                 <div className="form-check">
                   <input
                     type="checkbox"
                     className="form-check-input"
-                    id="needsFurniture"
+                    id="needsHealth&Hygiene"
                     name="schoolDetails.needs"
-                    value="Furniture"
+                    value="Health & Hygiene"
                     checked={updatedUserInfo.schoolDetails.needs.includes(
-                      "Furniture"
+                      "Health & Hygiene"
                     )}
                     onChange={handleChange}
                   />
-                  <label className="form-check-label" htmlFor="needsFurniture">
-                    Furniture
+                  <label
+                    className="form-check-label"
+                    htmlFor="needsHealth&Hygiene"
+                  >
+                    Health & Hygiene
                   </label>
                 </div>
                 <div className="form-check">
                   <input
                     type="checkbox"
                     className="form-check-input"
-                    id="needsFood"
+                    id="needsUtilities&Services"
                     name="schoolDetails.needs"
-                    value="Food"
+                    value="Utilities & Services"
                     checked={updatedUserInfo.schoolDetails.needs.includes(
-                      "Food"
+                      "Utilities & Services"
                     )}
                     onChange={handleChange}
                   />
-                  <label className="form-check-label" htmlFor="needsFood">
-                    Food
+                  <label
+                    className="form-check-label"
+                    htmlFor="needsUtilities&Services"
+                  >
+                    Utilities & Services
                   </label>
                 </div>
                 <div className="form-check">
                   <input
                     type="checkbox"
                     className="form-check-input"
-                    id="needsUniforms"
+                    id="needsinfrastructure"
                     name="schoolDetails.needs"
-                    value="Uniforms"
+                    value="infrastructure"
                     checked={updatedUserInfo.schoolDetails.needs.includes(
-                      "Uniforms"
+                      "infrastructure"
                     )}
                     onChange={handleChange}
                   />
-                  <label className="form-check-label" htmlFor="needsUniforms">
-                    Uniforms
+                  <label
+                    className="form-check-label"
+                    htmlFor="needsinfrastructure"
+                  >
+                    Infrastructure
                   </label>
                 </div>
                 <div className="form-check">
@@ -416,17 +439,17 @@ const ProfilePage = () => {
                     className="form-check-input"
                     id="needsSanitaryTowels"
                     name="schoolDetails.needs"
-                    value="Sanitary Towels"
+                    value="Financial Aid"
                     checked={updatedUserInfo.schoolDetails.needs.includes(
-                      "Sanitary Towels"
+                      "Financial Aid"
                     )}
                     onChange={handleChange}
                   />
                   <label
                     className="form-check-label"
-                    htmlFor="needsSanitary Towels"
+                    htmlFor="needsFinancialAid"
                   >
-                    Sanitary Towels
+                    Financial Aid
                   </label>
                 </div>
                 <div className="form-check">
@@ -442,7 +465,7 @@ const ProfilePage = () => {
                     onChange={handleChange}
                   />
                   <label className="form-check-label" htmlFor="needsMoney">
-                    Money
+                    Food Supplies
                   </label>
                 </div>
               </div>
@@ -547,40 +570,11 @@ const ProfilePage = () => {
                   required
                 />
               </div>
-              <div className="mb-3">
-                <label htmlFor="contactNumber" className="form-label">
-                  Contact Number
-                </label>
-                <textarea
-                  type="text"
-                  className="form-control"
-                  id="contactNumber"
-                  name="schoolDetails.contactNumber"
-                  placeholder="Start with +254"
-                  value={updatedUserInfo.schoolDetails.contactNumber}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
             </>
           )}
 
           {userInfo.role === "donor" && (
             <>
-              <div className="mb-3">
-                <label htmlFor="contactNumber" className="form-label">
-                  Contact Number
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="contactNumber"
-                  name="donorDetails.contactNumber"
-                  value={updatedUserInfo.donorDetails.contactNumber}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
               <div className="mb-3">
                 <label htmlFor="donorType" className="form-label">
                   Donor Type
@@ -675,7 +669,7 @@ const ProfilePage = () => {
                     onChange={handleChange}
                   />
                   <label className="form-check-label" htmlFor="donationBooks">
-                    Books
+                    Learning Materials
                   </label>
                 </div>
                 <div className="form-check">
@@ -694,39 +688,45 @@ const ProfilePage = () => {
                     className="form-check-label"
                     htmlFor="donationUniforms"
                   >
-                    Uniforms
+                    infrastructure
                   </label>
                 </div>
                 <div className="form-check">
                   <input
                     type="checkbox"
                     className="form-check-input"
-                    id="donationMoney"
+                    id="donationFoodSupplies"
                     name="donorDetails.donationCategories"
-                    value="Money"
+                    value="Food Supplies"
                     checked={updatedUserInfo.donorDetails.donationCategories.includes(
-                      "Money"
+                      "Food Supplies"
                     )}
                     onChange={handleChange}
                   />
-                  <label className="form-check-label" htmlFor="donationMoney">
-                    Money
+                  <label
+                    className="form-check-label"
+                    htmlFor="donationFood Supplies"
+                  >
+                    Food Supplies
                   </label>
                 </div>
                 <div className="form-check">
                   <input
                     type="checkbox"
                     className="form-check-input"
-                    id="donationFood"
+                    id="donationUtilities & Services"
                     name="donorDetails.donationCategories"
-                    value="Food"
+                    value="Utilities & Services"
                     checked={updatedUserInfo.donorDetails.donationCategories.includes(
-                      "Food"
+                      "Utilities & Services"
                     )}
                     onChange={handleChange}
                   />
-                  <label className="form-check-label" htmlFor="donationFood">
-                    Food
+                  <label
+                    className="form-check-label"
+                    htmlFor="donationUtilities & Services"
+                  >
+                    Utilities & Services
                   </label>
                 </div>
                 <div className="form-check">
@@ -829,6 +829,9 @@ const ProfilePage = () => {
           <p>
             <strong>Email:</strong> {userInfo.email}
           </p>
+          <p>
+            <strong>Contact Number:</strong> {userInfo.contactNumber}
+          </p>
           {userInfo.role === "school" && (
             <>
               <p>
@@ -865,18 +868,10 @@ const ProfilePage = () => {
                 <strong>Mission Statement:</strong>{" "}
                 {userInfo.schoolDetails.missionStatement}
               </p>
-              <p>
-                <strong>Contact Number:</strong>{" "}
-                {userInfo.schoolDetails.contactNumber}
-              </p>
             </>
           )}
           {userInfo.role === "donor" && (
             <>
-              <p>
-                <strong>Contact Number:</strong>{" "}
-                {userInfo.donorDetails.contactNumber}
-              </p>
               <p>
                 <strong>Donor Type:</strong> {userInfo.donorDetails.donorType}
               </p>

@@ -13,15 +13,15 @@ const schoolSchema = new mongoose.Schema({
   accreditation: { type: Boolean, default: false },
   website: { type: String, default: "" },
   missionStatement: { type: String, maxlength: 500, default: "" },
-  contactNumber: {
-    type: String,
-    validate: {
-      validator: function (v) {
-        return /^\+?\d{10,15}$/.test(v);
-      },
-      message: (props) => `${props.value} is not a valid phone number!`,
-    },
-  },
+  // contactNumber: {
+  //   type: String,
+  //   validate: {
+  //     validator: function (v) {
+  //       return /^\+?\d{10,15}$/.test(v);
+  //     },
+  //     message: (props) => `${props.value} is not a valid phone number!`,
+  //   },
+  // },
 
   // Updated fields for donations and requests
   donationsReceived: [

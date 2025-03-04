@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 
 // Register User
 const registerUser = async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, contactNumber, password, role } = req.body;
 
   // Validate role
   const validRoles = ["admin", "donor", "school"];
@@ -31,6 +31,15 @@ const registerUser = async (req, res) => {
     });
   }
 
+  // Validate phone number format
+  const phoneRegex = /^\+\d{12}$/; // Example: +254712345678 (12 digits total)
+  if (!phoneRegex.test(contactNumber)) {
+    return res.status(400).json({
+      message:
+        "Please provide a valid phone number starting with a country code and exactly 12 digits (e.g., +254712345678).",
+    });
+  }
+
   try {
     // Check if the user already exists
     const userExists = await User.findOne({ email });
@@ -47,18 +56,21 @@ const registerUser = async (req, res) => {
       user = new Donor({
         name,
         email,
+        contactNumber,
         password: hashedPassword,
       });
     } else if (role.toLowerCase() === "school") {
       user = new School({
         name,
         email,
+        contactNumber,
         password: hashedPassword,
       });
     } else {
       user = new User({
         name,
         email,
+        contactNumber,
         password: hashedPassword,
         role: role.toLowerCase(),
       });
@@ -114,6 +126,7 @@ const loginUser = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        contactNumber: user.contactNumber,
         role: user.role.toLowerCase(),
       },
     });
@@ -141,6 +154,7 @@ const getUserProfile = async (req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
+      contactNumber: user.contactNumber,
       role: user.role,
       createdAt: user.createdAt,
       isProfileComplete: user.isProfileComplete,
@@ -151,7 +165,6 @@ const getUserProfile = async (req, res) => {
     // Add discriminator-specific fields based on the user's role
     if (user.role.toLowerCase() === "donor") {
       userProfile.donorDetails = {
-        contactNumber: user.contactNumber || "",
         donorType: user.donorType || "",
         organizationName: user.organizationName || "",
         registrationNumber: user.registrationNumber || "",
@@ -173,7 +186,6 @@ const getUserProfile = async (req, res) => {
         accreditation: user.accreditation || "",
         website: user.website || "",
         missionStatement: user.missionStatement || "",
-        contactNumber: user.contactNumber || "",
       };
     }
 
@@ -187,6 +199,7 @@ const getUserProfile = async (req, res) => {
     res.status(500).json({ message: "Server error. Please try again later." });
   }
 };
+
 // Update User Profile
 const updateUserProfile = async (req, res) => {
   const userId = req.user.id;
@@ -203,6 +216,7 @@ const updateUserProfile = async (req, res) => {
     // Update common fields
     user.name = updatedData.name || user.name;
     user.email = updatedData.email || user.email;
+    user.contactNumber = updatedData.contactNumber || user.contactNumber;
 
     if (user.role.toLowerCase() === "school" && updatedData.schoolDetails) {
       // Update school-specific fields
@@ -231,16 +245,11 @@ const updateUserProfile = async (req, res) => {
       user.website = updatedData.schoolDetails.website || user.website;
       user.missionStatement =
         updatedData.schoolDetails.missionStatement || user.missionStatement;
-      user.contactNumber =
-        updatedData.schoolDetails.contactNumber || user.contactNumber;
     } else if (
       user.role.toLowerCase() === "donor" &&
       updatedData.donorDetails
     ) {
       // Update donor-specific fields
-      user.contactNumber = updatedData.donorDetails.contactNumber
-        ? updatedData.donorDetails.contactNumber.replace(/\D/g, "").slice(0, 10)
-        : user.contactNumber;
       user.donorType = updatedData.donorDetails.donorType || user.donorType;
       user.organizationName =
         updatedData.donorDetails.organizationName || user.organizationName;
@@ -291,6 +300,7 @@ const updateUserProfile = async (req, res) => {
     return res.status(500).json({ message: "Server error: " + err.message });
   }
 };
+
 // Function to check profile completeness
 const checkProfileCompleteness = (user) => {
   let requiredFields = [];
@@ -305,11 +315,9 @@ const checkProfileCompleteness = (user) => {
       "accreditation",
       "website",
       "missionStatement",
-      "contactNumber",
     ];
   } else if (user.role === "donor") {
     requiredFields = [
-      "contactNumber",
       "donorType",
       "organizationName",
       "registrationNumber",
@@ -344,10 +352,8 @@ const getMissingFields = (user) => {
           "accreditation",
           "website",
           "missionStatement",
-          "contactNumber",
         ]
       : [
-          "contactNumber",
           "donorType",
           "organizationName",
           "registrationNumber",

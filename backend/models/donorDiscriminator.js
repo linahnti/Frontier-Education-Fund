@@ -4,15 +4,15 @@ const User = require("./user"); // Import the base User model
 // Donor schema
 const donorSchema = new mongoose.Schema({
   // Existing fields
-  contactNumber: {
-    type: String,
-    validate: {
-      validator: function (v) {
-        return /^\+?\d{10,15}$/.test(v);
-      },
-      message: (props) => `${props.value} is not a valid phone number!`,
-    },
-  },
+  // contactNumber: {
+  //   type: String,
+  //   validate: {
+  //     validator: function (v) {
+  //       return /^\+?\d{10,15}$/.test(v);
+  //     },
+  //     message: (props) => `${props.value} is not a valid phone number!`,
+  //   },
+  // },
   donorType: {
     type: String,
     enum: ["NGO", "Government", "Individual", "Corporate"],

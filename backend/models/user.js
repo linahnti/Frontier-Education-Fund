@@ -12,6 +12,17 @@ const userSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
     },
+    contactNumber: {
+      type: String,
+      required: true,
+      validate: {
+        validator: function (v) {
+          return /^\+\d{12}$/.test(v); // Validate contactNumber format
+        },
+        message: (props) =>
+          `${props.value} is not a valid contact number! It must start with a country code and be exactly 12 digits (e.g., +254712345678).`,
+      },
+    },
     password: {
       type: String,
       required: [true, "Password is required"],

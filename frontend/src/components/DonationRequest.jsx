@@ -15,6 +15,8 @@ const DonationRequest = ({
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [message, setMessage] = useState("");
   const [selectedNeeds, setSelectedNeeds] = useState([]);
+
+  // Initialize requests state
   const [requests, setRequests] = useState([
     {
       id: 1,
@@ -41,14 +43,18 @@ const DonationRequest = ({
 
   // Handle donation request submission
   const handleDonationRequest = async () => {
+    console.log("User object before API call:", user); // Debugging log
+    console.log("Selected needs before sending request:", selectedNeeds);
+
     if (!user || !user._id) {
       setMessage("User not found. Please log in again.");
       setShowMessageModal(true);
       return; // Do not redirect to login
     }
 
-    // Convert user._id to a string if it's an object
-    const userId = typeof user._id === "object" ? user._id.$oid : user._id;
+    // Use schoolId (which is user._id)
+    const schoolId = typeof user._id === "object" ? user._id.$oid : user._id;
+    console.log("School ID:", schoolId);
 
     if (selectedNeeds.length === 0) {
       setMessage("Please select at least one need.");
@@ -58,7 +64,7 @@ const DonationRequest = ({
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/schools/${userId}/donation-needs`, // Use userId here
+        `http://localhost:5000/api/schools/${schoolId}/donation-needs`, 
         {
           method: "POST",
           headers: {
@@ -91,9 +97,14 @@ const DonationRequest = ({
 
   // Handle selection of needs
   const handleNeedSelection = (need) => {
-    setSelectedNeeds((prev) =>
-      prev.includes(need) ? prev.filter((n) => n !== need) : [...prev, need]
-    );
+    setSelectedNeeds((prev) => {
+      const updatedNeeds = prev.includes(need)
+        ? prev.filter((n) => n !== need)
+        : [...prev, need];
+
+      console.log("Updated selectedNeeds:", updatedNeeds); // Debugging log
+      return updatedNeeds;
+    });
   };
 
   // Handle clicking the "Post a Donation Request" button

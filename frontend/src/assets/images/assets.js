@@ -32,6 +32,8 @@ import testimonial10 from "../images/Testimonial10.jpg";
 import testimonial11 from "../images/Testimonial11.jpg";
 import testimonial12 from "../images/Testimonial12.jpg";
 import testimonial13 from "../images/Testimonial13.jpg";
+import background1 from "../images/background1.jpg";
+import background2 from "../images/background2.jpg";
 
 const assets = {
   picture1,
@@ -68,6 +70,8 @@ const assets = {
   testimonial11,
   testimonial12,
   testimonial13,
+  background1,
+  background2,
 };
 
 export default assets;

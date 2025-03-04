@@ -4,12 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import assets from "../assets/images/assets";
-//import "../styles/Toast.css"
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
+    contactNumber: "",
     password: "",
     confirmPassword: "",
     role: "",
@@ -17,9 +18,9 @@ const Register = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState(""); // State for error messages
-  const [isSubmitting, setIsSubmitting] = useState(false); // state for submit button
-  const navigate = useNavigate(); // Initialize useNavigate
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({
@@ -30,67 +31,106 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
+    console.log("Form Data:", formData);
+    console.log("Error:", error);
+
     // Clear previous errors
     setError("");
-  
+
     // Check if role is selected
     if (!formData.role) {
-      alert("Please select your role!");
-      return;
-    }
-  
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
-  
-    setIsSubmitting(true); // Set submitting state to true
-  
-    try {
-      // Send a POST request to the backend
-      const response = await axios.post(
-        "http://localhost:5000/api/users/register",
-        {
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          role: formData.role,
-        }
-      );
-  
-      // Show success toast in the center of the screen
-      toast.success("Registration successful! Redirecting to login...", {
-        position: "top-center", // Position the toast in the center
-        autoClose: 3000, // Close after 3 seconds
+      toast.error("Please select your role!", {
+        position: "top-center",
+        autoClose: 3000,
         hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
         style: { backgroundColor: "#ffc107", color: "#000" },
       });
-  
+      return;
+    }
+
+    // Validate phone number format (must start with a country code and be exactly 12 digits)
+    const phoneRegex = /^\+\d{12}$/; // Example: +254712345678 (12 digits total)
+    if (!phoneRegex.test(formData.contactNumber)) {
+      toast.error(
+        "Please provide a valid phone number starting with a country code and exactly 12 digits (e.g., +254712345678).",
+        {
+          position: "top-center",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          style: { backgroundColor: "#ffc107", color: "#000" },
+        }
+      );
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match!", {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: { backgroundColor: "#ffc107", color: "#000" },
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Combine first and last name
+      const name = `${formData.firstName} ${formData.lastName}`;
+
+      // Send a POST request to the backend
+      const response = await axios.post(
+        "http://localhost:5000/api/users/register",
+        {
+          name,
+          email: formData.email,
+          contactNumber: formData.contactNumber,
+          password: formData.password,
+          role: formData.role,
+        }
+      );
+
+      // Show success toast in the center of the screen
+      toast.success("Registration successful! Redirecting to login...", {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        style: { backgroundColor: "#007bff", color: "#fff" },
+      });
+
       // Redirect to the login page
       setTimeout(() => {
         navigate("/login");
       }, 3000);
     } catch (err) {
-      // Handle errors from the backend
       console.error("Registration error:", err.response?.data);
-  
-      // Extract the specific error message from the backend response
+
       const errorMessage =
         err.response?.data?.message || "Registration failed. Please try again.";
-      setError(errorMessage); // Display the specific error message
+      setError(errorMessage);
     } finally {
-      setIsSubmitting(false); // Reset submitting state
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div
       style={{
-        backgroundImage: `url(${assets.sunrise2})`, // Use the imported image
+        backgroundImage: `url(${assets.sunrise2})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         minHeight: "100vh",
@@ -105,7 +145,7 @@ const Register = () => {
           backgroundColor: "rgba(255, 255, 255, 0.8)",
           borderRadius: "10px",
           padding: "20px",
-          maxWidth: "500px",
+          maxWidth: "600px",
         }}
       >
         <h2
@@ -118,95 +158,127 @@ const Register = () => {
         >
           Register
         </h2>
-        {/* Display error messages here */}
         {error && <div className="alert alert-danger">{error}</div>}
         <form onSubmit={handleSubmit}>
-          {/* Name */}
-          <div className="mb-3">
-            <label htmlFor="name" className="form-label">
-              Name
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="form-control"
-              required
-            />
-          </div>
-
-          {/* Email */}
-          <div className="mb-3">
-            <label htmlFor="email" className="form-label">
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="form-control"
-              required
-            />
-          </div>
-
-          {/* Password */}
-          <div className="mb-3">
-            <label htmlFor="password" className="form-label">
-              Password
-            </label>
-            <div className="input-group">
+          {/* First Name and Last Name (Side by Side) */}
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <label htmlFor="firstName" className="form-label">
+                First Name
+              </label>
               <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                name="password"
-                value={formData.password}
+                type="text"
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
                 onChange={handleChange}
                 className="form-control"
                 required
               />
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
             </div>
-          </div>
-
-          {/* Confirm Password */}
-          <div className="mb-3">
-            <label htmlFor="confirmPassword" className="form-label">
-              Confirm Password
-            </label>
-            <div className="input-group">
+            <div className="col-md-6">
+              <label htmlFor="lastName" className="form-label">
+                Last Name
+              </label>
               <input
-                type={showConfirmPassword ? "text" : "password"}
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
+                type="text"
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
                 onChange={handleChange}
                 className="form-control"
                 required
               />
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                {showConfirmPassword ? "Hide" : "Show"}
-              </button>
             </div>
-            {error === "Passwords do not match!" && (
-              <div className="text-danger mt-2">Passwords do not match!</div>
-            )}
           </div>
 
-          {/* Role Selection */}
+          {/* Email and Phone Number (Side by Side) */}
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <label htmlFor="email" className="form-label">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="form-control"
+                required
+              />
+            </div>
+            <div className="col-md-6">
+              <label htmlFor="contactNumber" className="form-label">
+                Contact Number
+              </label>
+              <input
+                type="text"
+                id="contactNumber"
+                name="contactNumber"
+                value={formData.contactNumber}
+                onChange={handleChange}
+                className="form-control"
+                placeholder="Start with country code, e.g., +254712345678"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Password and Confirm Password (Side by Side) */}
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <label htmlFor="password" className="form-label">
+                Password
+              </label>
+              <div className="input-group">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="form-control"
+                  required
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+            </div>
+            <div className="col-md-6">
+              <label htmlFor="confirmPassword" className="form-label">
+                Confirm Password
+              </label>
+              <div className="input-group">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="form-control"
+                  required
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? "Hide" : "Show"}
+                </button>
+              </div>
+              {error === "Passwords do not match!" && (
+                <div className="text-danger mt-2">Passwords do not match!</div>
+              )}
+            </div>
+          </div>
+
+          {/* Role Selection (Full Width) */}
           <div className="mb-3">
             <label htmlFor="role" className="form-label">
               Register As
@@ -255,8 +327,8 @@ const Register = () => {
 
       {/* Toast Container */}
       <ToastContainer
-        position="top-center" // Position the toast in the center
-        autoClose={2000} // Close after 2 seconds
+        position="top-center"
+        autoClose={2000}
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick

@@ -8,6 +8,7 @@ export const calculateProfileCompletion = (user, profileData) => {
     requiredFields = [
       "name",
       "email",
+      "contactNumber",
       "schoolDetails.schoolName",
       "schoolDetails.location",
       "schoolDetails.needs",
@@ -17,13 +18,12 @@ export const calculateProfileCompletion = (user, profileData) => {
       "schoolDetails.accreditation",
       "schoolDetails.website",
       "schoolDetails.missionStatement",
-      "schoolDetails.contactNumber",
     ];
   } else if (user.role === "donor") {
     requiredFields = [
       "name",
       "email",
-      "donorDetails.contactNumber",
+      "contactNumber",
       "donorDetails.donorType",
       "donorDetails.organizationName",
       "donorDetails.registrationNumber",
