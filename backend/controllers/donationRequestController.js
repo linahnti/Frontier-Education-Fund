@@ -1,15 +1,29 @@
 const DonationRequest = require("../models/donationRequest");
-const School = require("../models/user");
+const User = require("../models/user");
 
 // Create a donation request
 const createDonationRequest = async (req, res) => {
-  const { schoolId, items } = req.body;
+  const { schoolId, donationNeeds, customRequest } = req.body; // Accepting both fields
 
   try {
-    const donationRequest = new DonationRequest({ schoolId, items });
+    // Check if the school exists
+    const school = await User.findById(schoolId);
+    if (!school || school.role !== "school") {
+      return res.status(404).json({ message: "School not found" });
+    }
+
+    // Create a new donation request
+    const donationRequest = new DonationRequest({
+      schoolId,
+      donationNeeds, // Use donationNeeds instead of items
+      customRequest: customRequest || null, // Store the custom request if provided
+      status: "Pending",
+    });
+
     await donationRequest.save();
 
-    await School.findByIdAndUpdate(schoolId, {
+    // Add the donation request to the school's donationRequests array
+    await User.findByIdAndUpdate(schoolId, {
       $push: { donationRequests: donationRequest._id },
     });
 
@@ -25,6 +39,13 @@ const approveDonationRequest = async (req, res) => {
   const { donorId } = req.body;
 
   try {
+    // Check if the donor exists
+    const donor = await User.findById(donorId);
+    if (!donor || donor.role !== "donor") {
+      return res.status(404).json({ message: "Donor not found" });
+    }
+
+    // Update the donation request with the donor's approval
     const donationRequest = await DonationRequest.findByIdAndUpdate(
       requestId,
       {
@@ -33,7 +54,12 @@ const approveDonationRequest = async (req, res) => {
       { new: true }
     );
 
-    await School.findByIdAndUpdate(donationRequest.schoolId, {
+    if (!donationRequest) {
+      return res.status(404).json({ message: "Donation request not found" });
+    }
+
+    // Add the donor to the school's activeDonors array
+    await User.findByIdAndUpdate(donationRequest.schoolId, {
       $addToSet: { activeDonors: donorId },
     });
 
@@ -51,6 +77,13 @@ const completeDonation = async (req, res) => {
   const { donorId } = req.body;
 
   try {
+    // Check if the donor exists
+    const donor = await User.findById(donorId);
+    if (!donor || donor.role !== "donor") {
+      return res.status(404).json({ message: "Donor not found" });
+    }
+
+    // Update the donation request status to "Completed"
     const donationRequest = await DonationRequest.findByIdAndUpdate(
       requestId,
       {
@@ -60,11 +93,16 @@ const completeDonation = async (req, res) => {
       { new: true }
     );
 
-    await School.findByIdAndUpdate(donationRequest.schoolId, {
+    if (!donationRequest) {
+      return res.status(404).json({ message: "Donation request not found" });
+    }
+
+    // Add the completed donation to the school's donationsReceived array
+    await User.findByIdAndUpdate(donationRequest.schoolId, {
       $push: {
         donationsReceived: {
           donorId,
-          item: donationRequest.items[0].item, // Example: Use the first item
+          item: donationRequest.donationNeeds[0], // Use the first item in donationNeeds
           status: "Completed",
         },
       },
@@ -81,6 +119,13 @@ const getDonationRequestsForSchool = async (req, res) => {
   const { schoolId } = req.params;
 
   try {
+    // Check if the school exists
+    const school = await User.findById(schoolId);
+    if (!school || school.role !== "school") {
+      return res.status(404).json({ message: "School not found" });
+    }
+
+    // Fetch all donation requests for the school
     const donationRequests = await DonationRequest.find({ schoolId });
     res.status(200).json(donationRequests);
   } catch (error) {
@@ -95,6 +140,13 @@ const getDonationRequestsForDonor = async (req, res) => {
   const { donorId } = req.params;
 
   try {
+    // Check if the donor exists
+    const donor = await User.findById(donorId);
+    if (!donor || donor.role !== "donor") {
+      return res.status(404).json({ message: "Donor not found" });
+    }
+
+    // Fetch all donation requests where the donor has participated
     const donationRequests = await DonationRequest.find({
       "donors.donorId": donorId,
     });

@@ -64,7 +64,7 @@ const DonationRequest = ({
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/schools/${schoolId}/donation-needs`, 
+        `http://localhost:5000/api/schools/${schoolId}/donation-needs`,
         {
           method: "POST",
           headers: {
@@ -94,7 +94,7 @@ const DonationRequest = ({
       setShowMessageModal(true);
     }
   };
-
+  
   // Handle selection of needs
   const handleNeedSelection = (need) => {
     setSelectedNeeds((prev) => {
@@ -125,7 +125,7 @@ const DonationRequest = ({
         onClick={handlePostDonationClick}
         disabled={loading}
       >
-        Post a Donation Request
+        Ask for Support
       </Button>
 
       {/* Profile Warning Modal */}
@@ -170,7 +170,7 @@ const DonationRequest = ({
         size="lg"
       >
         <Modal.Header closeButton className="bg-warning text-white">
-          <Modal.Title>Post a Donation Request</Modal.Title>
+          <Modal.Title>Ask for Support</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>

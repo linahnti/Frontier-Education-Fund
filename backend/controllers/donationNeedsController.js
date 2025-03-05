@@ -9,7 +9,7 @@ const updateDonationNeeds = async (req, res) => {
     // Update the school's donationNeeds field
     const school = await User.findByIdAndUpdate(
       schoolId,
-      { $set: { donationNeeds } }, // Update the donationNeeds field
+      { $addToSet: { donationNeeds: { $each: donationNeeds } } }, // Update the donationNeeds field
       { new: true }
     );
 
@@ -21,6 +21,7 @@ const updateDonationNeeds = async (req, res) => {
     const donationRequest = new DonationRequest({
       schoolId,
       items: donationNeeds,
+      customRequest,
       status: "Pending",
     });
     await donationRequest.save();

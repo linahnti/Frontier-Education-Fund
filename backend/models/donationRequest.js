@@ -4,16 +4,11 @@ const donationRequestSchema = new mongoose.Schema(
   {
     schoolId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // Reference to the school
+      ref: "User", // Reference to the school (role: "school")
       required: true,
     },
-    items: [
-      {
-        item: { type: String, required: true }, // Item requested (e.g., books, desks)
-        quantity: { type: Number, required: true }, // Quantity of the item
-      },
-    ],
-    donationNeeds: { type: [String], default: [] },
+    donationNeeds: { type: [String], default: [] }, // Array of strings for donation needs
+    customRequest: { type: String, default: null }, // Optional custom request
     status: {
       type: String,
       enum: ["Pending", "Approved", "Completed"],
@@ -23,7 +18,7 @@ const donationRequestSchema = new mongoose.Schema(
       {
         donorId: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "User", // Reference to the donor
+          ref: "User", // Reference to the donor (role: "donor")
         },
         status: {
           type: String,

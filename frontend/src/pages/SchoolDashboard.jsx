@@ -36,9 +36,12 @@ const SchoolDashboard = () => {
         const parsedUser = JSON.parse(storedUser);
         parsedUser.isProfileComplete = Boolean(parsedUser.isProfileComplete);
         setUser(parsedUser);
+        console.log("User object refreshed:", parsedUser); // Debugging log
       } catch (error) {
         console.error("Failed to parse user data from localStorage:", error);
       }
+    } else {
+      console.error("No user found in localStorage"); // Debugging log
     }
   };
 
@@ -56,8 +59,15 @@ const SchoolDashboard = () => {
     };
   }, []);
 
+  // Show loading state while fetching user data
   if (loading) {
     return <p>Loading...</p>;
+  }
+
+  // Redirect to login if user is not found
+  if (!user) {
+    navigate("/login"); // Redirect to the login page
+    return null; // Do not render the dashboard
   }
 
   return (
@@ -67,6 +77,7 @@ const SchoolDashboard = () => {
       <p className="text-dark">
         Manage your school profile, post donation requests, and more.
       </p>
+
       {/* Alerts & Notifications */}
       {notifications.length > 0 && (
         <Alert variant="info">
@@ -75,6 +86,7 @@ const SchoolDashboard = () => {
           ))}
         </Alert>
       )}
+
       {/* Tabs for Navigation */}
       <Tabs
         activeKey={activeTab}
@@ -82,17 +94,21 @@ const SchoolDashboard = () => {
         className="mb-4"
       >
         <Tab eventKey="donations" title="Donations">
-          <DonationRequest // Use the correct component name
-            user={user}
-            loading={loading}
-            completionPercentage={completionPercentage} // Pass completion percentage
-            setActiveTab={setActiveTab} // Pass function to switch tabs
-          />
+          {user ? (
+            <DonationRequest
+              user={user}
+              loading={loading}
+              completionPercentage={completionPercentage}
+              setActiveTab={setActiveTab}
+            />
+          ) : (
+            <p>Loading user data...</p>
+          )}
         </Tab>
         <Tab eventKey="profile" title="Manage Profile">
           <ProfileCompletionProgress
             user={user}
-            setCompletionPercentage={setCompletionPercentage} // Pass setter function
+            setCompletionPercentage={setCompletionPercentage}
           />
           <Button
             variant="primary"
