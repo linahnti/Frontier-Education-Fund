@@ -33,8 +33,12 @@ const updateDonationNeeds = async (req, res) => {
 
   try {
     // Check if the school exists
-    const school = await User.findById(schoolId);
-    if (!school) {
+    const school = await User.findById(schoolId); // Use _id directly
+    console.log("Received School ID:", schoolId);
+    console.log("Found School:", school);
+
+    if (!school || school.role !== "School") {
+      // Ensure role is "School"
       return res.status(404).json({ message: "School not found" });
     }
 
@@ -56,12 +60,10 @@ const updateDonationNeeds = async (req, res) => {
     // Send notifications to donors
     await sendNotificationToDonors(schoolId, donationNeeds);
 
-    res
-      .status(200)
-      .json({
-        message: "Donation needs updated successfully",
-        donationRequest,
-      });
+    res.status(200).json({
+      message: "Donation needs updated successfully",
+      donationRequest,
+    });
   } catch (error) {
     console.error("Error updating donation needs:", error);
     res

@@ -8,8 +8,8 @@ const updateDonationNeeds = async (req, res) => {
   try {
     // Update the school's donationNeeds field
     const school = await User.findByIdAndUpdate(
-      schoolId,
-      { $addToSet: { donationNeeds: { $each: donationNeeds } } }, // Update the donationNeeds field
+      schoolId, // Use _id directly
+      { $addToSet: { donationNeeds: { $each: donationNeeds } } },
       { new: true }
     );
 
@@ -21,13 +21,10 @@ const updateDonationNeeds = async (req, res) => {
     const donationRequest = new DonationRequest({
       schoolId,
       items: donationNeeds,
-      customRequest,
+      customRequest: customRequest || null,
       status: "Pending",
     });
     await donationRequest.save();
-
-    // Send notifications to donors (optional)
-    // You can implement this logic based on your notification system
 
     res
       .status(200)

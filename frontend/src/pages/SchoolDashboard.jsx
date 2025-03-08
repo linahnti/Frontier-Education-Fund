@@ -29,16 +29,40 @@ const SchoolDashboard = () => {
   const [completionPercentage, setCompletionPercentage] = useState(0);
 
   // Function to refresh the user object from localStorage
-  const refreshUser = () => {
+  const refreshUser = async () => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
+        parsedUser.role =
+          parsedUser.role.charAt(0).toUpperCase() + parsedUser.role.slice(1); // Capitalize the role
         parsedUser.isProfileComplete = Boolean(parsedUser.isProfileComplete);
-        setUser(parsedUser);
-        console.log("User object refreshed:", parsedUser); // Debugging log
+
+        // Fetch the complete user object from the backend using getUserProfile
+        const token = localStorage.getItem("token"); // Ensure the token is stored during login
+        const response = await fetch(
+          `http://localhost:5000/api/users/profile`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`, // Pass the token for authentication
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+
+        const completeUser = await response.json();
+
+        // Merge the stored user with the complete user object
+        const updatedUser = { ...parsedUser, ...completeUser };
+        setUser(updatedUser);
+        console.log("User object refreshed:", updatedUser); // Debugging log
       } catch (error) {
-        console.error("Failed to parse user data from localStorage:", error);
+        console.error("Failed to fetch user data:", error);
       }
     } else {
       console.error("No user found in localStorage"); // Debugging log
@@ -59,15 +83,21 @@ const SchoolDashboard = () => {
     };
   }, []);
 
+  // Redirect to login if user is not found
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/login"); // Redirect to the login page
+    }
+  }, [loading, user, navigate]);
+
   // Show loading state while fetching user data
   if (loading) {
     return <p>Loading...</p>;
   }
 
-  // Redirect to login if user is not found
+  // Do not render the dashboard if the user is not found
   if (!user) {
-    navigate("/login"); // Redirect to the login page
-    return null; // Do not render the dashboard
+    return null; // Return null to avoid rendering the dashboard
   }
 
   return (

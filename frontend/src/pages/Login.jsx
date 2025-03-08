@@ -30,6 +30,25 @@ const Login = () => {
       console.log("API Response:", response.data); // Debugging
       console.log("User Role:", user.role); // Debugging
 
+      const profileResponse = await axios.get(
+        "http://localhost:5000/api/users/profile",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const completeUser = profileResponse.data;
+      console.log("Complete User:", completeUser);
+
+      // Capitalize the role before saving to localStorage
+      const updatedUser = {
+        ...user,
+        _id: user._id, // Use _id instead of id
+        role: user.role.charAt(0).toUpperCase() + user.role.slice(1), // Capitalize the role
+      };
+
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 

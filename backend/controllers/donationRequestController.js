@@ -3,33 +3,37 @@ const User = require("../models/user");
 
 // Create a donation request
 const createDonationRequest = async (req, res) => {
-  const { schoolId, donationNeeds, customRequest } = req.body; // Accepting both fields
+  const { schoolId, donationNeeds, customRequest } = req.body;
 
   try {
-    // Check if the school exists
-    const school = await User.findById(schoolId);
-    if (!school || school.role !== "school") {
-      return res.status(404).json({ message: "School not found" });
-    }
+      // Check if the school exists
+      const school = await User.findById(schoolId); // Use _id directly
+      console.log("Received School ID:", schoolId);
+      console.log("Found School:", school);
 
-    // Create a new donation request
-    const donationRequest = new DonationRequest({
-      schoolId,
-      donationNeeds, // Use donationNeeds instead of items
-      customRequest: customRequest || null, // Store the custom request if provided
-      status: "Pending",
-    });
+      if (!school || school.role !== "School") { // Ensure role is "School"
+          return res.status(404).json({ message: "School not found" });
+      }
 
-    await donationRequest.save();
+      // Create a new donation request
+      const donationRequest = new DonationRequest({
+          schoolId,
+          donationNeeds,
+          customRequest: customRequest || null,
+          status: "Pending",
+      });
 
-    // Add the donation request to the school's donationRequests array
-    await User.findByIdAndUpdate(schoolId, {
-      $push: { donationRequests: donationRequest._id },
-    });
+      await donationRequest.save();
 
-    res.status(201).json({ message: "Donation request created successfully" });
+      // Add the donation request to the school's donationRequests array
+      await User.findByIdAndUpdate(schoolId, {
+          $push: { donationRequests: donationRequest._id },
+      });
+
+      res.status(201).json({ message: "Donation request created successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Error creating donation request", error });
+      console.error("Error creating donation request:", error);
+      res.status(500).json({ message: "Error creating donation request", error });
   }
 };
 
@@ -41,7 +45,8 @@ const approveDonationRequest = async (req, res) => {
   try {
     // Check if the donor exists
     const donor = await User.findById(donorId);
-    if (!donor || donor.role !== "donor") {
+    if (!donor || donor.role !== "Donor") {
+      // Use capitalized role
       return res.status(404).json({ message: "Donor not found" });
     }
 
@@ -79,7 +84,8 @@ const completeDonation = async (req, res) => {
   try {
     // Check if the donor exists
     const donor = await User.findById(donorId);
-    if (!donor || donor.role !== "donor") {
+    if (!donor || donor.role !== "Donor") {
+      // Use capitalized role
       return res.status(404).json({ message: "Donor not found" });
     }
 
@@ -121,7 +127,8 @@ const getDonationRequestsForSchool = async (req, res) => {
   try {
     // Check if the school exists
     const school = await User.findById(schoolId);
-    if (!school || school.role !== "school") {
+    if (!school || school.role !== "School") {
+      // Use capitalized role
       return res.status(404).json({ message: "School not found" });
     }
 
@@ -142,7 +149,8 @@ const getDonationRequestsForDonor = async (req, res) => {
   try {
     // Check if the donor exists
     const donor = await User.findById(donorId);
-    if (!donor || donor.role !== "donor") {
+    if (!donor || donor.role !== "Donor") {
+      // Use capitalized role
       return res.status(404).json({ message: "Donor not found" });
     }
 

@@ -53,7 +53,7 @@ const DonationRequest = ({
     }
 
     // Use schoolId (which is user._id)
-    const schoolId = typeof user._id === "object" ? user._id.$oid : user._id;
+    const schoolId = user._id;
     console.log("School ID:", schoolId);
 
     if (selectedNeeds.length === 0) {
@@ -70,7 +70,10 @@ const DonationRequest = ({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ donationNeeds: selectedNeeds }),
+          body: JSON.stringify({
+            donationNeeds: selectedNeeds,
+            role: "School", // Ensure the role is capitalized
+          }),
         }
       );
 
@@ -94,13 +97,13 @@ const DonationRequest = ({
       setShowMessageModal(true);
     }
   };
-  
+
   // Handle selection of needs
   const handleNeedSelection = (need) => {
     setSelectedNeeds((prev) => {
       const updatedNeeds = prev.includes(need)
-        ? prev.filter((n) => n !== need)
-        : [...prev, need];
+        ? prev.filter((n) => n !== need) // Remove the need if it's already selected
+        : [...prev, need]; // Add the need if it's not selected
 
       console.log("Updated selectedNeeds:", updatedNeeds); // Debugging log
       return updatedNeeds;
