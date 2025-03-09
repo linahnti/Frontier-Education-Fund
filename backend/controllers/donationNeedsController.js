@@ -26,6 +26,9 @@ const updateDonationNeeds = async (req, res) => {
     });
     await donationRequest.save();
 
+    // Send notifications to donors
+    await sendNotificationToDonors(schoolId, donationNeeds, customRequest);
+
     res
       .status(200)
       .json({ message: "Donation needs updated successfully", school });

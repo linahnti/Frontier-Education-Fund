@@ -113,17 +113,6 @@ const SchoolDashboard = () => {
         Manage your school profile, post donation requests, and more.
       </p>
 
-      {/* Alerts & Notifications */}
-      {notifications.length > 0 && (
-        <Alert variant="info">
-          {notifications.map((note, index) => (
-            <p key={index} className="mb-1">
-              {note}
-            </p>
-          ))}
-        </Alert>
-      )}
-
       {/* Tabs for Navigation */}
       <Tabs
         activeKey={activeTab}
@@ -168,19 +157,21 @@ const SchoolDashboard = () => {
             <p>Communicate with donors (to be implemented).</p>
           </div>
         </Tab>
-        <Tab eventKey="announcements" title="Announcements">
+        {/* Notifications Tab */}
+        <Tab eventKey="notifications" title="Notifications">
           <div className="mt-4">
-            <h4>Post Updates</h4>
-            <Form>
-              <Form.Group className="mb-3">
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  placeholder="Share updates or success stories"
-                />
-              </Form.Group>
-              <Button variant="primary">Post Announcement</Button>
-            </Form>
+            <h4>Notifications</h4>
+            {notifications.length > 0 ? (
+              <ul className="list-group">
+                {notifications.map((note, index) => (
+                  <li key={index} className="list-group-item">
+                    {note}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No notifications to display.</p>
+            )}
           </div>
         </Tab>
         <Tab eventKey="support" title="Support">

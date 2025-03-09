@@ -58,7 +58,14 @@ const updateDonationNeeds = async (req, res) => {
     await donationRequest.save();
 
     // Send notifications to donors
-    await sendNotificationToDonors(schoolId, donationNeeds, customRequest);
+    //await sendNotificationToDonors(schoolId, donationNeeds, customRequest);
+
+    try {
+      await sendNotificationToDonors(schoolId, donationNeeds, customRequest);
+    } catch (notificationError) {
+      console.error("Failed to send notifications:", notificationError);
+      // We'll continue with success response since the donation request was created
+    }
 
     res.status(200).json({
       message: "Donation needs updated successfully",
@@ -73,7 +80,11 @@ const updateDonationNeeds = async (req, res) => {
 };
 
 // Helper function to send notifications to donors
-const sendNotificationToDonors = async (schoolId, donationNeeds) => {
+const sendNotificationToDonors = async (
+  schoolId,
+  donationNeeds,
+  customRequest
+) => {
   try {
     // Fetch the school details
     const school = await User.findById(schoolId);
@@ -82,16 +93,21 @@ const sendNotificationToDonors = async (schoolId, donationNeeds) => {
     }
 
     // Prepare the notification message with school name and location
-    const notificationMessage = `New donation request from ${
-      school.schoolName
-    } (${school.location}): ${donationNeeds.join(", ")}`;
+    const notificationMessage =
+      `New donation request from ${school.schoolName} (${
+        school.location
+      }): ${donationNeeds.join(", ")}` +
+      (customRequest ? `\nCustom Request: ${customRequest}` : "");
 
     // Fetch all donors from the database
-    const donors = await User.find({ role: "donor" });
+    const donors = await User.find({ role: "Donor" });
+    console.log(`Found ${donors.length} donors to notify`);
 
-    // Send notifications to each donor
-    donors.forEach(async (donor) => {
-      await User.findByIdAndUpdate(
+    const updatePromises = donors.map((donor) => {
+      console.log(
+        `Sending notification to donor: ${donor._id}, role: ${donor.role}`
+      );
+      return User.findByIdAndUpdate(
         donor._id,
         {
           $push: {
@@ -99,17 +115,24 @@ const sendNotificationToDonors = async (schoolId, donationNeeds) => {
               schoolId,
               message: notificationMessage,
               date: new Date(),
-              read: false, // Mark the notification as unread
+              read: false,
             },
           },
         },
-        { new: true } // Return the updated document
+        { new: true }
+      );
+      console.log(
+        `Updated donor ${donor._id} with notifications:`,
+        updatedDonor.notifications
       );
     });
+
+    await Promise.all(updatePromises);
 
     console.log("Notifications sent to all donors.");
   } catch (error) {
     console.error("Error sending notifications:", error);
+    throw error;
   }
 };
 

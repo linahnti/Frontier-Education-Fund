@@ -65,7 +65,7 @@ const donorSchema = new mongoose.Schema({
   notifications: [
     {
       schoolId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Reference to the school
-      message: { type: String, requires: true },
+      message: { type: String, required: true },
       date: { type: Date, default: Date.now }, // Date of the notification
       read: { type: Boolean, default: false }, // Whether the notification has been read
     },
