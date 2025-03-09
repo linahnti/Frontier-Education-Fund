@@ -29,7 +29,7 @@ const updateSchoolNeeds = async (req, res) => {
 // Update donation needs (for donation request component)
 const updateDonationNeeds = async (req, res) => {
   const { schoolId } = req.params;
-  const { donationNeeds } = req.body;
+  const { donationNeeds, customRequest } = req.body;
 
   try {
     // Check if the school exists
@@ -38,7 +38,6 @@ const updateDonationNeeds = async (req, res) => {
     console.log("Found School:", school);
 
     if (!school || school.role !== "School") {
-      // Ensure role is "School"
       return res.status(404).json({ message: "School not found" });
     }
 
@@ -53,12 +52,13 @@ const updateDonationNeeds = async (req, res) => {
     const donationRequest = new DonationRequest({
       schoolId,
       donationNeeds,
+      customRequest: customRequest || null,
       status: "Pending",
     });
     await donationRequest.save();
 
     // Send notifications to donors
-    await sendNotificationToDonors(schoolId, donationNeeds);
+    await sendNotificationToDonors(schoolId, donationNeeds, customRequest);
 
     res.status(200).json({
       message: "Donation needs updated successfully",
@@ -75,22 +75,39 @@ const updateDonationNeeds = async (req, res) => {
 // Helper function to send notifications to donors
 const sendNotificationToDonors = async (schoolId, donationNeeds) => {
   try {
-    // Fetch all donors
+    // Fetch the school details
+    const school = await User.findById(schoolId);
+    if (!school) {
+      throw new Error("School not found");
+    }
+
+    // Prepare the notification message with school name and location
+    const notificationMessage = `New donation request from ${
+      school.schoolName
+    } (${school.location}): ${donationNeeds.join(", ")}`;
+
+    // Fetch all donors from the database
     const donors = await User.find({ role: "donor" });
 
     // Send notifications to each donor
     donors.forEach(async (donor) => {
-      await User.findByIdAndUpdate(donor._id, {
-        $push: {
-          notifications: {
-            schoolId,
-            message: `New donation request: ${donationNeeds.join(", ")}`,
-            date: new Date(),
-            read: false,
+      await User.findByIdAndUpdate(
+        donor._id,
+        {
+          $push: {
+            notifications: {
+              schoolId,
+              message: notificationMessage,
+              date: new Date(),
+              read: false, // Mark the notification as unread
+            },
           },
         },
-      });
+        { new: true } // Return the updated document
+      );
     });
+
+    console.log("Notifications sent to all donors.");
   } catch (error) {
     console.error("Error sending notifications:", error);
   }

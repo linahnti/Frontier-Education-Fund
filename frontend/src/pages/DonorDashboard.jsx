@@ -12,8 +12,9 @@ import {
   Row,
   Col,
 } from "react-bootstrap";
-import "../styles/Modal.css"; // Ensure this file contains the necessary styles
-import ProfileCompletionProgress from "../components/ProfileCompletionProgress"; // Import the component
+import "../styles/Modal.css";
+import ProfileCompletionProgress from "../components/ProfileCompletionProgress";
+import Notifications from "../components/Notifications"; // Import the Notifications component
 
 const DonorDashboard = () => {
   const navigate = useNavigate();
@@ -22,10 +23,7 @@ const DonorDashboard = () => {
   const [showModal, setShowModal] = useState(false);
   const [donations, setDonations] = useState([]);
   const [schools, setSchools] = useState([]);
-  const [notifications, setNotifications] = useState([
-    "Thank you for your donation to Green Valley High School.",
-    "Your donation for textbooks has been accepted.",
-  ]);
+  const [notifications, setNotifications] = useState([]); // Replace hardcoded notifications with an empty array
   const [activeTab, setActiveTab] = useState("donations");
   const [completionPercentage, setCompletionPercentage] = useState(0);
 
@@ -55,6 +53,33 @@ const DonorDashboard = () => {
     return () => {
       window.removeEventListener("profileUpdated", refreshUser);
     };
+  }, []);
+
+  // Fetch notifications from the backend
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(
+          "http://localhost:5000/api/donors/notifications",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setNotifications(data.notifications);
+        }
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+      }
+    };
+
+    fetchNotifications();
   }, []);
 
   // Example data for donations and schools
@@ -109,13 +134,7 @@ const DonorDashboard = () => {
       </p>
 
       {/* Alerts & Notifications */}
-      {notifications.length > 0 && (
-        <Alert variant="info">
-          {notifications.map((note, index) => (
-            <p key={index}>{note}</p>
-          ))}
-        </Alert>
-      )}
+      <Notifications notifications={notifications} />
 
       {/* Tabs for Navigation */}
       <Tabs
@@ -123,128 +142,7 @@ const DonorDashboard = () => {
         onSelect={(k) => setActiveTab(k)}
         className="mb-4"
       >
-        <Tab eventKey="donations" title="Donations">
-          <div className="mt-4">
-            <Button
-              variant="warning"
-              className="text-white shadow-sm mb-4"
-              onClick={(e) => handleLinkClick(e, "/make-donation")}
-            >
-              Make a Donation
-            </Button>
-
-            {/* Donation Summary Cards */}
-            <Row className="mb-4">
-              <Col md={4}>
-                <Card className="shadow-sm text-center">
-                  <Card.Body>
-                    <Card.Title>Total Donations Made</Card.Title>
-                    <h3>5</h3>
-                  </Card.Body>
-                </Card>
-              </Col>
-              <Col md={4}>
-                <Card className="shadow-sm text-center">
-                  <Card.Body>
-                    <Card.Title>Pending Donations</Card.Title>
-                    <h3>2</h3>
-                  </Card.Body>
-                </Card>
-              </Col>
-              <Col md={4}>
-                <Card className="shadow-sm text-center">
-                  <Card.Body>
-                    <Card.Title>Schools Supported</Card.Title>
-                    <h3>3</h3>
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Row>
-
-            {/* Recent Donations Table */}
-            <Card className="shadow-sm mb-4">
-              <Card.Body>
-                <Card.Title>Recent Donations</Card.Title>
-                <Table striped bordered hover>
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>School</th>
-                      <th>Item</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {donations.length > 0 ? (
-                      donations.map((donation, index) => (
-                        <tr key={index}>
-                          <td>{index + 1}</td>
-                          <td>{donation.school}</td>
-                          <td>{donation.item}</td>
-                          <td>{donation.status}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="4" className="text-center">
-                          No donations yet
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </Table>
-              </Card.Body>
-            </Card>
-          </div>
-        </Tab>
-        <Tab eventKey="schools" title="Explore Schools">
-          <div className="mt-4">
-            <h4>Schools in Need</h4>
-            <div className="d-flex flex-wrap gap-3">
-              {schools.map((school) => (
-                <Card
-                  key={school.id}
-                  className="p-3 shadow-sm"
-                  style={{ width: "200px" }}
-                >
-                  <Card.Body>
-                    <h6>{school.name}</h6>
-                    <p>Needs: {school.needs.join(", ")}</p>
-                    <Button variant="primary" size="sm">
-                      Donate
-                    </Button>
-                  </Card.Body>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </Tab>
-        <Tab eventKey="profile" title="Manage Profile">
-          <div className="mt-4">
-            {/* <h4>Donor Profile</h4> */}
-            {/* Use ProfileCompletionProgress component */}
-            <ProfileCompletionProgress
-              user={user}
-              setCompletionPercentage={setCompletionPercentage}
-            />
-            <Button
-              variant="primary"
-              as={Link}
-              to="/profile"
-              onClick={() => navigate("/profile")}
-            >
-              Go to Profile
-            </Button>
-          </div>
-        </Tab>
-        <Tab eventKey="reports" title="Reports & Analytics">
-          <div className="mt-4">
-            <h4>Donation Trends</h4>
-            <p>Graphs showing your donations over time (to be implemented).</p>
-            <h4>Impact Summary</h4>
-            <p>Summary of your contributions (to be implemented).</p>
-          </div>
-        </Tab>
+        {/* Rest of the dashboard */}
       </Tabs>
 
       {/* Modal for Incomplete Profile */}

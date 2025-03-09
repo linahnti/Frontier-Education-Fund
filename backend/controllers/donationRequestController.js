@@ -6,34 +6,46 @@ const createDonationRequest = async (req, res) => {
   const { schoolId, donationNeeds, customRequest } = req.body;
 
   try {
-      // Check if the school exists
-      const school = await User.findById(schoolId); // Use _id directly
-      console.log("Received School ID:", schoolId);
-      console.log("Found School:", school);
+    // Check if the school exists
+    const school = await User.findById(schoolId); // Use _id directly
+    console.log("Received School ID:", schoolId);
+    console.log("Found School:", school);
 
-      if (!school || school.role !== "School") { // Ensure role is "School"
-          return res.status(404).json({ message: "School not found" });
-      }
+    console.log("Received donationNeeds:", donationNeeds);
+    console.log("Received cutomRequest:", customRequest);
 
-      // Create a new donation request
-      const donationRequest = new DonationRequest({
-          schoolId,
-          donationNeeds,
-          customRequest: customRequest || null,
-          status: "Pending",
-      });
+    if (!school || school.role !== "School") {
+      return res.status(404).json({ message: "School not found" });
+    }
 
-      await donationRequest.save();
+    // Create a new donation request
+    const donationRequest = new DonationRequest({
+      schoolId,
+      donationNeeds,
+      customRequest: customRequest || null,
+      status: "Pending",
+    });
 
-      // Add the donation request to the school's donationRequests array
-      await User.findByIdAndUpdate(schoolId, {
-          $push: { donationRequests: donationRequest._id },
-      });
+    console.log("Creating donation request with:", {
+      schoolId,
+      donationNeeds,
+      customRequest: donationRequest.customRequest,
+    });
 
-      res.status(201).json({ message: "Donation request created successfully" });
+    await donationRequest.save();
+
+    // Add the donation request to the school's donationRequests array
+    await User.findByIdAndUpdate(schoolId, {
+      $push: { donationRequests: donationRequest._id },
+    });
+
+    // Send notifications to all donors
+    await sendNotificationToDonors(schoolId, donationNeeds, customRequest);
+
+    res.status(201).json({ message: "Donation request created successfully" });
   } catch (error) {
-      console.error("Error creating donation request:", error);
-      res.status(500).json({ message: "Error creating donation request", error });
+    console.error("Error creating donation request:", error);
+    res.status(500).json({ message: "Error creating donation request", error });
   }
 };
 

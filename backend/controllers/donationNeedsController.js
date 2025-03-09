@@ -3,7 +3,7 @@ const DonationRequest = require("../models/donationRequest");
 
 const updateDonationNeeds = async (req, res) => {
   const { schoolId } = req.params;
-  const { donationNeeds } = req.body;
+  const { donationNeeds, customRequest } = req.body;
 
   try {
     // Update the school's donationNeeds field

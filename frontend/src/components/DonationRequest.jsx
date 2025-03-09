@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Card, Table, Row, Col, Modal, Form } from "react-bootstrap";
 import { calculateProfileCompletion } from "./ProfileUtils";
@@ -15,6 +15,8 @@ const DonationRequest = ({
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [message, setMessage] = useState("");
   const [selectedNeeds, setSelectedNeeds] = useState([]);
+  const [customRequest, setCustomRequest] = useState(""); // New state for custom request
+  const [localUser, setLocalUser] = useState(null);
 
   // Initialize requests state
   const [requests, setRequests] = useState([
@@ -38,26 +40,54 @@ const DonationRequest = ({
     },
   ]);
 
+  // Load user data from props or localStorage if not available
+  useEffect(() => {
+    if (user) {
+      setLocalUser(user);
+    } else {
+      // Fallback to localStorage if user prop is not available
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          console.log("Loaded user from localStorage:", parsedUser);
+          setLocalUser(parsedUser);
+        } catch (error) {
+          console.error("Failed to parse user from localStorage:", error);
+        }
+      }
+    }
+  }, [user]);
+
   // Use the shared function to check profile completeness
-  const { isProfileComplete } = calculateProfileCompletion(user, profileData);
+  const isProfileComplete = localUser
+    ? profileData
+      ? calculateProfileCompletion(localUser, profileData).isProfileComplete
+      : false
+    : false;
 
   // Handle donation request submission
   const handleDonationRequest = async () => {
-    console.log("User object before API call:", user); // Debugging log
-    console.log("Selected needs before sending request:", selectedNeeds);
+    const token = localStorage.getItem("token");
+    const currentUser = localUser || user;
 
-    if (!user || !user._id) {
+    console.log("User object before API call:", currentUser);
+    console.log("Selected needs before sending request:", selectedNeeds);
+    console.log("Custom request before sending:", customRequest);
+
+    const userId = currentUser.id || currentUser._id;
+
+    if (!currentUser || !userId) {
       setMessage("User not found. Please log in again.");
       setShowMessageModal(true);
-      return; // Do not redirect to login
+      return;
     }
 
     // Use schoolId (which is user._id)
-    const schoolId = user._id;
-    console.log("School ID:", schoolId);
+    const schoolId = userId;
 
-    if (selectedNeeds.length === 0) {
-      setMessage("Please select at least one need.");
+    if (selectedNeeds.length === 0 && !customRequest) {
+      setMessage("Please select at least one need or add a custom request.");
       setShowMessageModal(true);
       return;
     }
@@ -69,10 +99,12 @@ const DonationRequest = ({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
+            schoolId: schoolId,
             donationNeeds: selectedNeeds,
-            role: "School", // Ensure the role is capitalized
+            customRequest: customRequest, // Include custom request
           }),
         }
       );
@@ -86,11 +118,13 @@ const DonationRequest = ({
       const data = await response.json();
       console.log("Donation needs updated:", data);
 
-      setMessage("Donation needs updated successfully!");
+      setMessage("Your donation needs have been updated successfully!");
       setShowMessageModal(true);
 
+      // Reset form fields
       setShowDonationModal(false);
       setSelectedNeeds([]);
+      setCustomRequest(""); // Reset custom request
     } catch (error) {
       console.error("Error updating donation needs:", error);
       setMessage(error.message);
@@ -118,6 +152,11 @@ const DonationRequest = ({
     }
     setShowDonationModal(true); // Show donation request modal
   };
+
+  // If still loading, show a loading indicator
+  if (loading) {
+    return <p>Loading donation request data...</p>;
+  }
 
   return (
     <div className="mt-4">
@@ -252,6 +291,8 @@ const DonationRequest = ({
                 as="textarea"
                 rows={2}
                 placeholder="Add other needs"
+                value={customRequest}
+                onChange={(e) => setCustomRequest(e.target.value)}
               />
             </Form.Group>
           </Form>

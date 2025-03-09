@@ -15,12 +15,13 @@ import {
 } from "react-bootstrap";
 import "../styles/Modal.css";
 import ProfileCompletionProgress from "../components/ProfileCompletionProgress";
-import DonationRequest from "../components/DonationRequest"; // Correct import
+import DonationRequest from "../components/DonationRequest";
 
 const SchoolDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [profileData, setProfileData] = useState(null);
   const [notifications, setNotifications] = useState([
     "New donation received from John Doe.",
     "Your request for textbooks has been approved.",
@@ -28,76 +29,80 @@ const SchoolDashboard = () => {
   const [activeTab, setActiveTab] = useState("donations");
   const [completionPercentage, setCompletionPercentage] = useState(0);
 
-  // Function to refresh the user object from localStorage
-  const refreshUser = async () => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
+  // Fetch user data from localStorage and API on component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
       try {
+        const storedUser = localStorage.getItem("user");
+        const token = localStorage.getItem("token");
+
+        if (!storedUser || !token) {
+          throw new Error("No user found in localStorage");
+        }
+
         const parsedUser = JSON.parse(storedUser);
+
+        // Capitalize the role for consistency
         parsedUser.role =
-          parsedUser.role.charAt(0).toUpperCase() + parsedUser.role.slice(1); // Capitalize the role
+          parsedUser.role.charAt(0).toUpperCase() + parsedUser.role.slice(1);
         parsedUser.isProfileComplete = Boolean(parsedUser.isProfileComplete);
 
-        // Fetch the complete user object from the backend using getUserProfile
-        const token = localStorage.getItem("token"); // Ensure the token is stored during login
-        const response = await fetch(
+        // Fetch the complete user profile from the backend
+        const profileResponse = await fetch(
           `http://localhost:5000/api/users/profile`,
           {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`, // Pass the token for authentication
+              Authorization: `Bearer ${token}`,
             },
           }
         );
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch user data");
+        if (!profileResponse.ok) {
+          throw new Error("Failed to fetch user profile");
         }
 
-        const completeUser = await response.json();
+        const profileData = await profileResponse.json();
+        setProfileData(profileData);
+        console.log("Fetched profile data:", profileData);
 
-        // Merge the stored user with the complete user object
-        const updatedUser = { ...parsedUser, ...completeUser };
+        // Merge the stored user with the profile data
+        const updatedUser = { ...parsedUser, ...profileData };
         setUser(updatedUser);
-        console.log("User object refreshed:", updatedUser); // Debugging log
+        console.log("User data successfully loaded:", updatedUser);
       } catch (error) {
-        console.error("Failed to fetch user data:", error);
+        console.error("Error fetching user data:", error);
+      } finally {
+        setLoading(false);
       }
-    } else {
-      console.error("No user found in localStorage"); // Debugging log
-    }
-  };
-
-  // Fetch user data from localStorage on component mount
-  useEffect(() => {
-    refreshUser(); // Fetch user data on mount
-    setLoading(false);
-
-    // Listen for the profileUpdated event
-    window.addEventListener("profileUpdated", refreshUser);
-
-    // Clean up the event listener
-    return () => {
-      window.removeEventListener("profileUpdated", refreshUser);
     };
+
+    fetchUserData();
   }, []);
 
-  // Redirect to login if user is not found
+  // Redirect to login if no user is found after loading completes
   useEffect(() => {
     if (!loading && !user) {
-      navigate("/login"); // Redirect to the login page
+      navigate("/login");
     }
   }, [loading, user, navigate]);
 
   // Show loading state while fetching user data
   if (loading) {
-    return <p>Loading...</p>;
+    return (
+      <div className="container mt-5 text-center">
+        <h3>Loading your dashboard...</h3>
+        <div className="spinner-border text-warning" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
   }
 
   // Do not render the dashboard if the user is not found
   if (!user) {
-    return null; // Return null to avoid rendering the dashboard
+    return null;
   }
 
   return (
@@ -112,7 +117,9 @@ const SchoolDashboard = () => {
       {notifications.length > 0 && (
         <Alert variant="info">
           {notifications.map((note, index) => (
-            <p key={index}>{note}</p>
+            <p key={index} className="mb-1">
+              {note}
+            </p>
           ))}
         </Alert>
       )}
@@ -124,31 +131,24 @@ const SchoolDashboard = () => {
         className="mb-4"
       >
         <Tab eventKey="donations" title="Donations">
-          {user ? (
-            <DonationRequest
-              user={user}
-              loading={loading}
-              completionPercentage={completionPercentage}
-              setActiveTab={setActiveTab}
-            />
-          ) : (
-            <p>Loading user data...</p>
-          )}
+          <DonationRequest
+            user={user}
+            loading={loading}
+            completionPercentage={completionPercentage}
+            profileData={profileData}
+          />
         </Tab>
         <Tab eventKey="profile" title="Manage Profile">
-          <ProfileCompletionProgress
-            user={user}
-            setCompletionPercentage={setCompletionPercentage}
-          />
-          <Button
-            variant="primary"
-            as={Link}
-            to="/profile"
-            onClick={() => navigate("/profile")}
-            className="mt-3"
-          >
-            Go to Profile
-          </Button>
+          <div className="mt-4">
+            <ProfileCompletionProgress
+              user={user}
+              profileData={profileData}
+              setCompletionPercentage={setCompletionPercentage}
+            />
+            <Button variant="primary" as={Link} to="/profile" className="mt-3">
+              Go to Profile
+            </Button>
+          </div>
         </Tab>
         <Tab eventKey="reports" title="Reports & Analytics">
           <div className="mt-4">

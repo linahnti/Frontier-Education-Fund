@@ -3,7 +3,6 @@ const User = require("./user"); // Import the base User model
 
 // Donor schema
 const donorSchema = new mongoose.Schema({
-
   donorType: {
     type: String,
     enum: ["NGO", "Government", "Individual", "Corporate"],
@@ -66,7 +65,7 @@ const donorSchema = new mongoose.Schema({
   notifications: [
     {
       schoolId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Reference to the school
-      item: { type: String }, // Item requested (e.g., books, desks)
+      message: { type: String, requires: true },
       date: { type: Date, default: Date.now }, // Date of the notification
       read: { type: Boolean, default: false }, // Whether the notification has been read
     },

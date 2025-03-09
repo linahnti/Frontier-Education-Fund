@@ -48,7 +48,7 @@ const ProfileCompletionProgress = ({ user, setCompletionPercentage }) => {
     <div>
       <h4>{user.role === "school" ? "School Profile" : "Donor Profile"}</h4>
       <ProgressBar
-        now={completionPercentage} // Use local state
+        now={completionPercentage}
         label={`${completionPercentage}%`}
         className="mb-3"
       />
