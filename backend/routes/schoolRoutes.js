@@ -1,15 +1,21 @@
 const express = require("express");
-const schoolController = require("../controllers/schoolController");
+const {
+  updateSchoolNeeds,
+  updateDonationNeeds,
+  getSchoolDetails,
+  getAllSchools,
+} = require("../controllers/schoolController");
 
 const router = express.Router();
 
-// Update school needs (for profile page)
-router.put("/:schoolId/needs", schoolController.updateSchoolNeeds);
+router.put("/:schoolId/needs", updateSchoolNeeds);
 
-// Update donation needs (for donation request component)
-router.post("/:schoolId/donation-needs", schoolController.updateDonationNeeds);
+router.post("/:schoolId/donation-needs", updateDonationNeeds);
 
-// Get school details (including donations received)
-router.get("/:schoolId", schoolController.getSchoolDetails);
+router.get("/:schoolId", getSchoolDetails);
+
+router.get("/", getAllSchools);
+
+
 
 module.exports = router;

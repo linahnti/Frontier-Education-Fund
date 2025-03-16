@@ -1,30 +1,36 @@
 const express = require("express");
-const donationRequestController = require("../controllers/donationRequestController");
+const DonationRequest = require("../models/donationRequest");
+const {
+  createDonationRequest,
+  approveDonationRequest,
+  completeDonation,
+  getDonationRequestsForSchool,
+  getDonationRequestsForDonor,
+} = require("../controllers/donationRequestController");
 
 const router = express.Router();
 
-// Create a donation request
-router.post("/", donationRequestController.createDonationRequest);
+router.post("/requests", createDonationRequest);
 
-// Approve a donation request
-router.put(
-  "/:requestId/approve",
-  donationRequestController.approveDonationRequest
-);
+router.put("/:requestId/approve", approveDonationRequest);
 
-// Complete a donation
-router.put("/:requestId/complete", donationRequestController.completeDonation);
+router.put("/:requestId/complete", completeDonation);
 
-// Get donation requests for a school
-router.get(
-  "/schools/:schoolId",
-  donationRequestController.getDonationRequestsForSchool
-);
+router.get("/school/:schoolId", getDonationRequestsForSchool);
 
-// Get donation requests for a donor
-router.get(
-  "/donors/:donorId",
-  donationRequestController.getDonationRequestsForDonor
-);
+router.get("/donors/:donorId", getDonationRequestsForDonor);
+
+router.get("/", async (req, res) => {
+  const { schoolId } = req.query;
+
+  try {
+    const donationRequests = await DonationRequest.find({ schoolId });
+    res.status(200).json(donationRequests);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching donation requests", error });
+  }
+});
 
 module.exports = router;

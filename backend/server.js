@@ -17,16 +17,18 @@ app.use(
 app.use(express.json()); // Middleware to parse incoming JSON data
 
 // Import Routes
-const userRoutes = require("./routes/userRoutes.js"); // Existing user routes
-const donationRequestRoutes = require("./routes/donationRequestRoutes.js"); // Donation request routes
-const schoolRoutes = require("./routes/schoolRoutes.js"); // School-specific routes
-const donorRoutes = require("./routes/donorRoutes.js"); // Donor-specific routes
+const userRoutes = require("./routes/userRoutes.js");
+const donationRequestRoutes = require("./routes/donationRequestRoutes.js");
+const schoolRoutes = require("./routes/schoolRoutes.js");
+const donorRoutes = require("./routes/donorRoutes.js");
+const donationRoutes = require("./routes/donationRoutes.js");
 
-// Use Routes
-app.use("/api/users", userRoutes); // All user-related APIs will start with /api/users
-app.use("/api/donation-requests", donationRequestRoutes); // Donation request APIs
-app.use("/api/schools", schoolRoutes); // School-specific APIs
-app.use("/api/donors", donorRoutes); // Donor-specific APIs
+// User Routes
+app.use("/api/users", userRoutes);
+app.use("/api/donation-requests", donationRequestRoutes);
+app.use("/api/schools", schoolRoutes);
+app.use("/api/donors", donorRoutes);
+app.use("/api/donations", donationRoutes);
 
-const PORT = process.env.PORT || 5000; // Define the server's port
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`)); // Start the server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

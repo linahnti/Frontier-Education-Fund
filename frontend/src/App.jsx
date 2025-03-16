@@ -21,6 +21,7 @@ const About = lazy(() => import("./pages/About"));
 const Schools = lazy(() => import("./pages/Schools"));
 const Donations = lazy(() => import("./pages/Donations"));
 const Testimonials = lazy(() => import("./pages/Testimonials"));
+const Donate = lazy(() => import("./pages/DonatePage"));
 
 // Loading Component
 const Loading = () => (
@@ -100,6 +101,11 @@ const App = () => {
             {/* Authenticated Testimonials */}
             <Route element={<ProtectedRoute />}>
               <Route path="/testimonials" element={<Testimonials />} />
+            </Route>
+
+            {/* Authenticated Donate */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/donate" element={<Donate />} />
             </Route>
           </Route>
 

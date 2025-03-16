@@ -4,7 +4,7 @@ export const calculateProfileCompletion = (user, profileData) => {
     return { completionPercentage: 0, isProfileComplete: false };
 
   let requiredFields = [];
-  if (user.role === "school") {
+  if (user.role.toLowerCase() === "school") {
     requiredFields = [
       "name",
       "email",
@@ -19,7 +19,7 @@ export const calculateProfileCompletion = (user, profileData) => {
       "schoolDetails.website",
       "schoolDetails.missionStatement",
     ];
-  } else if (user.role === "donor") {
+  } else if (user.role.toLowerCase() === "donor") {
     requiredFields = [
       "name",
       "email",

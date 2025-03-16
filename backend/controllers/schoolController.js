@@ -1,4 +1,5 @@
 const User = require("../models/user");
+const Donor = require("../models/donorDiscriminator");
 const DonationRequest = require("../models/donationRequest");
 
 // Update school needs (for profile page)
@@ -103,16 +104,18 @@ const sendNotificationToDonors = async (
     const donors = await User.find({ role: "Donor" });
     console.log(`Found ${donors.length} donors to notify`);
 
-    const updatePromises = donors.map((donor) => {
+    const updatePromises = donors.map(async (donor) => {
       console.log(
         `Sending notification to donor: ${donor._id}, role: ${donor.role}`
       );
-      return User.findByIdAndUpdate(
+
+      const updatedDonor = await Donor.findByIdAndUpdate(
         donor._id,
         {
           $push: {
             notifications: {
               schoolId,
+              schoolName: school.schoolName,
               message: notificationMessage,
               date: new Date(),
               read: false,
@@ -121,6 +124,7 @@ const sendNotificationToDonors = async (
         },
         { new: true }
       );
+
       console.log(
         `Updated donor ${donor._id} with notifications:`,
         updatedDonor.notifications
@@ -148,8 +152,21 @@ const getSchoolDetails = async (req, res) => {
   }
 };
 
+const getAllSchools = async (req, res) => {
+  try {
+    const schools = await User.find({ role: "School" }).select(
+      "schoolName contactNumber principalName location"
+    );
+
+    res.status(200).json(schools);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching schools", error });
+  }
+};
+
 module.exports = {
   updateSchoolNeeds,
   updateDonationNeeds,
   getSchoolDetails,
+  getAllSchools,
 };

@@ -46,7 +46,11 @@ const ProfileCompletionProgress = ({ user, setCompletionPercentage }) => {
 
   return (
     <div>
-      <h4>{user.role === "school" ? "School Profile" : "Donor Profile"}</h4>
+      <h4>
+        {user.role.toLowerCase() === "school"
+          ? "School Profile"
+          : "Donor Profile"}
+      </h4>
       <ProgressBar
         now={completionPercentage}
         label={`${completionPercentage}%`}

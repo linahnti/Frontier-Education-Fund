@@ -43,16 +43,17 @@ const donorSchema = new mongoose.Schema({
   },
   organizationAffiliation: { type: String, default: "" },
 
-  // Updated fields for donations and notifications
   donationsMade: [
     {
-      schoolId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Reference to the school
-      item: { type: String }, // Item donated (e.g., books, desks)
+      schoolId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, 
+      type: { type: String, enum: ["money", "items"], required: true }, 
+      amount: { type: Number }, 
+      items: [{ type: String }], 
       status: {
         type: String,
         enum: ["Pending", "Approved", "Completed"],
         default: "Pending",
-      }, // Status of the donation
+      },
       date: { type: Date, default: Date.now }, // Date of the donation
     },
   ],
@@ -65,6 +66,7 @@ const donorSchema = new mongoose.Schema({
   notifications: [
     {
       schoolId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Reference to the school
+      schoolName: { type: String },
       message: { type: String, required: true },
       date: { type: Date, default: Date.now }, // Date of the notification
       read: { type: Boolean, default: false }, // Whether the notification has been read

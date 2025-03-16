@@ -4,6 +4,7 @@ const {
   approveDonationRequest,
   completeDonation,
   getDonorDetails,
+  getDonorDonations,
   getDonorNotifications,
   getCurrentUserNotifications,
   markNotificationsAsRead,
@@ -14,6 +15,7 @@ const { protect } = require("../middleware/authMiddleware");
 router.put("/:donorId/approve", approveDonationRequest);
 router.put("/:donorId/complete", completeDonation);
 router.get("/:donorId", getDonorDetails);
+router.get("/:donorId/donations", getDonorDonations);
 
 // notifications routes
 router.get("/:donorId/notifications", getDonorNotifications);

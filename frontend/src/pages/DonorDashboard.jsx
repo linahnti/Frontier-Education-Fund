@@ -3,32 +3,31 @@ import { useNavigate, Link } from "react-router-dom";
 import {
   Modal,
   Button,
-  Card,
   ProgressBar,
   Tab,
   Tabs,
   Alert,
-  Table,
-  Row,
-  Col,
+  Badge,
 } from "react-bootstrap";
 import "../styles/Modal.css";
 import ProfileCompletionProgress from "../components/ProfileCompletionProgress";
-import Notifications from "../components/Notifications"; // Import the Notifications component
+import Notifications from "../components/Notifications";
+import ExploreSchools from "../components/ExploreSchools";
+import DonationsTab from "../components/DonationsTab";
+import assets from "../assets/images/assets";
 
 const DonorDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [donations, setDonations] = useState([]);
-  const [schools, setSchools] = useState([]);
-  const [notifications, setNotifications] = useState([]); // Replace hardcoded notifications with an empty array
+  const [notifications, setNotifications] = useState([]);
+  const [newNotificationsCount, setNewNotificationsCount] = useState(0);
   const [activeTab, setActiveTab] = useState("donations");
   const [completionPercentage, setCompletionPercentage] = useState(0);
 
-  // Function to refresh the user object from localStorage
-  const refreshUser = () => {
+  // Fetch user data from localStorage on component mount
+  useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
@@ -39,70 +38,44 @@ const DonorDashboard = () => {
         console.error("Failed to parse user data from localStorage:", error);
       }
     }
-  };
-
-  // Fetch user data from localStorage on component mount
-  useEffect(() => {
-    refreshUser(); // Fetch user data on mount
     setLoading(false);
-
-    // Listen for the profileUpdated event
-    window.addEventListener("profileUpdated", refreshUser);
-
-    // Clean up the event listener
-    return () => {
-      window.removeEventListener("profileUpdated", refreshUser);
-    };
   }, []);
 
   // Fetch notifications from the backend
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(
-          "http://localhost:5000/api/donors/notifications",
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user"));
+      const donorId = user.id;
 
-        if (response.ok) {
-          const data = await response.json();
-          setNotifications(data.notifications);
+      const response = await fetch(
+        `http://localhost:5000/api/donors/${donorId}/notifications`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch notifications");
       }
-    };
 
-    fetchNotifications();
-  }, []);
+      const data = await response.json();
+      setNotifications(data.notifications);
 
-  // Example data for donations and schools
+      // Calculate the number of new notifications (unread)
+      const newNotifications = data.notifications.filter((note) => !note.read);
+      setNewNotificationsCount(newNotifications.length);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
+  };
+
+  // Fetch notifications on component mount
   useEffect(() => {
-    setDonations([
-      {
-        id: 1,
-        school: "Green Valley High School",
-        item: "Books",
-        status: "Completed",
-      },
-      {
-        id: 2,
-        school: "Sunrise Academy",
-        item: "Sanitary Towels",
-        status: "Pending",
-      },
-    ]);
-
-    setSchools([
-      { id: 1, name: "Green Valley High School", needs: ["Books", "Desks"] },
-      { id: 2, name: "Sunrise Academy", needs: ["Sanitary Towels", "Chairs"] },
-    ]);
+    fetchNotifications();
   }, []);
 
   // Handle navigation with profile completion check
@@ -126,179 +99,141 @@ const DonorDashboard = () => {
   }
 
   return (
-    <div className="container mt-5">
-      <h2 className="text-warning">Welcome to the Donor Dashboard</h2>
-      <h3 className="text-dark">{user?.name || "Donor"}</h3>
-      <p className="text-dark">
-        Make donations, track your contributions, and explore schools in need.
-      </p>
+    <div
+      style={{
+        position: "relative", // Ensure the overlay is positioned correctly
+        minHeight: "100vh", // Ensure the background covers the full height
+      }}
+    >
+      {/* Background Image and Overlay */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundImage: `url(${assets.mvg7})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          filter: "brightness(0.7)", // Dim the background image
+          zIndex: -1, // Ensure it stays behind the content
+        }}
+      ></div>
 
-      {/* Alerts & Notifications */}
-      {notifications.length > 0 && (
-        <Alert variant="info">
-          {notifications.map((note, index) => (
-            <p key={index}>{note.message}</p>
-          ))}
-        </Alert>
-      )}
+      {/* Semi-transparent Overlay */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.4)", // Adjust opacity for dimming
+          zIndex: -1, // Ensure it stays behind the content
+        }}
+      ></div>
 
-      {/* Tabs for Navigation */}
-      <Tabs
-        activeKey={activeTab}
-        onSelect={(k) => setActiveTab(k)}
-        className="mb-4"
+      {/* Dashboard Content */}
+      <div
+        className="container mt-5"
+        style={{
+          position: "relative", // Ensure content stays above the background and overlay
+          zIndex: 1, // Bring content to the front
+        }}
       >
-        <Tab eventKey="donations" title="Donations">
-          <div className="mt-4">
-            <Button
-              variant="warning"
-              className="text-white shadow-sm mb-4"
-              onClick={(e) => handleLinkClick(e, "/make-donation")}
-            >
-              Make a Donation
-            </Button>
+        <h2 className="text-warning">Welcome to the Donor Dashboard</h2>
+        <h3 className="text-dark">{user?.name || "Donor"}</h3>
+        <p className="text-dark">
+          Make donations, track your contributions, and explore schools in need.
+        </p>
 
-            {/* Donation Summary Cards */}
-            <Row className="mb-4">
-              <Col md={4}>
-                <Card className="shadow-sm text-center">
-                  <Card.Body>
-                    <Card.Title>Total Donations Made</Card.Title>
-                    <h3>5</h3>
-                  </Card.Body>
-                </Card>
-              </Col>
-              <Col md={4}>
-                <Card className="shadow-sm text-center">
-                  <Card.Body>
-                    <Card.Title>Pending Donations</Card.Title>
-                    <h3>2</h3>
-                  </Card.Body>
-                </Card>
-              </Col>
-              <Col md={4}>
-                <Card className="shadow-sm text-center">
-                  <Card.Body>
-                    <Card.Title>Schools Supported</Card.Title>
-                    <h3>3</h3>
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Row>
-
-            {/* Recent Donations Table */}
-            <Card className="shadow-sm mb-4">
-              <Card.Body>
-                <Card.Title>Recent Donations</Card.Title>
-                <Table striped bordered hover>
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>School</th>
-                      <th>Item</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {donations.length > 0 ? (
-                      donations.map((donation, index) => (
-                        <tr key={index}>
-                          <td>{index + 1}</td>
-                          <td>{donation.school}</td>
-                          <td>{donation.item}</td>
-                          <td>{donation.status}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="4" className="text-center">
-                          No donations yet
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </Table>
-              </Card.Body>
-            </Card>
-          </div>
-        </Tab>
-        <Tab eventKey="schools" title="Explore Schools">
-          <div className="mt-4">
-            <h4>Schools in Need</h4>
-            <div className="d-flex flex-wrap gap-3">
-              {schools.map((school) => (
-                <Card
-                  key={school.id}
-                  className="p-3 shadow-sm"
-                  style={{ width: "200px" }}
-                >
-                  <Card.Body>
-                    <h6>{school.name}</h6>
-                    <p>Needs: {school.needs.join(", ")}</p>
-                    <Button variant="primary" size="sm">
-                      Donate
-                    </Button>
-                  </Card.Body>
-                </Card>
-              ))}
+        {/* Tabs for Navigation */}
+        <Tabs
+          activeKey={activeTab}
+          onSelect={(k) => setActiveTab(k)}
+          className="mb-4"
+        >
+          <Tab eventKey="donations" title="Donations">
+            <div className="mt-4">
+              <DonationsTab donorId={user?.id} />
             </div>
-          </div>
-        </Tab>
-        <Tab eventKey="profile" title="Manage Profile">
-          <div className="mt-4">
-            <ProfileCompletionProgress
-              user={user}
-              setCompletionPercentage={setCompletionPercentage}
-            />
+          </Tab>
+          <Tab eventKey="schools" title="Explore Schools">
+            <div className="mt-4">
+              <ExploreSchools />
+            </div>
+          </Tab>
+          <Tab eventKey="profile" title="Manage Profile">
+            <div className="mt-4">
+              <ProfileCompletionProgress
+                user={user}
+                setCompletionPercentage={setCompletionPercentage}
+              />
+              <Button
+                variant="primary"
+                as={Link}
+                to="/profile"
+                onClick={() => navigate("/profile")}
+              >
+                Go to Profile
+              </Button>
+            </div>
+          </Tab>
+          <Tab eventKey="reports" title="Reports & Analytics">
+            <div className="mt-4">
+              <h4>Donation Trends</h4>
+              <p>
+                Graphs showing your donations over time (to be implemented).
+              </p>
+              <h4>Impact Summary</h4>
+              <p>Summary of your contributions (to be implemented).</p>
+            </div>
+          </Tab>
+          <Tab
+            eventKey="notifications"
+            title={
+              <>
+                Notifications{" "}
+                {newNotificationsCount > 0 && (
+                  <Badge bg="warning" text="dark">
+                    {newNotificationsCount}
+                  </Badge>
+                )}
+              </>
+            }
+          >
+            <div className="mt-4">
+              <Notifications notifications={notifications} />
+            </div>
+          </Tab>
+        </Tabs>
+
+        {/* Modal for Incomplete Profile */}
+        <Modal show={showModal} onHide={handleCloseModal} centered>
+          <Modal.Header closeButton className="bg-warning text-white">
+            <Modal.Title>Profile Incomplete</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p className="text-dark">
+              Please complete your profile to access all features.
+            </p>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleCloseModal}>
+              Close
+            </Button>
             <Button
               variant="primary"
               as={Link}
               to="/profile"
-              onClick={() => navigate("/profile")}
+              onClick={handleCloseModal}
             >
               Go to Profile
             </Button>
-          </div>
-        </Tab>
-        <Tab eventKey="reports" title="Reports & Analytics">
-          <div className="mt-4">
-            <h4>Donation Trends</h4>
-            <p>Graphs showing your donations over time (to be implemented).</p>
-            <h4>Impact Summary</h4>
-            <p>Summary of your contributions (to be implemented).</p>
-          </div>
-        </Tab>
-        <Tab eventKey="notifications" title="Notifications">
-          <div className="mt-4">
-            <Notifications notifications={notifications} />
-          </div>
-        </Tab>
-      </Tabs>
-
-      {/* Modal for Incomplete Profile */}
-      <Modal show={showModal} onHide={handleCloseModal} centered>
-        <Modal.Header closeButton className="bg-warning text-white">
-          <Modal.Title>Profile Incomplete</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p className="text-dark">
-            Please complete your profile to access all features.
-          </p>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseModal}>
-            Close
-          </Button>
-          <Button
-            variant="primary"
-            as={Link}
-            to="/profile"
-            onClick={handleCloseModal}
-          >
-            Go to Profile
-          </Button>
-        </Modal.Footer>
-      </Modal>
+          </Modal.Footer>
+        </Modal>
+      </div>
     </div>
   );
 };

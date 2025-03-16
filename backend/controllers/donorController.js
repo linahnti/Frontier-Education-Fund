@@ -61,6 +61,23 @@ const getDonorDetails = async (req, res) => {
   }
 };
 
+const getDonorDonations = async (req, res) => {
+  const { donorId } = req.params;
+
+  try {
+    const donor = await User.findById(donorId).populate(
+      "donationsMade.schoolId"
+    );
+    if (!donor || donor.role !== "Donor") {
+      return res.status(404).json({ message: "Donor not found" });
+    }
+
+    res.status(200).json(donor.donationsMade);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching donations", error });
+  }
+};
+
 const getDonorNotifications = async (req, res) => {
   const { donorId } = req.params;
 
@@ -143,8 +160,11 @@ const markNotificationsAsRead = async (req, res) => {
       );
     }
 
+    // Fetch the updated donor document to return the updated notifications
+    const updatedDonor = await User.findById(donorId);
     res.status(200).json({
       message: "Notifications marked as read",
+      notifications: updatedDonor.notifications,
       success: true,
     });
   } catch (error) {
@@ -160,6 +180,7 @@ module.exports = {
   approveDonationRequest,
   completeDonation,
   getDonorDetails,
+  getDonorDonations,
   getDonorNotifications,
   getCurrentUserNotifications,
   markNotificationsAsRead,
