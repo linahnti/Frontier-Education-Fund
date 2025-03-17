@@ -3,6 +3,7 @@ import { Container, Row, Col, Tabs, Tab } from "react-bootstrap";
 import ManageDonations from "./ManageDonations";
 import ManageSchools from "./ManageSchools";
 import ManageUsers from "./ManageUsers";
+import ManageDonationRequests from "./ManageDonationRequests"; // Import the new component
 import AdminNavbar from "../components/AdminNavbar";
 
 const AdminDashboard = () => {
@@ -29,6 +30,10 @@ const AdminDashboard = () => {
               </Tab>
               <Tab eventKey="users" title="Manage Users">
                 <ManageUsers />
+              </Tab>
+              {/* Add the new Donation Requests tab */}
+              <Tab eventKey="donation-requests" title="Donation Requests">
+                <ManageDonationRequests />
               </Tab>
             </Tabs>
           </Col>

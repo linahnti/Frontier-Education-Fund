@@ -1,31 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
-  Modal,
   Button,
   Card,
-  Form,
   ProgressBar,
   Tab,
   Tabs,
-  Alert,
   Table,
   Row,
   Col,
+  Modal,
 } from "react-bootstrap";
 import "../styles/Modal.css";
 import ProfileCompletionProgress from "../components/ProfileCompletionProgress";
-import DonationRequest from "../components/DonationRequest";
+import SchoolsDonationTab from "../components/SchoolsDonationTab"; // Import the SchoolsDonationTab
+import SchoolsNotifications from "../components/SchoolsNotifications"; // Import the SchoolsNotifications
 
 const SchoolDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState(null);
-  const [notifications, setNotifications] = useState([
-    "New donation received from John Doe.",
-    "Your request for textbooks has been approved.",
-  ]);
+  const [notifications, setNotifications] = useState([]); // Removed dummy notifications
   const [activeTab, setActiveTab] = useState("donations");
   const [completionPercentage, setCompletionPercentage] = useState(0);
 
@@ -71,6 +67,28 @@ const SchoolDashboard = () => {
         const updatedUser = { ...parsedUser, ...profileData };
         setUser(updatedUser);
         console.log("User data successfully loaded:", updatedUser);
+
+        // Fetch notifications from the backend
+        if (updatedUser._id) {
+          const notificationsResponse = await fetch(
+            `http://localhost:5000/api/schools/${updatedUser._id}/notifications`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (!notificationsResponse.ok) {
+            throw new Error("Failed to fetch notifications");
+          }
+
+          const notificationsData = await notificationsResponse.json();
+          setNotifications(notificationsData.notifications || []); // Set notifications from backend
+        } else {
+          console.error("School ID is undefined");
+        }
       } catch (error) {
         console.error("Error fetching user data:", error);
       } finally {
@@ -123,10 +141,16 @@ const SchoolDashboard = () => {
         }}
       >
         {/* Dashboard Title and User Name */}
-        <h2 className="text-warning" style={{ fontSize: "2.5rem", fontWeight: "bold" }}>
+        <h2
+          className="text-warning"
+          style={{ fontSize: "2.5rem", fontWeight: "bold" }}
+        >
           Welcome to the School Dashboard
         </h2>
-        <h3 className="text-dark" style={{ fontSize: "2rem", fontWeight: "600" }}>
+        <h3
+          className="text-dark"
+          style={{ fontSize: "2rem", fontWeight: "600" }}
+        >
           {user?.name || "School"}
         </h3>
         <p className="text-dark" style={{ fontWeight: "300", opacity: "0.8" }}>
@@ -140,11 +164,13 @@ const SchoolDashboard = () => {
           className="mb-4"
         >
           <Tab eventKey="donations" title="Donations">
-            <DonationRequest
+            {/* Pass schoolId to SchoolsDonationTab */}
+            <SchoolsDonationTab
+              schoolId={user._id} // Pass schoolId as a prop
               user={user}
+              profileData={profileData}
               loading={loading}
               completionPercentage={completionPercentage}
-              profileData={profileData}
             />
           </Tab>
           <Tab eventKey="profile" title="Manage Profile">
@@ -154,7 +180,12 @@ const SchoolDashboard = () => {
                 profileData={profileData}
                 setCompletionPercentage={setCompletionPercentage}
               />
-              <Button variant="primary" as={Link} to="/profile" className="mt-3">
+              <Button
+                variant="primary"
+                as={Link}
+                to="/profile"
+                className="mt-3"
+              >
                 Go to Profile
               </Button>
             </div>
@@ -180,18 +211,7 @@ const SchoolDashboard = () => {
           {/* Notifications Tab */}
           <Tab eventKey="notifications" title="Notifications">
             <div className="mt-4">
-              <h4>Notifications</h4>
-              {notifications.length > 0 ? (
-                <ul className="list-group">
-                  {notifications.map((note, index) => (
-                    <li key={index} className="list-group-item">
-                      {note}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No notifications to display.</p>
-              )}
+              <SchoolsNotifications notifications={notifications} />
             </div>
           </Tab>
           <Tab eventKey="support" title="Support">

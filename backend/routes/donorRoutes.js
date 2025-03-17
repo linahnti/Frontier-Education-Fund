@@ -9,6 +9,7 @@ const {
   getCurrentUserNotifications,
   markNotificationsAsRead,
   deleteNotification,
+  getActiveDonors,
 } = require("../controllers/donorController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -16,7 +17,8 @@ const { protect } = require("../middleware/authMiddleware");
 router.put("/:donorId/approve", approveDonationRequest);
 router.put("/:donorId/complete", completeDonation);
 router.get("/:donorId", getDonorDetails);
-router.get("/:donorId/donations", getDonorDonations);
+router.get("/active-donors", getActiveDonors);
+router.get("/:donorId/donations", protect, getDonorDonations);
 
 // notifications routes
 router.get("/:donorId/notifications", getDonorNotifications);

@@ -179,6 +179,93 @@ const completeDonation = async (req, res) => {
   }
 };
 
+const getAllDonationRequests = async (req, res) => {
+  try {
+    const donationRequests = await DonationRequest.find()
+      .populate("schoolId", "schoolName location") // Populate school details
+      .populate("donors.donorId", "name"); // Populate donor details
+
+    res.status(200).json(donationRequests);
+  } catch (error) {
+    console.error("Error fetching donation requests:", error);
+    res
+      .status(500)
+      .json({ message: "Error fetching donation requests", error });
+  }
+};
+
+// Approve a donation request
+const approveDonationRequest = async (req, res) => {
+  const { requestId } = req.params;
+
+  try {
+    const donationRequest = await DonationRequest.findByIdAndUpdate(
+      requestId,
+      { $set: { status: "Approved" } },
+      { new: true }
+    );
+
+    if (!donationRequest) {
+      return res.status(404).json({ message: "Donation request not found" });
+    }
+
+    res.status(200).json({
+      message: "Donation request approved successfully",
+      donationRequest,
+    });
+  } catch (error) {
+    console.error("Error approving donation request:", error);
+    res
+      .status(500)
+      .json({ message: "Error approving donation request", error });
+  }
+};
+
+// Complete a donation request
+const completeDonationRequest = async (req, res) => {
+  const { requestId } = req.params;
+
+  try {
+    const donationRequest = await DonationRequest.findByIdAndUpdate(
+      requestId,
+      { $set: { status: "Completed" } },
+      { new: true }
+    );
+
+    if (!donationRequest) {
+      return res.status(404).json({ message: "Donation request not found" });
+    }
+
+    res.status(200).json({
+      message: "Donation request completed successfully",
+      donationRequest,
+    });
+  } catch (error) {
+    console.error("Error completing donation request:", error);
+    res
+      .status(500)
+      .json({ message: "Error completing donation request", error });
+  }
+};
+
+// Delete a donation request
+const deleteDonationRequest = async (req, res) => {
+  const { requestId } = req.params;
+
+  try {
+    const donationRequest = await DonationRequest.findByIdAndDelete(requestId);
+
+    if (!donationRequest) {
+      return res.status(404).json({ message: "Donation request not found" });
+    }
+
+    res.status(200).json({ message: "Donation request deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting donation request:", error);
+    res.status(500).json({ message: "Error deleting donation request", error });
+  }
+};
+
 module.exports = {
   getAllDonations,
   getAllSchools,
@@ -186,4 +273,8 @@ module.exports = {
   approveDonation,
   deleteDonation,
   completeDonation,
+  getAllDonationRequests,
+  approveDonationRequest,
+  completeDonationRequest,
+  deleteDonationRequest,
 };

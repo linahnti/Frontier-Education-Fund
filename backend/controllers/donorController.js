@@ -199,6 +199,28 @@ const deleteNotification = async (req, res) => {
   }
 };
 
+const getActiveDonors = async (req, res) => {
+  try {
+    // Fetch all donors who have made at least one donation
+    const activeDonors = await User.find({
+      role: "Donor",
+      donationsMade: { $exists: true, $not: { $size: 0 } }, // Ensure donationsMade array is not empty
+    }).select("name email donationsMade"); // Select only necessary fields
+
+    res.status(200).json({
+      message: "Active donors fetched successfully",
+      activeDonors,
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error fetching active donors:", error);
+    res.status(500).json({
+      message: "Error fetching active donors",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   approveDonationRequest,
   completeDonation,
@@ -208,4 +230,5 @@ module.exports = {
   getCurrentUserNotifications,
   markNotificationsAsRead,
   deleteNotification,
+  getActiveDonors,
 };
