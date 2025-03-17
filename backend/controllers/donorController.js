@@ -176,6 +176,29 @@ const markNotificationsAsRead = async (req, res) => {
   }
 };
 
+const deleteNotification = async (req, res) => {
+  const { donorId, notificationId } = req.params;
+
+  try {
+    const donor = await User.findById(donorId);
+    if (!donor) {
+      return res.status(404).json({ message: "Donor not found" });
+    }
+
+    // Remove the notification from the donor's notifications array
+    donor.notifications = donor.notifications.filter(
+      (note) => note._id.toString() !== notificationId
+    );
+
+    await donor.save();
+
+    res.status(200).json({ message: "Notification deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting notification:", error);
+    res.status(500).json({ message: "Error deleting notification", error });
+  }
+};
+
 module.exports = {
   approveDonationRequest,
   completeDonation,
@@ -184,4 +207,5 @@ module.exports = {
   getDonorNotifications,
   getCurrentUserNotifications,
   markNotificationsAsRead,
+  deleteNotification,
 };

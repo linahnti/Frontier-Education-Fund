@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Badge, ButtonGroup } from "react-bootstrap";
+import { Table, Button, Badge, ButtonGroup, Alert } from "react-bootstrap";
 import axios from "axios";
 
 const ManageDonations = () => {
@@ -7,6 +7,7 @@ const ManageDonations = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Fetch donations from the backend
   useEffect(() => {
     const fetchDonations = async () => {
       try {
@@ -30,6 +31,88 @@ const ManageDonations = () => {
 
     fetchDonations();
   }, []);
+
+  // Handle donation approval
+  const handleApprove = async (donationId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.put(
+        `http://localhost:5000/api/admin/donations/${donationId}/approve`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        // Update the local state to reflect the approval
+        setDonations((prevDonations) =>
+          prevDonations.map((donation) =>
+            donation._id === donationId
+              ? { ...donation, status: "Approved" }
+              : donation
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error approving donation:", error);
+    }
+  };
+
+  // Handle donation completion
+  const handleComplete = async (donationId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.put(
+        `http://localhost:5000/api/admin/donations/${donationId}/complete`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        // Update the local state to reflect the completion
+        setDonations((prevDonations) =>
+          prevDonations.map((donation) =>
+            donation._id === donationId
+              ? { ...donation, status: "Completed" }
+              : donation
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error completing donation:", error);
+    }
+  };
+
+  // Handle donation deletion
+  const handleDelete = async (donationId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.delete(
+        `http://localhost:5000/api/admin/donations/${donationId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        // Remove the deleted donation from the local state
+        setDonations((prevDonations) =>
+          prevDonations.filter((donation) => donation._id !== donationId)
+        );
+      }
+    } catch (error) {
+      console.error("Error deleting donation:", error);
+    }
+  };
 
   if (loading) {
     return <p>Loading donations...</p>;
@@ -97,6 +180,13 @@ const ManageDonations = () => {
                     Complete
                   </Button>
                 )}
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => handleDelete(donation._id)}
+                >
+                  Delete
+                </Button>
               </ButtonGroup>
             </td>
           </tr>

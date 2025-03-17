@@ -8,6 +8,7 @@ const {
   getDonorNotifications,
   getCurrentUserNotifications,
   markNotificationsAsRead,
+  deleteNotification,
 } = require("../controllers/donorController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -20,6 +21,11 @@ router.get("/:donorId/donations", getDonorDonations);
 // notifications routes
 router.get("/:donorId/notifications", getDonorNotifications);
 router.put("/:donorId/notifications/read", markNotificationsAsRead);
+router.delete(
+  "/:donorId/notifications/:notificationId",
+  protect,
+  deleteNotification
+);
 
 // Route for the currently authenticated user
 router.get("/notifications", protect, getCurrentUserNotifications);

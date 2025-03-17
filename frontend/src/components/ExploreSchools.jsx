@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Card, Container, Badge, Button, Modal } from "react-bootstrap";
+import { Card, Container, Badge, Button, Modal, Accordion } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 
 const ExploreSchools = () => {
@@ -33,21 +33,28 @@ const ExploreSchools = () => {
       const response = await axios.get(
         `http://localhost:5000/api/donation-requests/school/${schoolId}`
       );
+      
+      // Filter out completed requests and sort by date (newest first)
+      const activeRequests = response.data
+        .filter(request => request.status !== "Completed")
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
       setDonationRequests((prevRequests) => ({
         ...prevRequests,
-        [schoolId]: response.data,
+        [schoolId]: activeRequests,
       }));
     } catch (error) {
       console.error("Error fetching donation requests:", error);
     }
   };
 
-  const handleDonate = () => {
+  const handleDonate = (schoolId) => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user || !user.isProfileComplete) {
       setShowModal(true); // Show modal if profile is incomplete
     } else {
-      navigate("/donate"); // Navigate to the DonatePage
+      // Navigate to the DonatePage with the selected school's ID
+      navigate(`/donate?schoolId=${schoolId}`);
     }
   };
 
@@ -77,35 +84,66 @@ const ExploreSchools = () => {
               <strong>Donation Needs:</strong>{" "}
               {donationRequests[school._id] &&
               donationRequests[school._id].length > 0 ? (
-                donationRequests[school._id].map((request, index) => (
-                  <span key={index}>
-                    {request.donationNeeds.map((need, idx) => (
-                      <Badge
-                        key={idx}
-                        style={{
-                          backgroundColor: "#28A745",
-                          margin: "2px",
-                          fontSize: "0.9em",
-                        }}
-                      >
-                        {need}
-                      </Badge>
-                    ))}
-                    {request.customRequest && (
-                      <p>
-                        <strong>Custom Request:</strong> {request.customRequest}
-                      </p>
-                    )}
-                  </span>
-                ))
+                <Accordion className="mt-2">
+                  {donationRequests[school._id].map((request, index) => (
+                    <Accordion.Item eventKey={index.toString()} key={index}>
+                      <Accordion.Header>
+                        Request {index + 1} - {new Date(request.createdAt).toLocaleDateString()}
+                        {request.urgency && (
+                          <Badge 
+                            bg="danger" 
+                            className="ms-2"
+                          >
+                            Urgent
+                          </Badge>
+                        )}
+                      </Accordion.Header>
+                      <Accordion.Body>
+                        <div>
+                          {request.donationNeeds.map((need, idx) => (
+                            <Badge
+                              key={idx}
+                              style={{
+                                backgroundColor: "#007BFF", // Blue background instead of green
+                                margin: "2px",
+                                fontSize: "0.9em",
+                              }}
+                              className="me-1 mb-1"
+                            >
+                              {need}
+                            </Badge>
+                          ))}
+                          {request.customRequest && (
+                            <p className="mt-2 mb-1">
+                              <strong>Custom Request:</strong> {request.customRequest}
+                            </p>
+                          )}
+                          <p className="mb-1">
+                            <strong>Status:</strong> {request.status}
+                          </p>
+                          <Button
+                            variant="warning"
+                            size="sm"
+                            onClick={() => handleDonate(school._id)}
+                            className="mt-2"
+                            style={{ backgroundColor: "#FFC107", border: "none" }}
+                          >
+                            Donate
+                          </Button>
+                        </div>
+                      </Accordion.Body>
+                    </Accordion.Item>
+                  ))}
+                </Accordion>
               ) : (
-                <span>No donation needs listed</span>
+                <span>No active donation needs</span>
               )}
             </div>
             <Button
               variant="warning"
               style={{ backgroundColor: "#FFC107", border: "none" }}
-              onClick={handleDonate} // Navigate to /donate
+              onClick={() => handleDonate(school._id)}
+              className="mt-3"
             >
               Donate
             </Button>

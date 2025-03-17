@@ -24,6 +24,7 @@ const DonorDashboard = () => {
   const [newNotificationsCount, setNewNotificationsCount] = useState(0);
   const [activeTab, setActiveTab] = useState("donations");
   const [completionPercentage, setCompletionPercentage] = useState(0);
+  const [donations, setDonations] = useState([]); // State to store donations
 
   // Fetch user data from localStorage on component mount
   useEffect(() => {
@@ -72,9 +73,47 @@ const DonorDashboard = () => {
     }
   };
 
-  // Fetch notifications on component mount
+  // Fetch donations from the backend
+  const fetchDonations = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user"));
+      const donorId = user.id;
+
+      const response = await fetch(
+        `http://localhost:5000/api/donors/${donorId}/donations`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch donations");
+      }
+
+      const data = await response.json();
+      setDonations(data); // Update the donations state
+    } catch (error) {
+      console.error("Error fetching donations:", error);
+    }
+  };
+
+  // Fetch notifications and donations on component mount and set up polling
   useEffect(() => {
     fetchNotifications();
+    fetchDonations(); // Fetch donations immediately on mount
+
+    // Set up polling to fetch notifications and donations every 10 seconds
+    const interval = setInterval(() => {
+      fetchNotifications();
+      fetchDonations();
+    }, 10000);
+
+    // Clean up the interval on component unmount
+    return () => clearInterval(interval);
   }, []);
 
   // Handle navigation with profile completion check
@@ -100,22 +139,20 @@ const DonorDashboard = () => {
   return (
     <div
       style={{
-        minHeight: "100vh", // Ensure the background covers the full height
-        backgroundColor: "#ffffff", // White background
-        padding: "20px", // Add padding for better spacing
+        minHeight: "100vh",
+        backgroundColor: "#ffffff",
+        padding: "20px",
       }}
     >
-      {/* Dashboard Content */}
       <div
         className="container mt-5"
         style={{
-          backgroundColor: "#f5f5f5", // Light grey container
-          borderRadius: "10px", // Optional: Add rounded corners
-          padding: "20px", // Add padding for better spacing
-          boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)", // Floating effect
+          backgroundColor: "#f5f5f5",
+          borderRadius: "10px",
+          padding: "20px",
+          boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
         }}
       >
-        {/* Dashboard Title and User Name */}
         <h2
           className="text-warning"
           style={{ fontSize: "2.5rem", fontWeight: "bold" }}
@@ -132,7 +169,6 @@ const DonorDashboard = () => {
           Make donations, track your contributions, and explore schools in need.
         </p>
 
-        {/* Tabs for Navigation */}
         <Tabs
           activeKey={activeTab}
           onSelect={(k) => setActiveTab(k)}
@@ -140,7 +176,7 @@ const DonorDashboard = () => {
         >
           <Tab eventKey="donations" title="Donations">
             <div className="mt-4">
-              <DonationsTab donorId={user?.id} />
+              <DonationsTab donorId={user?.id} donations={donations} />
             </div>
           </Tab>
           <Tab eventKey="schools" title="Explore Schools">
@@ -193,7 +229,6 @@ const DonorDashboard = () => {
           </Tab>
         </Tabs>
 
-        {/* Modal for Incomplete Profile */}
         <Modal show={showModal} onHide={handleCloseModal} centered>
           <Modal.Header closeButton className="bg-warning text-white">
             <Modal.Title>Profile Incomplete</Modal.Title>

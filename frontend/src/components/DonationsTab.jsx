@@ -33,6 +33,12 @@ const DonationsTab = ({ donorId }) => {
     };
 
     fetchDonations();
+
+    // Set up polling to fetch donations every 10 seconds
+    const interval = setInterval(fetchDonations, 10000);
+
+    // Clean up the interval on component unmount
+    return () => clearInterval(interval);
   }, [donorId]);
 
   // Handle "Make a Donation" button click
@@ -71,11 +77,11 @@ const DonationsTab = ({ donorId }) => {
             {donations.map((donation, index) => (
               <tr key={index}>
                 <td>{index + 1}</td>
-                <td>{donation.schoolId.schoolName}</td>
+                <td>{donation.schoolId?.schoolName || "N/A"}</td>
                 <td>
                   {donation.type === "money"
                     ? `KES ${donation.amount}`
-                    : donation.items.join(", ")}
+                    : donation.items?.join(", ") || "N/A"}
                 </td>
                 <td>
                   <Badge

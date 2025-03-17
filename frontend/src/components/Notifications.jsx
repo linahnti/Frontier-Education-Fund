@@ -1,21 +1,61 @@
 import React, { useState } from "react";
 import { Table, Alert, Button, Modal } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
-const Notifications = ({ notifications }) => {
+const Notifications = ({ notifications, setNotifications }) => {
   const [showModal, setShowModal] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState(null);
   const navigate = useNavigate();
 
-  const newNotificationsCount = notifications.filter(
+  // Reverse the notifications array to show the latest first
+  const reversedNotifications = [...notifications].reverse();
+
+  const newNotificationsCount = reversedNotifications.filter(
     (note) => !note.read
   ).length;
 
+  // Handle View Details button click
+  const handleViewDetails = (notification) => {
+    setSelectedNotification(notification);
+    setShowModal(true);
+  };
+
+  // Handle Donate button click
   const handleDonate = () => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user || !user.isProfileComplete) {
-      setShowModal(true); // Show modal if profile is incomplete
+      alert("Please complete your profile to make a donation.");
+      navigate("/profile");
     } else {
-      navigate("/donate"); // Navigate to the DonatePage
+      navigate("/donate");
+    }
+  };
+
+  // Handle Delete Notification button click
+  const handleDeleteNotification = async (notificationId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user"));
+      const donorId = user.id;
+
+      const response = await axios.delete(
+        `http://localhost:5000/api/donors/${donorId}/notifications/${notificationId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        // Remove the deleted notification from the local state
+        setNotifications((prevNotifications) =>
+          prevNotifications.filter((note) => note._id !== notificationId)
+        );
+      }
+    } catch (error) {
+      console.error("Error deleting notification:", error);
     }
   };
 
@@ -27,7 +67,7 @@ const Notifications = ({ notifications }) => {
         </Alert>
       )}
 
-      {notifications.length > 0 ? (
+      {reversedNotifications.length > 0 ? (
         <Table striped bordered hover>
           <thead>
             <tr>
@@ -35,23 +75,39 @@ const Notifications = ({ notifications }) => {
               <th>Message</th>
               <th>School Name</th>
               <th>Date</th>
-              <th>Action</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {notifications.map((note, index) => (
+            {reversedNotifications.map((note, index) => (
               <tr key={index}>
                 <td>{index + 1}</td>
                 <td>{note.message}</td>
                 <td>{note.schoolName}</td>
                 <td>{new Date(note.date).toLocaleString()}</td>
                 <td>
-                  <Button
-                    variant="warning"
-                    onClick={handleDonate} // Navigate to /donate
-                  >
-                    Donate
-                  </Button>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <Button
+                      variant="info"
+                      onClick={() => handleViewDetails(note)}
+                      style={{
+                        backgroundColor: "#17a2b8",
+                        borderColor: "#17a2b8",
+                      }} // Same color for both buttons
+                    >
+                      View Details
+                    </Button>
+                    <Button
+                      variant="info"
+                      onClick={() => handleDeleteNotification(note._id)}
+                      style={{
+                        backgroundColor: "#17a2b8",
+                        borderColor: "#17a2b8",
+                      }} // Same color for both buttons
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -61,27 +117,56 @@ const Notifications = ({ notifications }) => {
         <p>No new notifications.</p>
       )}
 
-      {/* Modal for Incomplete Profile */}
+      {/* Modal for Notification Details */}
+      {/* Modal for Notification Details */}
       <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton className="bg-warning text-white">
-          <Modal.Title>Profile Incomplete</Modal.Title>
+        <Modal.Header closeButton>
+          <Modal.Title>Notification Details</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p className="text-dark">
-            Please complete your profile to make a donation.
-          </p>
+          {selectedNotification && (
+            <>
+              <p>
+                <strong>Message:</strong> {selectedNotification.message}
+              </p>
+              <p>
+                <strong>School:</strong> {selectedNotification.schoolName}
+              </p>
+              <p>
+                <strong>Date:</strong>{" "}
+                {new Date(selectedNotification.date).toLocaleString()}
+              </p>
+              {/* Check if the message contains "new request" or if the type is "newRequest" */}
+              {(selectedNotification.type === "newRequest" ||
+                (selectedNotification.message &&
+                  selectedNotification.message
+                    .toLowerCase()
+                    .includes("new request"))) && (
+                <Button
+                  variant="warning"
+                  style={{ backgroundColor: "#ffc107", borderColor: "#ffc107" }}
+                  onClick={handleDonate}
+                >
+                  Donate
+                </Button>
+              )}
+              {selectedNotification.type === "approval" && (
+                <p>
+                  Your donation has been approved. Please wait for completion.
+                </p>
+              )}
+              {selectedNotification.type === "completion" && (
+                <p>
+                  Thank you for your donation! We will provide feedback on the
+                  progress soon.
+                </p>
+              )}
+            </>
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowModal(false)}>
             Close
-          </Button>
-          <Button
-            variant="primary"
-            as={Link}
-            to="/profile"
-            onClick={() => setShowModal(false)}
-          >
-            Go to Profile
           </Button>
         </Modal.Footer>
       </Modal>

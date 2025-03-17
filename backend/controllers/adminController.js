@@ -49,8 +49,141 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+const approveDonation = async (req, res) => {
+  const { donationId } = req.params;
+
+  try {
+    // Find the donation and update its status to "Approved"
+    const donor = await Donor.findOneAndUpdate(
+      { "donationsMade._id": donationId },
+      { $set: { "donationsMade.$.status": "Approved" } },
+      { new: true }
+    );
+
+    if (!donor) {
+      return res.status(404).json({ message: "Donation not found" });
+    }
+
+    // Find the updated donation
+    const updatedDonation = donor.donationsMade.find(
+      (donation) => donation._id.toString() === donationId
+    );
+
+    // Populate the school name and include donation details in the notification
+    const school = await User.findById(updatedDonation.schoolId);
+    const schoolName = school ? school.schoolName : "Unknown School";
+
+    let donationDetails;
+    if (updatedDonation.type === "money") {
+      donationDetails = `KES ${updatedDonation.amount}`;
+    } else if (updatedDonation.type === "items") {
+      donationDetails = updatedDonation.items.join(", ");
+    }
+
+    // Send a notification to the donor
+    const donorUser = await User.findById(donor._id);
+    if (donorUser) {
+      donorUser.notifications.push({
+        message: `Your donation of ${donationDetails} to ${schoolName} has been approved.`,
+        schoolName: schoolName, // Include the school name
+        type: "approval", // Add this field
+        date: new Date(),
+        read: false,
+      });
+      await donorUser.save();
+    }
+
+    res.status(200).json({
+      message: "Donation approved successfully",
+      donation: updatedDonation,
+    });
+  } catch (error) {
+    console.error("Error approving donation:", error);
+    res.status(500).json({ message: "Error approving donation", error });
+  }
+};
+
+const deleteDonation = async (req, res) => {
+  const { donationId } = req.params;
+
+  try {
+    // Find the donor and remove the donation from their donationsMade array
+    const donor = await Donor.findOneAndUpdate(
+      { "donationsMade._id": donationId },
+      { $pull: { donationsMade: { _id: donationId } } },
+      { new: true }
+    );
+
+    if (!donor) {
+      return res.status(404).json({ message: "Donation not found" });
+    }
+
+    res.status(200).json({ message: "Donation deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting donation:", error);
+    res.status(500).json({ message: "Error deleting donation", error });
+  }
+};
+
+const completeDonation = async (req, res) => {
+  const { donationId } = req.params;
+
+  try {
+    // Find the donation and update its status to "Completed"
+    const donor = await Donor.findOneAndUpdate(
+      { "donationsMade._id": donationId },
+      { $set: { "donationsMade.$.status": "Completed" } },
+      { new: true }
+    );
+
+    if (!donor) {
+      return res.status(404).json({ message: "Donation not found" });
+    }
+
+    // Find the updated donation
+    const updatedDonation = donor.donationsMade.find(
+      (donation) => donation._id.toString() === donationId
+    );
+
+    // Populate the school name and include donation details in the notification
+    const school = await User.findById(updatedDonation.schoolId);
+    const schoolName = school ? school.schoolName : "Unknown School";
+
+    let donationDetails;
+    if (updatedDonation.type === "money") {
+      donationDetails = `KES ${updatedDonation.amount}`;
+    } else if (updatedDonation.type === "items") {
+      donationDetails = updatedDonation.items.join(", ");
+    }
+
+    // Send a notification to the donor
+    const donorUser = await User.findById(donor._id);
+    if (donorUser) {
+      donorUser.notifications.push({
+        message: `Your donation of ${donationDetails} to ${schoolName} has been completed. Thank you for your contribution!`,
+        schoolName: schoolName,
+        type: "completion",
+        date: new Date(),
+        read: false,
+      });
+      await donorUser.save();
+    }
+
+    res.status(200).json({
+      message: "Donation completed successfully",
+      donation: updatedDonation,
+    });
+  } catch (error) {
+    console.error("Error completing donation:", error);
+    res.status(500).json({ message: "Error completing donation", error });
+  }
+};
+
 module.exports = {
   getAllDonations,
   getAllSchools,
   getAllUsers,
+  approveDonation,
+  deleteDonation,
+  completeDonation,
 };
