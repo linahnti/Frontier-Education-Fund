@@ -45,10 +45,11 @@ const donorSchema = new mongoose.Schema({
 
   donationsMade: [
     {
-      schoolId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, 
-      type: { type: String, enum: ["money", "items"], required: true }, 
-      amount: { type: Number }, 
-      items: [{ type: String }], 
+      donorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      schoolId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      type: { type: String, enum: ["money", "items"], required: true },
+      amount: { type: Number },
+      items: [{ type: String }],
       status: {
         type: String,
         enum: ["Pending", "Approved", "Completed"],
@@ -72,6 +73,17 @@ const donorSchema = new mongoose.Schema({
       read: { type: Boolean, default: false }, // Whether the notification has been read
     },
   ],
+  delivery: {
+    address: { type: String },
+    preferredDate: { type: Date },
+    status: {
+      type: String,
+      enum: ["Not Started", "In Transit", "Delivered"],
+      default: "Not Started",
+    },
+    trackingNumber: { type: String },
+  },
+  date: { type: Date, default: Date.now },
 });
 // Create Donor discriminator
 const Donor = User.discriminator("Donor", donorSchema);

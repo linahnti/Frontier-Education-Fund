@@ -11,13 +11,23 @@ const createAdmin = async () => {
   const adminEmail = "fefadmin@gmail.com";
   const adminPassword = "OnlyTheAdmin@2025";
 
+  // Check if the admin user already exists
+  const existingAdmin = await User.findOne({ email: adminEmail });
+  if (existingAdmin) {
+    console.log("Admin account already exists.");
+    return;
+  }
+
+  // Hash the password
   const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
+  // Create the admin user
   const adminUser = new User({
     name: "Admin",
     email: adminEmail,
     password: hashedPassword,
-    role: "admin",
+    role: "Admin", // Ensure the role is "Admin" (uppercase)
+    // No contactNumber provided
   });
 
   try {
@@ -35,10 +45,7 @@ if (!dbURI) {
 
 // Connect to MongoDB and create the admin account
 mongoose
-  .connect(dbURI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(dbURI) // Removed deprecated options
   .then(() => {
     console.log("Connected to MongoDB");
     createAdmin(); // Run the function to create the admin account

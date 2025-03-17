@@ -4,21 +4,18 @@ import { Link, useNavigate } from "react-router-dom";
 
 const Notifications = ({ notifications }) => {
   const [showModal, setShowModal] = useState(false);
-  const [selectedSchoolId, setSelectedSchoolId] = useState(null);
   const navigate = useNavigate();
 
   const newNotificationsCount = notifications.filter(
     (note) => !note.read
   ).length;
 
-  const handleDonate = (schoolId) => {
+  const handleDonate = () => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user || !user.isProfileComplete) {
-      setShowModal(true);
-      setSelectedSchoolId(schoolId);
+      setShowModal(true); // Show modal if profile is incomplete
     } else {
-      // Navigate to the donation page or perform the donation action
-      navigate(`/donate/${schoolId}`);
+      navigate("/donate"); // Navigate to the DonatePage
     }
   };
 
@@ -51,7 +48,7 @@ const Notifications = ({ notifications }) => {
                 <td>
                   <Button
                     variant="warning"
-                    onClick={() => handleDonate(note.schoolId)}
+                    onClick={handleDonate} // Navigate to /donate
                   >
                     Donate
                   </Button>

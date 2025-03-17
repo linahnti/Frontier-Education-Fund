@@ -1,9 +1,30 @@
 const User = require("../models/user");
 
 const createDonation = async (req, res) => {
-  const { donorId, schoolId, type, amount, items } = req.body;
+  const { donorId, schoolId, type, amount, items, preferredDate } = req.body;
 
   try {
+    // Validate the donation amount if the donation type is money
+    if (type === "money" && (isNaN(amount) || amount <= 0)) {
+      return res.status(400).json({
+        message: "Invalid donation amount. Amount must be greater than zero.",
+      });
+    }
+
+    // Validate items and preferred date for item donations
+    if (type === "items") {
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res
+          .status(400)
+          .json({ message: "Items cannot be empty for item donations." });
+      }
+      if (!preferredDate || isNaN(new Date(preferredDate).getTime())) {
+        return res
+          .status(400)
+          .json({ message: "Invalid preferred delivery date." });
+      }
+    }
+
     const donor = await User.findById(donorId);
     const school = await User.findById(schoolId);
 
@@ -32,6 +53,11 @@ const createDonation = async (req, res) => {
       donation.amount = amount;
     } else if (type === "items") {
       donation.items = items;
+      donation.delivery = {
+        address: school.address, // Use the school's address as the delivery address
+        preferredDate: new Date(preferredDate),
+        status: "Not Started",
+      };
     }
 
     donor.donationsMade.push(donation);

@@ -6,7 +6,9 @@ const HomepageNavbar = () => {
   return (
     <header
       className="shadow-sm py-2"
-      style={{ background: "#005f8f" }} // Deep blue background
+      style={{
+        background: "linear-gradient(135deg, #1E3A8A, #3B82F6)", // Soft blue gradient
+      }}
     >
       <div className="container-fluid d-flex justify-content-between align-items-center">
         {/* Logo and Title */}

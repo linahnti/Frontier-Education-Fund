@@ -9,7 +9,6 @@ const ExploreSchools = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [selectedSchoolId, setSelectedSchoolId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,13 +42,12 @@ const ExploreSchools = () => {
     }
   };
 
-  const handleDonate = (schoolId) => {
+  const handleDonate = () => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user || !user.isProfileComplete) {
-      setShowModal(true);
-      setSelectedSchoolId(schoolId);
+      setShowModal(true); // Show modal if profile is incomplete
     } else {
-      navigate(`/donate/${schoolId}`);
+      navigate("/donate"); // Navigate to the DonatePage
     }
   };
 
@@ -107,7 +105,7 @@ const ExploreSchools = () => {
             <Button
               variant="warning"
               style={{ backgroundColor: "#FFC107", border: "none" }}
-              onClick={() => handleDonate(school._id)}
+              onClick={handleDonate} // Navigate to /donate
             >
               Donate
             </Button>

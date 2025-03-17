@@ -63,10 +63,6 @@ const App = () => {
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
             </Route>
-            {/* Admin Dashboard */}
-            <Route element={<ProtectedRoute allowedRole="admin" />}>
-              <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            </Route>
 
             {/* Donor Dashboard */}
             <Route element={<ProtectedRoute allowedRole="donor" />}>
@@ -109,7 +105,11 @@ const App = () => {
             </Route>
           </Route>
 
-          {/* ✅ Catch-All 404 Page */}
+          {/*  Admin Dashboard - Uses its own layout (AdminNavbar is inside AdminDashboard) */}
+          <Route element={<ProtectedRoute allowedRole="admin" />}>
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          </Route>
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

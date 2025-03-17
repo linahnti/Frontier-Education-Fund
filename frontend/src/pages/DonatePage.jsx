@@ -18,11 +18,12 @@ const DonatePage = () => {
   const [items, setItems] = useState("");
   const [schoolId, setSchoolId] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [preferredDate, setPreferredDate] = useState(""); // Preferred delivery date state
   const [schools, setSchools] = useState([]);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Fetch schools for the dropdown
+  // Fetch schools on component mount
   useEffect(() => {
     const fetchSchools = async () => {
       try {
@@ -36,9 +37,28 @@ const DonatePage = () => {
     fetchSchools();
   }, []);
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate donation amount for monetary donations
+    if (donationType === "money" && (isNaN(amount) || amount <= 0)) {
+      setError(
+        "Please enter a valid donation amount (must be greater than zero)."
+      );
+      return;
+    }
+
+    // Validate items and preferred date for item donations
+    if (donationType === "items") {
+      if (!items || items.trim() === "") {
+        setError("Items cannot be empty for item donations.");
+        return;
+      }
+      if (!preferredDate || isNaN(new Date(preferredDate).getTime())) {
+        setError("Invalid preferred delivery date.");
+        return;
+      }
+    }
 
     try {
       const token = localStorage.getItem("token");
@@ -51,7 +71,12 @@ const DonatePage = () => {
           schoolId,
           type: donationType,
           amount: donationType === "money" ? amount : null,
-          items: donationType === "items" ? items.split(",") : null,
+          items:
+            donationType === "items"
+              ? items.split(",").map((item) => item.trim())
+              : null,
+          preferredDate:
+            donationType === "items" ? new Date(preferredDate) : null,
         },
         {
           headers: {
@@ -71,6 +96,14 @@ const DonatePage = () => {
 
   // Handle M-Pesa STK Push
   const handleMpesaPayment = async () => {
+    // Validate donation amount before proceeding with M-Pesa payment
+    if (isNaN(amount) || amount <= 0) {
+      setError(
+        "Please enter a valid donation amount (must be greater than zero)."
+      );
+      return;
+    }
+
     try {
       const token = localStorage.getItem("token");
 
@@ -194,17 +227,28 @@ const DonatePage = () => {
                     </>
                   )}
 
-                  {/* Physical Donation Fields */}
+                  {/* Item Donation Fields */}
                   {donationType === "items" && (
-                    <Form.Group className="mb-3">
-                      <Form.Label>Items (comma-separated)</Form.Label>
-                      <Form.Control
-                        type="text"
-                        value={items}
-                        onChange={(e) => setItems(e.target.value)}
-                        required
-                      />
-                    </Form.Group>
+                    <>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Items (comma-separated)</Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={items}
+                          onChange={(e) => setItems(e.target.value)}
+                          required
+                        />
+                      </Form.Group>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Preferred Delivery Date</Form.Label>
+                        <Form.Control
+                          type="date"
+                          value={preferredDate}
+                          onChange={(e) => setPreferredDate(e.target.value)}
+                          required
+                        />
+                      </Form.Group>
+                    </>
                   )}
 
                   {/* Error Message */}

@@ -24,20 +24,38 @@ const protect = async (req, res, next) => {
 
       // Handle specific JWT errors
       if (error instanceof jwt.TokenExpiredError) {
-        return res.status(401).json({ message: "Session expired. Please log in again." });
+        return res
+          .status(401)
+          .json({ message: "Session expired. Please log in again." });
       }
       if (error instanceof jwt.JsonWebTokenError) {
-        return res.status(401).json({ message: "Invalid token. Please log in again." });
+        return res
+          .status(401)
+          .json({ message: "Invalid token. Please log in again." });
       }
       if (error instanceof jwt.NotBeforeError) {
-        return res.status(401).json({ message: "Token not active yet. Try again later." });
+        return res
+          .status(401)
+          .json({ message: "Token not active yet. Try again later." });
       }
 
       return res.status(401).json({ message: "Not authorized, token invalid" });
     }
   } else {
-    return res.status(401).json({ message: "Not authorized, no token provided" });
+    return res
+      .status(401)
+      .json({ message: "Not authorized, no token provided" });
   }
 };
 
-module.exports = { protect };
+const admin = (req, res, next) => {
+  if (req.user && req.user.role === "Admin") {
+    next();
+  } else {
+    return res
+      .status(403)
+      .json({ message: "Access denied. Admin privileges required." });
+  }
+};
+
+module.exports = { protect, admin };

@@ -106,84 +106,105 @@ const SchoolDashboard = () => {
   }
 
   return (
-    <div className="container mt-5">
-      <h2 className="text-warning">Welcome to the School Dashboard</h2>
-      <h3 className="text-dark">{user?.name || "School"}</h3>
-      <p className="text-dark">
-        Manage your school profile, post donation requests, and more.
-      </p>
-
-      {/* Tabs for Navigation */}
-      <Tabs
-        activeKey={activeTab}
-        onSelect={(k) => setActiveTab(k)}
-        className="mb-4"
+    <div
+      style={{
+        minHeight: "100vh", // Ensure the background covers the full height
+        backgroundColor: "#ffffff", // White background
+        padding: "20px", // Add padding for better spacing
+      }}
+    >
+      <div
+        className="container mt-5"
+        style={{
+          backgroundColor: "#f5f5f5", // Light grey container
+          borderRadius: "10px", // Optional: Add rounded corners
+          padding: "20px", // Add padding for better spacing
+          boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)", // Floating effect
+        }}
       >
-        <Tab eventKey="donations" title="Donations">
-          <DonationRequest
-            user={user}
-            loading={loading}
-            completionPercentage={completionPercentage}
-            profileData={profileData}
-          />
-        </Tab>
-        <Tab eventKey="profile" title="Manage Profile">
-          <div className="mt-4">
-            <ProfileCompletionProgress
+        {/* Dashboard Title and User Name */}
+        <h2 className="text-warning" style={{ fontSize: "2.5rem", fontWeight: "bold" }}>
+          Welcome to the School Dashboard
+        </h2>
+        <h3 className="text-dark" style={{ fontSize: "2rem", fontWeight: "600" }}>
+          {user?.name || "School"}
+        </h3>
+        <p className="text-dark" style={{ fontWeight: "300", opacity: "0.8" }}>
+          Manage your school profile, post donation requests, and more.
+        </p>
+
+        {/* Tabs for Navigation */}
+        <Tabs
+          activeKey={activeTab}
+          onSelect={(k) => setActiveTab(k)}
+          className="mb-4"
+        >
+          <Tab eventKey="donations" title="Donations">
+            <DonationRequest
               user={user}
+              loading={loading}
+              completionPercentage={completionPercentage}
               profileData={profileData}
-              setCompletionPercentage={setCompletionPercentage}
             />
-            <Button variant="primary" as={Link} to="/profile" className="mt-3">
-              Go to Profile
-            </Button>
-          </div>
-        </Tab>
-        <Tab eventKey="reports" title="Reports & Analytics">
-          <div className="mt-4">
-            <h4>Donation Trends</h4>
-            <p>
-              Graphs showing received donations over time (to be implemented).
-            </p>
-            <h4>Most Needed Items</h4>
-            <p>List of most requested items (to be implemented).</p>
-            <h4>Active Donors</h4>
-            <p>List of frequent donors (to be implemented).</p>
-          </div>
-        </Tab>
-        <Tab eventKey="messages" title="Messaging">
-          <div className="mt-4">
-            <h4>Message Center</h4>
-            <p>Communicate with donors (to be implemented).</p>
-          </div>
-        </Tab>
-        {/* Notifications Tab */}
-        <Tab eventKey="notifications" title="Notifications">
-          <div className="mt-4">
-            <h4>Notifications</h4>
-            {notifications.length > 0 ? (
-              <ul className="list-group">
-                {notifications.map((note, index) => (
-                  <li key={index} className="list-group-item">
-                    {note}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No notifications to display.</p>
-            )}
-          </div>
-        </Tab>
-        <Tab eventKey="support" title="Support">
-          <div className="mt-4">
-            <h4>FAQs & Help</h4>
-            <p>
-              How to request donations, contact support, etc. (to be
-              implemented).
-            </p>
-          </div>
-        </Tab>
-      </Tabs>
+          </Tab>
+          <Tab eventKey="profile" title="Manage Profile">
+            <div className="mt-4">
+              <ProfileCompletionProgress
+                user={user}
+                profileData={profileData}
+                setCompletionPercentage={setCompletionPercentage}
+              />
+              <Button variant="primary" as={Link} to="/profile" className="mt-3">
+                Go to Profile
+              </Button>
+            </div>
+          </Tab>
+          <Tab eventKey="reports" title="Reports & Analytics">
+            <div className="mt-4">
+              <h4>Donation Trends</h4>
+              <p>
+                Graphs showing received donations over time (to be implemented).
+              </p>
+              <h4>Most Needed Items</h4>
+              <p>List of most requested items (to be implemented).</p>
+              <h4>Active Donors</h4>
+              <p>List of frequent donors (to be implemented).</p>
+            </div>
+          </Tab>
+          <Tab eventKey="messages" title="Messaging">
+            <div className="mt-4">
+              <h4>Message Center</h4>
+              <p>Communicate with donors (to be implemented).</p>
+            </div>
+          </Tab>
+          {/* Notifications Tab */}
+          <Tab eventKey="notifications" title="Notifications">
+            <div className="mt-4">
+              <h4>Notifications</h4>
+              {notifications.length > 0 ? (
+                <ul className="list-group">
+                  {notifications.map((note, index) => (
+                    <li key={index} className="list-group-item">
+                      {note}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No notifications to display.</p>
+              )}
+            </div>
+          </Tab>
+          <Tab eventKey="support" title="Support">
+            <div className="mt-4">
+              <h4>FAQs & Help</h4>
+              <p>
+                How to request donations, contact support, etc. (to be
+                implemented).
+              </p>
+            </div>
+          </Tab>
+        </Tabs>
+      </div>
     </div>
   );
 };

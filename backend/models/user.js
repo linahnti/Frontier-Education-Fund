@@ -14,10 +14,15 @@ const userSchema = new mongoose.Schema(
     },
     contactNumber: {
       type: String,
-      required: true,
+      required: function () {
+        return this.role === "Donor" || this.role === "School";
+      },
       validate: {
         validator: function (v) {
-          return /^\+\d{12}$/.test(v); // Validate contactNumber format
+          if (v) {
+            return /^\+\d{12}$/.test(v);
+          }
+          return true;
         },
         message: (props) =>
           `${props.value} is not a valid contact number! It must start with a country code and be exactly 12 digits (e.g., +254712345678).`,

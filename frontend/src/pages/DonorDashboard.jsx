@@ -14,7 +14,6 @@ import ProfileCompletionProgress from "../components/ProfileCompletionProgress";
 import Notifications from "../components/Notifications";
 import ExploreSchools from "../components/ExploreSchools";
 import DonationsTab from "../components/DonationsTab";
-import assets from "../assets/images/assets";
 
 const DonorDashboard = () => {
   const navigate = useNavigate();
@@ -101,50 +100,35 @@ const DonorDashboard = () => {
   return (
     <div
       style={{
-        position: "relative", // Ensure the overlay is positioned correctly
         minHeight: "100vh", // Ensure the background covers the full height
+        backgroundColor: "#ffffff", // White background
+        padding: "20px", // Add padding for better spacing
       }}
     >
-      {/* Background Image and Overlay */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage: `url(${assets.mvg7})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          filter: "brightness(0.7)", // Dim the background image
-          zIndex: -1, // Ensure it stays behind the content
-        }}
-      ></div>
-
-      {/* Semi-transparent Overlay */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "rgba(0, 0, 0, 0.4)", // Adjust opacity for dimming
-          zIndex: -1, // Ensure it stays behind the content
-        }}
-      ></div>
-
       {/* Dashboard Content */}
       <div
         className="container mt-5"
         style={{
-          position: "relative", // Ensure content stays above the background and overlay
-          zIndex: 1, // Bring content to the front
+          backgroundColor: "#f5f5f5", // Light grey container
+          borderRadius: "10px", // Optional: Add rounded corners
+          padding: "20px", // Add padding for better spacing
+          boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)", // Floating effect
         }}
       >
-        <h2 className="text-warning">Welcome to the Donor Dashboard</h2>
-        <h3 className="text-dark">{user?.name || "Donor"}</h3>
-        <p className="text-dark">
+        {/* Dashboard Title and User Name */}
+        <h2
+          className="text-warning"
+          style={{ fontSize: "2.5rem", fontWeight: "bold" }}
+        >
+          Welcome to the Donor Dashboard
+        </h2>
+        <h3
+          className="text-dark"
+          style={{ fontSize: "2rem", fontWeight: "600" }}
+        >
+          {user?.name || "Donor"}
+        </h3>
+        <p className="text-dark" style={{ fontWeight: "300", opacity: "0.8" }}>
           Make donations, track your contributions, and explore schools in need.
         </p>
 

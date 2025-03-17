@@ -22,6 +22,7 @@ const donationRequestRoutes = require("./routes/donationRequestRoutes.js");
 const schoolRoutes = require("./routes/schoolRoutes.js");
 const donorRoutes = require("./routes/donorRoutes.js");
 const donationRoutes = require("./routes/donationRoutes.js");
+const adminRoutes = require("./routes/adminRoutes.js");
 
 // User Routes
 app.use("/api/users", userRoutes);
@@ -29,6 +30,7 @@ app.use("/api/donation-requests", donationRequestRoutes);
 app.use("/api/schools", schoolRoutes);
 app.use("/api/donors", donorRoutes);
 app.use("/api/donations", donationRoutes);
+app.use("/api/admin", adminRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
