@@ -13,15 +13,15 @@ import {
 } from "react-bootstrap";
 import "../styles/Modal.css";
 import ProfileCompletionProgress from "../components/ProfileCompletionProgress";
-import SchoolsDonationTab from "../components/SchoolsDonationTab"; // Import the SchoolsDonationTab
-import SchoolsNotifications from "../components/SchoolsNotifications"; // Import the SchoolsNotifications
+import SchoolsDonationTab from "../components/SchoolsDonationTab";
+import SchoolsNotifications from "../components/SchoolsNotifications";
 
 const SchoolDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState(null);
-  const [notifications, setNotifications] = useState([]); // Removed dummy notifications
+  const [notifications, setNotifications] = useState([]);
   const [activeTab, setActiveTab] = useState("donations");
   const [completionPercentage, setCompletionPercentage] = useState(0);
 
@@ -37,6 +37,11 @@ const SchoolDashboard = () => {
         }
 
         const parsedUser = JSON.parse(storedUser);
+
+        // Ensure the user object has an `id` field
+        if (!parsedUser.id) {
+          throw new Error("User ID is undefined");
+        }
 
         // Capitalize the role for consistency
         parsedUser.role =
@@ -69,26 +74,22 @@ const SchoolDashboard = () => {
         console.log("User data successfully loaded:", updatedUser);
 
         // Fetch notifications from the backend
-        if (updatedUser._id) {
-          const notificationsResponse = await fetch(
-            `http://localhost:5000/api/schools/${updatedUser._id}/notifications`,
-            {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          if (!notificationsResponse.ok) {
-            throw new Error("Failed to fetch notifications");
+        const notificationsResponse = await fetch(
+          `http://localhost:5000/api/schools/${updatedUser.id}/notifications`, // Use updatedUser.id
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
+        );
 
-          const notificationsData = await notificationsResponse.json();
-          setNotifications(notificationsData.notifications || []); // Set notifications from backend
-        } else {
-          console.error("School ID is undefined");
+        if (!notificationsResponse.ok) {
+          throw new Error("Failed to fetch notifications");
         }
+
+        const notificationsData = await notificationsResponse.json();
+        setNotifications(notificationsData.notifications || []); // Set notifications from backend
       } catch (error) {
         console.error("Error fetching user data:", error);
       } finally {
@@ -99,10 +100,14 @@ const SchoolDashboard = () => {
     fetchUserData();
   }, []);
 
-  // Redirect to login if no user is found after loading completes
   useEffect(() => {
     if (!loading && !user) {
-      navigate("/login");
+      const storedUser = localStorage.getItem("user");
+      const token = localStorage.getItem("token");
+
+      if (!storedUser || !token) {
+        navigate("/login");
+      }
     }
   }, [loading, user, navigate]);
 
@@ -164,9 +169,8 @@ const SchoolDashboard = () => {
           className="mb-4"
         >
           <Tab eventKey="donations" title="Donations">
-            {/* Pass schoolId to SchoolsDonationTab */}
             <SchoolsDonationTab
-              schoolId={user._id} // Pass schoolId as a prop
+              schoolId={user.id}
               user={user}
               profileData={profileData}
               loading={loading}

@@ -6,31 +6,42 @@ const ManageDonations = () => {
   const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [feedback, setFeedback] = useState(null);
 
   // Fetch donations from the backend
   useEffect(() => {
-    const fetchDonations = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          "http://localhost:5000/api/admin/donations",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setDonations(response.data);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching donations:", error);
-        setError("Failed to fetch donations. Please try again later.");
-        setLoading(false);
-      }
-    };
-
     fetchDonations();
   }, []);
+
+  const fetchDonations = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        "http://localhost:5000/api/admin/donations",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setDonations(response.data);
+      setError(null);
+    } catch (error) {
+      console.error("Error fetching donations:", error);
+      setError("Failed to fetch donations. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Show feedback for a few seconds
+  const showTemporaryFeedback = (message, type = "success") => {
+    setFeedback({ message, type });
+    setTimeout(() => {
+      setFeedback(null);
+    }, 3000);
+  };
 
   // Handle donation approval
   const handleApprove = async (donationId) => {
@@ -47,7 +58,7 @@ const ManageDonations = () => {
       );
 
       if (response.status === 200) {
-        // Update the local state to reflect the approval
+        // Update the local state directly instead of relying on response
         setDonations((prevDonations) =>
           prevDonations.map((donation) =>
             donation._id === donationId
@@ -55,9 +66,11 @@ const ManageDonations = () => {
               : donation
           )
         );
+        showTemporaryFeedback("Donation approved successfully");
       }
     } catch (error) {
       console.error("Error approving donation:", error);
+      showTemporaryFeedback("Error approving donation", "danger");
     }
   };
 
@@ -76,7 +89,7 @@ const ManageDonations = () => {
       );
 
       if (response.status === 200) {
-        // Update the local state to reflect the completion
+        // Update the local state directly
         setDonations((prevDonations) =>
           prevDonations.map((donation) =>
             donation._id === donationId
@@ -84,9 +97,11 @@ const ManageDonations = () => {
               : donation
           )
         );
+        showTemporaryFeedback("Donation marked as completed");
       }
     } catch (error) {
       console.error("Error completing donation:", error);
+      showTemporaryFeedback("Error completing donation", "danger");
     }
   };
 
@@ -108,91 +123,113 @@ const ManageDonations = () => {
         setDonations((prevDonations) =>
           prevDonations.filter((donation) => donation._id !== donationId)
         );
+        showTemporaryFeedback("Donation deleted successfully");
       }
     } catch (error) {
       console.error("Error deleting donation:", error);
+      showTemporaryFeedback("Error deleting donation", "danger");
     }
   };
 
-  if (loading) {
-    return <p>Loading donations...</p>;
-  }
-
-  if (error) {
-    return <p className="text-danger">{error}</p>;
+  if (loading && donations.length === 0) {
+    return (
+      <div className="text-center p-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+        <p className="mt-3">Loading donations...</p>
+      </div>
+    );
   }
 
   return (
-    <Table striped bordered hover>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Donor</th>
-          <th>School</th>
-          <th>Type</th>
-          <th>Amount/Items</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {donations.map((donation, index) => (
-          <tr key={donation._id}>
-            <td>{index + 1}</td>
-            <td>{donation.donorId?.name || "N/A"}</td>
-            <td>{donation.schoolId?.schoolName || "N/A"}</td>
-            <td>{donation.type}</td>
-            <td>
-              {donation.type === "money"
-                ? `KES ${donation.amount}`
-                : donation.items?.join(", ") || "N/A"}
-            </td>
-            <td>
-              <Badge
-                bg={
-                  donation.status === "Completed"
-                    ? "success"
-                    : donation.status === "Approved"
-                    ? "primary"
-                    : "warning"
-                }
-              >
-                {donation.status}
-              </Badge>
-            </td>
-            <td>
-              <ButtonGroup style={{ gap: "8px" }}>
-                {donation.status === "Pending" && (
-                  <Button
-                    variant="success"
-                    size="sm"
-                    onClick={() => handleApprove(donation._id)}
+    <div>
+      {feedback && (
+        <Alert variant={feedback.type} className="mt-3">
+          {feedback.message}
+        </Alert>
+      )}
+
+      {error && <Alert variant="danger">{error}</Alert>}
+
+      {donations.length === 0 ? (
+        <Alert variant="info">No donations available.</Alert>
+      ) : (
+        <Table striped bordered hover responsive>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Donor</th>
+              <th>School</th>
+              <th>Type</th>
+              <th>Amount/Items</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {donations.map((donation, index) => (
+              <tr key={donation._id}>
+                <td>{index + 1}</td>
+                <td>{donation.donorId?.name || "N/A"}</td>
+                <td>{donation.schoolId?.schoolName || "N/A"}</td>
+                <td>{donation.type}</td>
+                <td>
+                  {donation.type === "money"
+                    ? `KES ${donation.amount}`
+                    : donation.items?.join(", ") || "N/A"}
+                </td>
+                <td>
+                  <Badge
+                    bg={
+                      donation.status === "Completed"
+                        ? "success"
+                        : donation.status === "Approved"
+                        ? "primary"
+                        : "warning"
+                    }
                   >
-                    Approve
-                  </Button>
-                )}
-                {donation.status === "Approved" && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleComplete(donation._id)}
-                  >
-                    Complete
-                  </Button>
-                )}
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={() => handleDelete(donation._id)}
-                >
-                  Delete
-                </Button>
-              </ButtonGroup>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </Table>
+                    {donation.status}
+                  </Badge>
+                </td>
+                <td>
+                  <ButtonGroup className="d-flex flex-wrap">
+                    {donation.status === "Pending" && (
+                      <Button
+                        variant="success"
+                        size="sm"
+                        className="m-1"
+                        onClick={() => handleApprove(donation._id)}
+                      >
+                        Approve
+                      </Button>
+                    )}
+                    {donation.status === "Approved" && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="m-1"
+                        onClick={() => handleComplete(donation._id)}
+                      >
+                        Complete
+                      </Button>
+                    )}
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      className="m-1"
+                      onClick={() => handleDelete(donation._id)}
+                    >
+                      Delete
+                    </Button>
+                  </ButtonGroup>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
+    </div>
   );
 };
 

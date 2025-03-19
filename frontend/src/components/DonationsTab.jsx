@@ -1,45 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react"; // Import useState
 import { Table, Button, Badge, Alert, Modal } from "react-bootstrap";
-import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 
-const DonationsTab = ({ donorId }) => {
-  const [donations, setDonations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+const DonationsTab = ({ donorId, donations, loading, error }) => {
+  const [showModal, setShowModal] = useState(false); // Now useState is defined
   const navigate = useNavigate();
-
-  // Fetch donation history for the donor
-  useEffect(() => {
-    const fetchDonations = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          `http://localhost:5000/api/donors/${donorId}/donations`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setDonations(response.data);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching donations:", error);
-        setError("Failed to fetch donations. Please try again later.");
-        setLoading(false);
-      }
-    };
-
-    fetchDonations();
-
-    // Set up polling to fetch donations every 10 seconds
-    const interval = setInterval(fetchDonations, 10000);
-
-    // Clean up the interval on component unmount
-    return () => clearInterval(interval);
-  }, [donorId]);
 
   // Handle "Make a Donation" button click
   const handleMakeDonation = () => {

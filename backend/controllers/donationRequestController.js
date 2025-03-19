@@ -1,18 +1,14 @@
 const DonationRequest = require("../models/donationRequest");
 const User = require("../models/user");
 
-// Create a donation request
 const createDonationRequest = async (req, res) => {
   const { schoolId, donationNeeds, customRequest } = req.body;
 
   try {
     // Check if the school exists
-    const school = await User.findById(schoolId); // Use _id directly
+    const school = await User.findById(schoolId);
     console.log("Received School ID:", schoolId);
     console.log("Found School:", school);
-
-    console.log("Received donationNeeds:", donationNeeds);
-    console.log("Received cutomRequest:", customRequest);
 
     if (!school || school.role !== "School") {
       return res.status(404).json({ message: "School not found" });
@@ -26,17 +22,21 @@ const createDonationRequest = async (req, res) => {
       status: "Pending",
     });
 
-    console.log("Creating donation request with:", {
-      schoolId,
-      donationNeeds,
-      customRequest: donationRequest.customRequest,
-    });
-
     await donationRequest.save();
 
     // Add the donation request to the school's donationRequests array
     await User.findByIdAndUpdate(schoolId, {
-      $push: { donationRequests: donationRequest._id },
+      $push: {
+        donationRequests: donationRequest._id,
+        notifications: {
+          message: `Your donation request for ${donationNeeds.join(
+            ", "
+          )} has been submitted successfully and is pending approval.`,
+          type: "request_submission",
+          date: new Date(),
+          read: false,
+        },
+      },
     });
 
     // Send notifications to all donors
@@ -157,13 +157,13 @@ const getDonationRequestsForSchool = async (req, res) => {
 // Get donation requests for a donor
 const getDonationRequestsForDonor = async (req, res) => {
   const { donorId } = req.params;
+  console.log("Fetching donations for donor:", donorId); // Log the donorId
 
   try {
     // Check if the donor exists
     const donor = await User.findById(donorId);
     if (!donor || donor.role !== "Donor") {
-      // Use capitalized role
-      return res.status(404).json({ message: "Donor not found" });
+      return res.status(404).json({ message: "Donor not found or invalid role" });
     }
 
     // Fetch all donation requests where the donor has participated

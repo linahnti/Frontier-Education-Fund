@@ -189,8 +189,8 @@ const getDonationsReceived = async (req, res) => {
   }
 };
 
-// Get pending donation requests for a school
-const getPendingDonationRequests = async (req, res) => {
+/// Get all donation requests for a school (regardless of status)
+const getDonationRequests = async (req, res) => {
   const { schoolId } = req.params;
 
   // Validate schoolId
@@ -201,15 +201,14 @@ const getPendingDonationRequests = async (req, res) => {
   try {
     const donationRequests = await DonationRequest.find({
       schoolId,
-      status: "Pending",
     }).populate("schoolId", "schoolName location");
 
     res.status(200).json(donationRequests);
   } catch (error) {
-    console.error("Error fetching pending donation requests:", error);
+    console.error("Error fetching donation requests:", error);
     res
       .status(500)
-      .json({ message: "Error fetching pending donation requests", error });
+      .json({ message: "Error fetching donation requests", error });
   }
 };
 
@@ -242,12 +241,29 @@ const getActiveDonors = async (req, res) => {
   }
 };
 
+const getSchoolNotifications = async (req, res) => {
+  const { schoolId } = req.params;
+
+  try {
+    const school = await User.findById(schoolId);
+    if (!school || school.role !== "School") {
+      return res.status(404).json({ message: "School not found" });
+    }
+
+    res.status(200).json({ notifications: school.notifications || [] });
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    res.status(500).json({ message: "Error fetching notifications", error });
+  }
+};
+
 module.exports = {
   updateSchoolNeeds,
   updateDonationNeeds,
   getSchoolDetails,
   getAllSchools,
   getDonationsReceived,
-  getPendingDonationRequests,
+  getDonationRequests,
   getActiveDonors,
+  getSchoolNotifications,
 };

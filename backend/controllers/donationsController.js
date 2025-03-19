@@ -60,8 +60,18 @@ const createDonation = async (req, res) => {
       };
     }
 
+    // Add donation to donor's donationsMade
     donor.donationsMade.push(donation);
     await donor.save();
+
+    // Add donation to school's donationsReceived
+    school.donationsReceived.push({
+      donorId,
+      item: type === "money" ? `KES ${amount}` : items.join(", "),
+      status: "Pending",
+      date: new Date(),
+    });
+    await school.save();
 
     res
       .status(201)

@@ -11,6 +11,7 @@ const {
   approveDonationRequest,
   completeDonationRequest,
   deleteDonationRequest,
+  rejectDonationRequest,
 } = require("../controllers/adminController");
 const { protect, admin } = require("../middleware/authMiddleware");
 
@@ -21,9 +22,10 @@ router.put("/donations/:donationId/approve", protect, admin, approveDonation);
 router.put("/donations/:donationId/complete", protect, admin, completeDonation);
 router.delete("/donations/:donationId", protect, admin, deleteDonation);
 
-router.get("/", protect, admin, getAllDonationRequests);
-router.put("/:requestId/approve", protect, admin, approveDonationRequest);
-router.put("/:requestId/complete", protect, admin, completeDonationRequest);
+router.get("/donation-requests", protect, admin, getAllDonationRequests);
+router.put("/donation-requests/:requestId/approve", protect, admin, approveDonationRequest);
+router.put("/donation-requests/:requestId/complete", protect, admin, completeDonationRequest);
+router.put("/donation-requests/:requestId/reject", protect, admin, rejectDonationRequest);
 router.delete("/:requestId", protect, admin, deleteDonationRequest);
 
 module.exports = router;

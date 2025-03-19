@@ -29,7 +29,6 @@ router.delete(
   deleteNotification
 );
 
-// Route for the currently authenticated user
 router.get("/notifications", protect, getCurrentUserNotifications);
 
 module.exports = router;

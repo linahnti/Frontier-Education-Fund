@@ -22,7 +22,7 @@ const donationRequestSchema = new mongoose.Schema(
         },
         status: {
           type: String,
-          enum: ["Pending", "Approved", "Completed"],
+          enum: ["Pending", "Approved", "Completed", "rejected"],
           default: "Pending",
         },
         date: { type: Date, default: Date.now }, // Date of the donor's response

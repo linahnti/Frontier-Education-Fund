@@ -18,21 +18,28 @@ const DonationRequest = ({
   const handleDonationRequest = async () => {
     const token = localStorage.getItem("token");
     const currentUser = user;
-
+  
     if (!currentUser) {
       setMessage("User not found. Please log in again.");
       setShowMessageModal(true);
       return;
     }
-
-    const schoolId = currentUser.id || currentUser._id;
-
+  
+    // Use `currentUser.id` instead of `currentUser._id`
+    const schoolId = currentUser.id;
+  
+    if (!schoolId) {
+      setMessage("School ID is undefined. Please log in again.");
+      setShowMessageModal(true);
+      return;
+    }
+  
     if (selectedNeeds.length === 0 && !customRequest) {
       setMessage("Please select at least one need or add a custom request.");
       setShowMessageModal(true);
       return;
     }
-
+  
     try {
       const response = await fetch(
         `http://localhost:5000/api/schools/${schoolId}/donation-needs`,
@@ -49,16 +56,16 @@ const DonationRequest = ({
           }),
         }
       );
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to update donation needs");
       }
-
+  
       const data = await response.json();
       setMessage("Your donation needs have been updated successfully!");
       setShowMessageModal(true);
-
+  
       // Reset form fields
       setShowDonationModal(false);
       setSelectedNeeds([]);

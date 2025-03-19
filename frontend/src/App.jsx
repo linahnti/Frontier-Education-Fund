@@ -1,5 +1,7 @@
 import React, { lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 import PublicLayout from "./components/PublicLayout";
 import GeneralLayout from "./components/GeneralLayout";
 import ProtectedRoute from "./components/ProtectedRoute";

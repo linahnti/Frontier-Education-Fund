@@ -55,7 +55,7 @@ const donorSchema = new mongoose.Schema({
         enum: ["Pending", "Approved", "Completed"],
         default: "Pending",
       },
-      date: { type: Date, default: Date.now }, // Date of the donation
+      date: { type: Date, default: Date.now },
     },
   ],
   donationRequests: [

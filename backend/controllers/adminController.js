@@ -1,10 +1,9 @@
 const User = require("../models/user");
 const Donor = require("../models/donorDiscriminator");
+const DonationRequest = require("../models/donationRequest");
 
-// Fetch all donations
 const getAllDonations = async (req, res) => {
   try {
-    // Fetch all donors and their donations
     const donors = await Donor.find()
       .populate("donationsMade.schoolId", "name schoolName") // Populate school name and schoolName
       .populate("donationsMade.donorId", "name"); // Populate donor name
@@ -53,7 +52,7 @@ const approveDonation = async (req, res) => {
   const { donationId } = req.params;
 
   try {
-    // Find the donation and update its status to "Approved"
+    // Find the donation and update its status to "Approved" in the donor's donationsMade array
     const donor = await Donor.findOneAndUpdate(
       { "donationsMade._id": donationId },
       { $set: { "donationsMade.$.status": "Approved" } },
@@ -69,8 +68,28 @@ const approveDonation = async (req, res) => {
       (donation) => donation._id.toString() === donationId
     );
 
-    // Populate the school name and include donation details in the notification
+    // Update the donation status in the school's donationsReceived array
     const school = await User.findById(updatedDonation.schoolId);
+    if (school && school.role === "School") {
+      const schoolDonation = school.donationsReceived.find(
+        (donation) => donation.donorId.toString() === donor._id.toString()
+      );
+      if (schoolDonation) {
+        schoolDonation.status = "Approved";
+      }
+
+      // Send a notification to the school
+      school.notifications.push({
+        message: `Your donation request from ${donor.name} has been approved.`,
+        type: "approval",
+        date: new Date(),
+        read: false,
+      });
+
+      await school.save();
+    }
+
+    // Populate the school name and include donation details in the notification
     const schoolName = school ? school.schoolName : "Unknown School";
 
     let donationDetails;
@@ -129,7 +148,7 @@ const completeDonation = async (req, res) => {
   const { donationId } = req.params;
 
   try {
-    // Find the donation and update its status to "Completed"
+    // Find the donation and update its status to "Completed" in the donor's donationsMade array
     const donor = await Donor.findOneAndUpdate(
       { "donationsMade._id": donationId },
       { $set: { "donationsMade.$.status": "Completed" } },
@@ -145,8 +164,28 @@ const completeDonation = async (req, res) => {
       (donation) => donation._id.toString() === donationId
     );
 
-    // Populate the school name and include donation details in the notification
+    // Update the donation status in the school's donationsReceived array
     const school = await User.findById(updatedDonation.schoolId);
+    if (school && school.role === "School") {
+      const schoolDonation = school.donationsReceived.find(
+        (donation) => donation.donorId.toString() === donor._id.toString()
+      );
+      if (schoolDonation) {
+        schoolDonation.status = "Completed";
+      }
+
+      // Send a notification to the school
+      school.notifications.push({
+        message: `Your donation request from ${donor.name} has been completed.`,
+        type: "completion",
+        date: new Date(),
+        read: false,
+      });
+
+      await school.save();
+    }
+
+    // Populate the school name and include donation details in the notification
     const schoolName = school ? school.schoolName : "Unknown School";
 
     let donationDetails;
@@ -183,14 +222,21 @@ const getAllDonationRequests = async (req, res) => {
   try {
     const donationRequests = await DonationRequest.find()
       .populate("schoolId", "schoolName location") // Populate school details
-      .populate("donors.donorId", "name"); // Populate donor details
+      .populate("donors.donorId", "name"); // Populate donor details (if needed)
 
+    // Check if donation requests were found
+    if (!donationRequests || donationRequests.length === 0) {
+      return res.status(404).json({ message: "No donation requests found" });
+    }
+
+    // Return the donation requests
     res.status(200).json(donationRequests);
   } catch (error) {
     console.error("Error fetching donation requests:", error);
-    res
-      .status(500)
-      .json({ message: "Error fetching donation requests", error });
+    res.status(500).json({
+      message: "Error fetching donation requests",
+      error: error.message,
+    });
   }
 };
 
@@ -203,10 +249,42 @@ const approveDonationRequest = async (req, res) => {
       requestId,
       { $set: { status: "Approved" } },
       { new: true }
-    );
+    ).populate("schoolId", "schoolName location");
 
     if (!donationRequest) {
       return res.status(404).json({ message: "Donation request not found" });
+    }
+
+    // Send notification to the school
+    await User.findByIdAndUpdate(donationRequest.schoolId._id, {
+      $push: {
+        notifications: {
+          message: `Your donation request for ${donationRequest.donationNeeds.join(
+            ", "
+          )} has been approved.`,
+          type: "request_approval",
+          date: new Date(),
+          read: false,
+        },
+      },
+    });
+
+    // Send notification to the donor (if donorId exists)
+    if (donationRequest.donorId) {
+      await User.findByIdAndUpdate(donationRequest.donorId, {
+        $push: {
+          notifications: {
+            message: `Your donation to ${
+              donationRequest.schoolId.schoolName
+            } for ${donationRequest.donationNeeds.join(
+              ", "
+            )} has been approved.`,
+            type: "request_approval",
+            date: new Date(),
+            read: false,
+          },
+        },
+      });
     }
 
     res.status(200).json({
@@ -230,10 +308,42 @@ const completeDonationRequest = async (req, res) => {
       requestId,
       { $set: { status: "Completed" } },
       { new: true }
-    );
+    ).populate("schoolId", "schoolName location");
 
     if (!donationRequest) {
       return res.status(404).json({ message: "Donation request not found" });
+    }
+
+    // Send notification to the school
+    await User.findByIdAndUpdate(donationRequest.schoolId._id, {
+      $push: {
+        notifications: {
+          message: `Your donation request for ${donationRequest.donationNeeds.join(
+            ", "
+          )} has been completed.`,
+          type: "request_completion",
+          date: new Date(),
+          read: false,
+        },
+      },
+    });
+
+    // Send notification to the donor (if donorId exists)
+    if (donationRequest.donorId) {
+      await User.findByIdAndUpdate(donationRequest.donorId, {
+        $push: {
+          notifications: {
+            message: `Your donation to ${
+              donationRequest.schoolId.schoolName
+            } for ${donationRequest.donationNeeds.join(
+              ", "
+            )} has been completed.`,
+            type: "request_completion",
+            date: new Date(),
+            read: false,
+          },
+        },
+      });
     }
 
     res.status(200).json({
@@ -266,6 +376,62 @@ const deleteDonationRequest = async (req, res) => {
   }
 };
 
+const rejectDonationRequest = async (req, res) => {
+  const { requestId } = req.params;
+
+  try {
+    const donationRequest = await DonationRequest.findByIdAndUpdate(
+      requestId,
+      { $set: { status: "Rejected" } },
+      { new: true }
+    ).populate("schoolId", "schoolName location");
+
+    if (!donationRequest) {
+      return res.status(404).json({ message: "Donation request not found" });
+    }
+
+    // Send notification to the school
+    await User.findByIdAndUpdate(donationRequest.schoolId._id, {
+      $push: {
+        notifications: {
+          message: `Your donation request for ${donationRequest.donationNeeds.join(
+            ", "
+          )} has been rejected.`,
+          type: "request_rejection",
+          date: new Date(),
+          read: false,
+        },
+      },
+    });
+
+    // Send notification to the donor (if donorId exists)
+    if (donationRequest.donorId) {
+      await User.findByIdAndUpdate(donationRequest.donorId, {
+        $push: {
+          notifications: {
+            message: `Your donation to ${donationRequest.schoolId.schoolName} for ${donationRequest.donationNeeds.join(
+              ", "
+            )} has been rejected.`,
+            type: "request_rejection",
+            date: new Date(),
+            read: false,
+          },
+        },
+      });
+    }
+
+    res.status(200).json({
+      message: "Donation request rejected successfully",
+      donationRequest,
+    });
+  } catch (error) {
+    console.error("Error rejecting donation request:", error);
+    res
+      .status(500)
+      .json({ message: "Error rejecting donation request", error });
+  }
+};
+
 module.exports = {
   getAllDonations,
   getAllSchools,
@@ -277,4 +443,5 @@ module.exports = {
   approveDonationRequest,
   completeDonationRequest,
   deleteDonationRequest,
+  rejectDonationRequest,
 };

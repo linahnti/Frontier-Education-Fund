@@ -63,17 +63,21 @@ const getDonorDetails = async (req, res) => {
 
 const getDonorDonations = async (req, res) => {
   const { donorId } = req.params;
+  console.log("Fetching donations for donor:", donorId); // Debugging
 
   try {
     const donor = await User.findById(donorId).populate(
       "donationsMade.schoolId"
     );
     if (!donor || donor.role !== "Donor") {
+      console.log("Donor not found or invalid role"); // Debugging
       return res.status(404).json({ message: "Donor not found" });
     }
 
+    console.log("Donations found:", donor.donationsMade); // Debugging
     res.status(200).json(donor.donationsMade);
   } catch (error) {
+    console.error("Error fetching donations:", error); // Debugging
     res.status(500).json({ message: "Error fetching donations", error });
   }
 };
