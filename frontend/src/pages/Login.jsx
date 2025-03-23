@@ -4,6 +4,8 @@ import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { motion } from "framer-motion";
+// import "../styles/Login.css";
 import assets from "../assets/images/assets";
 
 const Login = () => {
@@ -27,8 +29,8 @@ const Login = () => {
       );
 
       const { token, user } = response.data;
-      console.log("API Response:", response.data); // Debugging
-      console.log("User Role:", user.role); // Debugging
+      console.log("API Response:", response.data);
+      console.log("User Role:", user.role);
 
       const profileResponse = await axios.get(
         "http://localhost:5000/api/users/profile",
@@ -42,19 +44,12 @@ const Login = () => {
       const completeUser = profileResponse.data;
       console.log("Complete User:", completeUser);
 
-      // // Capitalize the role before saving to localStorage
-      // const updatedUser = {
-      //   ...user,
-      //   _id: user._id, // Use _id instead of id
-      //   role: user.role.charAt(0).toUpperCase() + user.role.slice(1), // Capitalize the role
-      // };
-
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
       toast.success("Login successful! Redirecting to dashboard...", {
-        position: "top-center", // Position the toast in the center
-        autoClose: 3000, // Close after 3 seconds
+        position: "top-center",
+        autoClose: 3000,
         hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true,
@@ -62,7 +57,6 @@ const Login = () => {
         style: { backgroundColor: "#ffc107", color: "#000" },
       });
 
-      // Redirect user based on role
       const role = user.role.toLowerCase();
       if (role === "admin") {
         navigate("/admin-dashboard");
@@ -71,7 +65,7 @@ const Login = () => {
       } else if (role === "school") {
         navigate("/school-dashboard");
       } else {
-        console.error("Unknown role:", user.role); // Debugging
+        console.error("Unknown role:", user.role);
       }
     } catch (err) {
       if (err.response && err.response.data && err.response.data.message) {
@@ -79,7 +73,7 @@ const Login = () => {
       } else {
         setError("Login failed. Please try again.");
       }
-      console.error("Login error:", err); // Debugging
+      console.error("Login error:", err);
     }
   };
 
@@ -87,30 +81,85 @@ const Login = () => {
     <div
       className="auth-container d-flex justify-content-center align-items-center min-vh-100"
       style={{
-        backgroundImage: `url(${assets.sunrise2})`, // Use the imported image
+        backgroundImage: `url(${assets.sunrise2})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         minHeight: "100vh",
         display: "flex",
-        justifyContent: "center",
+        justifyContent: "space-between", // Split the page into two sections
         alignItems: "center",
+        padding: "0 100px", // Add padding to the sides
       }}
     >
       <div
-        className="card p-4 shadow-lg text-white "
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          backgroundColor: "rgba(0, 0, 0, 0.4)", // Dark overlay
+        }}
+      ></div>
+      {/* Left Section: Animated Text */}
+      <div
+        className="text-section"
+        style={{
+          width: "50%",
+          color: "#fff",
+          textAlign: "left",
+          padding: "20px",
+          marginRight: "50px", // Add space between text and login form
+        }}
+      >
+        <motion.h1
+          initial={{ width: 0 }} // Start with no width (hidden)
+          animate={{ width: "100%" }} // Expand to full width
+          transition={{ duration: 3, ease: "easeInOut" }} // Animation duration and easing
+          style={{
+            fontSize: "3.5rem",
+            fontWeight: "bold",
+            whiteSpace: "normal", // Prevent text from wrapping
+            overflow: "hidden", // Hide overflow text
+          }}
+        >
+          Welcome to Frontier Education Fund
+        </motion.h1>
+        <motion.p
+          initial={{ width: 0, opacity: 0 }} // Start with no width and invisible
+          animate={{ width: "100%", opacity: 1 }} // Expand to full width and fade in
+          transition={{ duration: 3, ease: "easeInOut" }} // Animation duration and easing
+          style={{
+            fontSize: "1.5rem",
+            color: "#007BFF",
+            marginTop: "20px",
+            overflow: "hidden", 
+            whiteSpace: "normal",
+          }}
+        >
+          Bridging the gap between donors and underprivileged schools to ensure
+          quality education for every child.
+        </motion.p>
+      </div>
+
+      {/* Right Section: Login Form */}
+      <div
+        className="card p-4 shadow-lg text-white"
         style={{
           maxWidth: "400px",
           width: "100%",
           backgroundColor: "rgba(255, 255, 255, 0.8)",
         }}
       >
-        <h3 className="text-center mb-4" style={{ color: "#ffc107" }}>
+        <h3 className="text-center mb-4" style={{ color: "#000" }}>
           Login
         </h3>
         {error && <div className="alert alert-danger">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label className="form-label text-black">Email</label>
+            <label className="form-label" style={{ color: "#000" }}>
+              Email
+            </label>
             <input
               type="email"
               className="form-control"
@@ -121,7 +170,9 @@ const Login = () => {
             />
           </div>
           <div className="mb-3">
-            <label className="form-label text-black">Password</label>
+            <label className="form-label" style={{ color: "#000" }}>
+              Password
+            </label>
             <div className="input-group">
               <input
                 type={showPassword ? "text" : "password"}
@@ -143,7 +194,7 @@ const Login = () => {
             Login
           </button>
         </form>
-        <p className="text-center mt-3 text-black">
+        <p className="text-center mt-3" style={{ color: "#000" }}>
           <a
             href="/forgot-password"
             className="text-warning"
@@ -152,7 +203,7 @@ const Login = () => {
             Forgot Password?
           </a>
         </p>
-        <p className="text-center text-black">
+        <p className="text-center" style={{ color: "#000" }}>
           Don't have an account?{" "}
           <a
             href="/signup"
@@ -165,8 +216,8 @@ const Login = () => {
       </div>
 
       <ToastContainer
-        position="top-center" // Position the toast in the center
-        autoClose={2000} // Close after 2 seconds
+        position="top-center"
+        autoClose={2000}
         hideProgressBar={false}
         newestOnTop={false}
         closeOnClick

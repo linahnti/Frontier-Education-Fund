@@ -225,6 +225,36 @@ const getActiveDonors = async (req, res) => {
   }
 };
 
+const getDonorReports = async (req, res) => {
+  const { donorId } = req.params;
+
+  try {
+    const donor = await User.findById(donorId).populate({
+      path: "donationsMade.schoolId",
+      model: "User", // Explicitly specify the model to populate from
+      select: "schoolName", // Only fetch the schoolName field
+    });
+
+    if (!donor || donor.role !== "Donor") {
+      return res.status(404).json({ message: "Donor not found" });
+    }
+
+    const donations = donor.donationsMade.map((donation) => ({
+      schoolName: donation.schoolId?.schoolName || "N/A", // Using optional chaining
+      type: donation.type,
+      amount: donation.amount,
+      items: donation.items,
+      status: donation.status,
+      date: donation.date,
+    }));
+
+    res.status(200).json({ donations });
+  } catch (error) {
+    console.error("Error fetching donor reports:", error);
+    res.status(500).json({ message: "Error fetching donor reports", error });
+  }
+};
+
 module.exports = {
   approveDonationRequest,
   completeDonation,
@@ -235,4 +265,5 @@ module.exports = {
   markNotificationsAsRead,
   deleteNotification,
   getActiveDonors,
+  getDonorReports,
 };

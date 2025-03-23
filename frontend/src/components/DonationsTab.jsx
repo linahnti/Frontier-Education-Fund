@@ -1,10 +1,12 @@
-import React, { useState } from "react"; // Import useState
+import React, { useState } from "react";
 import { Table, Button, Badge, Alert, Modal } from "react-bootstrap";
 import { useNavigate, Link } from "react-router-dom";
 
 const DonationsTab = ({ donorId, donations, loading, error }) => {
-  const [showModal, setShowModal] = useState(false); // Now useState is defined
+  const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
+
+  console.log("Donations received in DonationsTab:", donations); 
 
   // Handle "Make a Donation" button click
   const handleMakeDonation = () => {
@@ -27,7 +29,7 @@ const DonationsTab = ({ donorId, donations, loading, error }) => {
   return (
     <div>
       <h4>Your Donations</h4>
-      {donations.length > 0 ? (
+      {donations && donations.length > 0 ? (
         <Table striped bordered hover>
           <thead>
             <tr>

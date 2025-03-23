@@ -15,6 +15,7 @@ import "../styles/Modal.css";
 import ProfileCompletionProgress from "../components/ProfileCompletionProgress";
 import SchoolsDonationTab from "../components/SchoolsDonationTab";
 import SchoolsNotifications from "../components/SchoolsNotifications";
+import ReportsTab from "../components/ReportsTab";
 
 const SchoolDashboard = () => {
   const navigate = useNavigate();
@@ -195,16 +196,7 @@ const SchoolDashboard = () => {
             </div>
           </Tab>
           <Tab eventKey="reports" title="Reports & Analytics">
-            <div className="mt-4">
-              <h4>Donation Trends</h4>
-              <p>
-                Graphs showing received donations over time (to be implemented).
-              </p>
-              <h4>Most Needed Items</h4>
-              <p>List of most requested items (to be implemented).</p>
-              <h4>Active Donors</h4>
-              <p>List of frequent donors (to be implemented).</p>
-            </div>
+            <ReportsTab userId={user?.id} role="School" />
           </Tab>
           <Tab eventKey="messages" title="Messaging">
             <div className="mt-4">

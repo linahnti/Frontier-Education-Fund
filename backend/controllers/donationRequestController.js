@@ -157,7 +157,7 @@ const getDonationRequestsForSchool = async (req, res) => {
 // Get donation requests for a donor
 const getDonationRequestsForDonor = async (req, res) => {
   const { donorId } = req.params;
-  console.log("Fetching donations for donor:", donorId); // Log the donorId
+  console.log("Fetching donations for donor:", donorId); 
 
   try {
     // Check if the donor exists

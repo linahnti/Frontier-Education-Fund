@@ -14,6 +14,7 @@ import ProfileCompletionProgress from "../components/ProfileCompletionProgress";
 import Notifications from "../components/Notifications";
 import ExploreSchools from "../components/ExploreSchools";
 import DonationsTab from "../components/DonationsTab";
+import ReportsTab from "../components/ReportsTab";
 
 const DonorDashboard = () => {
   const navigate = useNavigate();
@@ -25,6 +26,8 @@ const DonorDashboard = () => {
   const [activeTab, setActiveTab] = useState("donations");
   const [completionPercentage, setCompletionPercentage] = useState(0);
   const [donations, setDonations] = useState([]); // State to store donations
+  const [donationSubmitted, setDonationSubmitted] = useState(false); // Track new donations
+  const [error, setError] = useState(null); // Define error state
 
   // Fetch user data from localStorage on component mount
   useEffect(() => {
@@ -75,10 +78,23 @@ const DonorDashboard = () => {
 
   // Fetch donations from the backend
   const fetchDonations = async () => {
+    console.log("fetchDonations function is being called");
     try {
       const token = localStorage.getItem("token");
       const user = JSON.parse(localStorage.getItem("user"));
       const donorId = user.id;
+
+      console.log("User object:", user);
+      console.log("User role:", user.role);
+      console.log("User role type:", typeof user.role);
+      console.log("Is role 'Donor'?", user.role === "Donor");
+      console.log("Is role 'donor'?", user.role === "donor");
+
+      // Check if the user is a donor
+      if (user.role.toLowerCase() !== "donor") {
+        console.log("User is not a donor. Skipping donation fetch.");
+        return;
+      }
 
       const response = await fetch(
         `http://localhost:5000/api/donors/${donorId}/donations`,
@@ -95,26 +111,32 @@ const DonorDashboard = () => {
       }
 
       const data = await response.json();
-      setDonations(data); // Update the donations state
+      console.log("Donations fetched from API:", data); // Log the fetched data
+      if (data.length > 0) {
+        setDonations(data);
+      } else {
+        setDonations([]);
+        console.log("No donations found for this donor.");
+      }
     } catch (error) {
       console.error("Error fetching donations:", error);
+      setError("Failed to fetch donations. Please try again later."); // Set error state
     }
   };
 
-  // Fetch notifications and donations on component mount and set up polling
+  // Fetch notifications and donations on component mount
   useEffect(() => {
     fetchNotifications();
-    fetchDonations(); // Fetch donations immediately on mount
+    fetchDonations(); // Fetch donations only once on mount
 
-    // Set up polling to fetch notifications and donations every 10 seconds
+    // Set up polling to fetch notifications every 10 seconds
     const interval = setInterval(() => {
       fetchNotifications();
-      fetchDonations();
     }, 10000);
 
     // Clean up the interval on component unmount
     return () => clearInterval(interval);
-  }, []);
+  }, [donationSubmitted]); // Re-fetch donations when donationSubmitted changes
 
   // Handle navigation with profile completion check
   const handleLinkClick = (e, path) => {
@@ -176,7 +198,12 @@ const DonorDashboard = () => {
         >
           <Tab eventKey="donations" title="Donations">
             <div className="mt-4">
-              <DonationsTab donorId={user?.id} donations={donations} />
+              <DonationsTab
+                donorId={user?.id}
+                donations={donations}
+                loading={loading}
+                error={error}
+              />
             </div>
           </Tab>
           <Tab eventKey="schools" title="Explore Schools">
@@ -201,14 +228,7 @@ const DonorDashboard = () => {
             </div>
           </Tab>
           <Tab eventKey="reports" title="Reports & Analytics">
-            <div className="mt-4">
-              <h4>Donation Trends</h4>
-              <p>
-                Graphs showing your donations over time (to be implemented).
-              </p>
-              <h4>Impact Summary</h4>
-              <p>Summary of your contributions (to be implemented).</p>
-            </div>
+            <ReportsTab userId={user?.id} role="Donor" />
           </Tab>
           <Tab
             eventKey="notifications"

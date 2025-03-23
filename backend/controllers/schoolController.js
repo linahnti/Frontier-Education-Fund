@@ -257,6 +257,32 @@ const getSchoolNotifications = async (req, res) => {
   }
 };
 
+const getSchoolReports = async (req, res) => {
+  const { schoolId } = req.params;
+
+  try {
+    const school = await User.findById(schoolId).populate(
+      "donationsReceived.donorId",
+      "name"
+    );
+
+    if (!school || school.role !== "School") {
+      return res.status(404).json({ message: "School not found" });
+    }
+
+    const donations = school.donationsReceived.map((donation) => ({
+      donorName: donation.donorId.name,
+      item: donation.item,
+      status: donation.status,
+      date: donation.date,
+    }));
+
+    res.status(200).json({ donations });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching school reports", error });
+  }
+};
+
 module.exports = {
   updateSchoolNeeds,
   updateDonationNeeds,
@@ -266,4 +292,5 @@ module.exports = {
   getDonationRequests,
   getActiveDonors,
   getSchoolNotifications,
+  getSchoolReports,
 };

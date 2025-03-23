@@ -6,6 +6,7 @@ import PublicLayout from "./components/PublicLayout";
 import GeneralLayout from "./components/GeneralLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
+import "../src/contexts/axios-config.js";
 
 // Lazy load pages
 const Home = lazy(() => import("./pages/Home"));
