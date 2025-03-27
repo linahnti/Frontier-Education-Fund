@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Card, Container, Badge, Button, Modal, Accordion } from "react-bootstrap";
+import {
+  Card,
+  Container,
+  Badge,
+  Button,
+  Modal,
+  Accordion,
+} from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
+import { useTheme } from "../contexts/ThemeContext";
 
 const ExploreSchools = () => {
+  const { darkMode } = useTheme();
   const [schools, setSchools] = useState([]);
   const [donationRequests, setDonationRequests] = useState({});
   const [loading, setLoading] = useState(true);
@@ -33,12 +42,12 @@ const ExploreSchools = () => {
       const response = await axios.get(
         `http://localhost:5000/api/donation-requests/school/${schoolId}`
       );
-      
+
       // Filter out completed requests and sort by date (newest first)
       const activeRequests = response.data
-        .filter(request => request.status !== "Completed")
+        .filter((request) => request.status !== "Completed")
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      
+
       setDonationRequests((prevRequests) => ({
         ...prevRequests,
         [schoolId]: activeRequests,
@@ -69,9 +78,22 @@ const ExploreSchools = () => {
   return (
     <Container>
       {schools.map((school) => (
-        <Card key={school._id} style={{ width: "100%", marginBottom: "16px" }}>
+        <Card
+          key={school._id}
+          style={{
+            width: "100%",
+            marginBottom: "16px",
+            backgroundColor: darkMode ? "var(--color-card)" : "white",
+            color: darkMode ? "var(--color-text)" : "inherit",
+          }}
+        >
           <Card.Body>
-            <Card.Title style={{ color: "#007BFF", fontWeight: "bold" }}>
+            <Card.Title
+              style={{
+                color: darkMode ? "var(--color-primary)" : "#007BFF",
+                fontWeight: "bold",
+              }}
+            >
               {school.schoolName}
             </Card.Title>
             <div>
@@ -86,14 +108,27 @@ const ExploreSchools = () => {
               donationRequests[school._id].length > 0 ? (
                 <Accordion className="mt-2">
                   {donationRequests[school._id].map((request, index) => (
-                    <Accordion.Item eventKey={index.toString()} key={index}>
-                      <Accordion.Header>
-                        Request {index + 1} - {new Date(request.createdAt).toLocaleDateString()}
+                    <Accordion.Item
+                      eventKey={index.toString()}
+                      key={index}
+                      style={{
+                        backgroundColor: darkMode
+                          ? "var(--color-card)"
+                          : "white",
+                        color: darkMode ? "var(--color-text)" : "inherit",
+                      }}
+                    >
+                      <Accordion.Header
+                        style={{
+                          backgroundColor: darkMode
+                            ? "var(--color-bg-secondary)"
+                            : "white",
+                        }}
+                      >
+                        Request {index + 1} -{" "}
+                        {new Date(request.createdAt).toLocaleDateString()}
                         {request.urgency && (
-                          <Badge 
-                            bg="danger" 
-                            className="ms-2"
-                          >
+                          <Badge bg="danger" className="ms-2">
                             Urgent
                           </Badge>
                         )}
@@ -104,9 +139,12 @@ const ExploreSchools = () => {
                             <Badge
                               key={idx}
                               style={{
-                                backgroundColor: "#007BFF", // Blue background instead of green
+                                backgroundColor: darkMode
+                                  ? "var(--color-primary)"
+                                  : "#007BFF",
                                 margin: "2px",
                                 fontSize: "0.9em",
+                                color: "white",
                               }}
                               className="me-1 mb-1"
                             >
@@ -115,7 +153,8 @@ const ExploreSchools = () => {
                           ))}
                           {request.customRequest && (
                             <p className="mt-2 mb-1">
-                              <strong>Custom Request:</strong> {request.customRequest}
+                              <strong>Custom Request:</strong>{" "}
+                              {request.customRequest}
                             </p>
                           )}
                           <p className="mb-1">
@@ -126,7 +165,11 @@ const ExploreSchools = () => {
                             size="sm"
                             onClick={() => handleDonate(school._id)}
                             className="mt-2"
-                            style={{ backgroundColor: "#FFC107", border: "none" }}
+                            style={{
+                              backgroundColor: "#FFC107",
+                              border: "none",
+                              color: "white",
+                            }}
                           >
                             Donate
                           </Button>
@@ -141,7 +184,11 @@ const ExploreSchools = () => {
             </div>
             <Button
               variant="warning"
-              style={{ backgroundColor: "#FFC107", border: "none" }}
+              style={{
+                backgroundColor: "#FFC107",
+                border: "none",
+                color: "white",
+              }}
               onClick={() => handleDonate(school._id)}
               className="mt-3"
             >
@@ -151,16 +198,21 @@ const ExploreSchools = () => {
         </Card>
       ))}
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+      <Modal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        centered
+        contentClassName={darkMode ? "bg-dark text-white" : ""}
+      >
         <Modal.Header closeButton className="bg-warning text-white">
           <Modal.Title>Profile Incomplete</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <p className="text-dark">
+        <Modal.Body className={darkMode ? "bg-dark" : ""}>
+          <p className={darkMode ? "text-white" : "text-dark"}>
             Please complete your profile to make a donation.
           </p>
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className={darkMode ? "bg-dark border-secondary" : ""}>
           <Button variant="secondary" onClick={() => setShowModal(false)}>
             Close
           </Button>
