@@ -1,21 +1,22 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import assets from "../assets/images/assets";
+import ThemeToggle from "./ThemeToggle";
 
 const HomepageNavbar = () => {
   return (
     <header
       className="shadow-sm py-2"
       style={{
-        background: "linear-gradient(135deg, #1E3A8A, #3B82F6)", // Soft blue gradient
+        background: "linear-gradient(135deg, #1E3A8A, #3B82F6)",
       }}
     >
       <div className="container-fluid d-flex justify-content-between align-items-center">
         {/* Logo and Title */}
         <Link
-          to="/" // Navigate to the home page
+          to="/"
           className="d-flex align-items-center text-decoration-none"
-          style={{ cursor: "pointer" }} // Add pointer cursor
+          style={{ cursor: "pointer" }}
         >
           <img
             src={assets.favicon}
@@ -67,8 +68,9 @@ const HomepageNavbar = () => {
           </a>
         </div>
 
-        {/* Login and Signup Buttons */}
-        <div>
+        {/* Theme Toggle and Auth Buttons */}
+        <div className="d-flex align-items-center">
+          <ThemeToggle className="text-white mx-2" />
           <Link
             to="/login"
             className="btn btn-warning rounded-pill px-3 py-1 text-dark text-decoration-none me-2 fw-bold"

@@ -12,3 +12,56 @@
     min-height: 100vh; /* Ensures the full height */
     padding: 20px; /* Adjust padding as needed */
   }
+
+:root {
+  /* Light theme */
+  --color-bg: #ffffff;
+  --color-bg-secondary: #f8f9fa;
+  --color-text: #212529;
+  --color-text-secondary: #495057;
+  --color-text-muted: #6c757d;
+  --color-primary: #2563eb;
+  --color-border: #dee2e6;
+  --color-card: #ffffff;
+  --color-warning: #ffc107;
+  --color-shadow: rgba(0, 0, 0, 0.1);
+}
+
+.dark {
+  /* Dark theme */
+  --color-bg: #1a1a2e;
+  --color-bg-secondary: #16213e;
+  --color-text: #f8f9fa;
+  --color-text-secondary: #e9ecef;
+  --color-text-muted: #adb5bd;
+  --color-primary: #3b82f6;
+  --color-border: #374151;
+  --color-card: #16213e;
+  --color-warning: #ffc107;
+  --color-shadow: rgba(0, 0, 0, 0.3);
+}
+
+/* Apply to all elements */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Bootstrap overrides */
+.text-dark {
+  color: var(--color-text) !important;
+}
+.text-muted {
+  color: var(--color-text-muted) !important;
+}
+.bg-light {
+  background-color: var(--color-bg-secondary) !important;
+}
+.card {
+  background-color: var(--color-card);
+  border-color: var(--color-border);
+}

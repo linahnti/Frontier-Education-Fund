@@ -1,20 +1,19 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import assets from "../assets/images/assets";
+import ThemeToggle from "./ThemeToggle";
 
 const AuthenticatedNavbar = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const userRole = user ? user.role : null;
 
-  // Logout function
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     navigate("/login");
   };
 
-  // Handle logo and title click
   const handleLogoClick = () => {
     if (userRole === "admin") {
       navigate("/admin-dashboard");
@@ -31,15 +30,15 @@ const AuthenticatedNavbar = () => {
     <header
       className="shadow-sm py-2"
       style={{
-        background: "linear-gradient(135deg, #1E3A8A, #3B82F6)", // Soft blue gradient
+        background: "linear-gradient(135deg, #1E3A8A, #3B82F6)",
       }}
     >
       <div className="container-fluid d-flex justify-content-between align-items-center">
         {/* Logo and Title */}
         <div
           className="d-flex align-items-center"
-          style={{ cursor: "pointer" }} // Add pointer cursor
-          onClick={handleLogoClick} // Add click handler
+          style={{ cursor: "pointer" }}
+          onClick={handleLogoClick}
         >
           <img
             src={assets.favicon}
@@ -71,8 +70,10 @@ const AuthenticatedNavbar = () => {
           </Link>
         </div>
 
-        {/* Profile and Notifications */}
+        {/* Theme Toggle and User Menu */}
         <div className="d-flex align-items-center">
+          <ThemeToggle className="text-white mx-2 d-flex align-items-center gap-3" />
+
           <div className="dropdown me-3">
             <button
               className="btn btn-link text-white p-0 dropdown-toggle"
@@ -89,7 +90,6 @@ const AuthenticatedNavbar = () => {
             </ul>
           </div>
 
-          {/* Profile Dropdown */}
           <div className="dropdown">
             <button
               className="btn btn-link text-white p-0 dropdown-toggle"

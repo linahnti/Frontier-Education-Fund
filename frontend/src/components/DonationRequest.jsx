@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Button, Modal, Form } from "react-bootstrap";
+import { useTheme } from "../contexts/ThemeContext";
 
 const DonationRequest = ({
   user,
@@ -7,6 +8,7 @@ const DonationRequest = ({
   completionPercentage,
   profileData,
 }) => {
+  const { darkMode } = useTheme();
   const [showDonationModal, setShowDonationModal] = useState(false);
   const [showProfileWarningModal, setShowProfileWarningModal] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false);
@@ -18,28 +20,28 @@ const DonationRequest = ({
   const handleDonationRequest = async () => {
     const token = localStorage.getItem("token");
     const currentUser = user;
-  
+
     if (!currentUser) {
       setMessage("User not found. Please log in again.");
       setShowMessageModal(true);
       return;
     }
-  
+
     // Use `currentUser.id` instead of `currentUser._id`
     const schoolId = currentUser.id;
-  
+
     if (!schoolId) {
       setMessage("School ID is undefined. Please log in again.");
       setShowMessageModal(true);
       return;
     }
-  
+
     if (selectedNeeds.length === 0 && !customRequest) {
       setMessage("Please select at least one need or add a custom request.");
       setShowMessageModal(true);
       return;
     }
-  
+
     try {
       const response = await fetch(
         `http://localhost:5000/api/schools/${schoolId}/donation-needs`,
@@ -56,16 +58,16 @@ const DonationRequest = ({
           }),
         }
       );
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to update donation needs");
       }
-  
+
       const data = await response.json();
       setMessage("Your donation needs have been updated successfully!");
       setShowMessageModal(true);
-  
+
       // Reset form fields
       setShowDonationModal(false);
       setSelectedNeeds([]);
@@ -110,17 +112,18 @@ const DonationRequest = ({
         show={showProfileWarningModal}
         onHide={() => setShowProfileWarningModal(false)}
         centered
+        contentClassName={darkMode ? "bg-dark text-white" : ""}
       >
         <Modal.Header closeButton className="bg-warning text-white">
           <Modal.Title>Complete Your Profile</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className={darkMode ? "bg-dark" : ""}>
           <p className="text-dark">
             Your profile is only {completionPercentage}% complete. Please
             complete your profile before posting a donation request.
           </p>
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className={darkMode ? "bg-dark border-secondary" : ""}>
           <Button
             variant="secondary"
             onClick={() => setShowProfileWarningModal(false)}
@@ -145,11 +148,12 @@ const DonationRequest = ({
         onHide={() => setShowDonationModal(false)}
         centered
         size="lg"
+        contentClassName={darkMode ? "bg-dark text-white" : ""}
       >
         <Modal.Header closeButton className="bg-warning text-white">
           <Modal.Title>Ask for Support</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className={darkMode ? "bg-dark" : ""}>
           <Form>
             {/* Grouped Needs by Categories */}
             <h5>📚 Learning Materials</h5>
@@ -221,18 +225,21 @@ const DonationRequest = ({
             ))}
 
             <Form.Group className="mt-4">
-              <Form.Label>Custom Request</Form.Label>
+              <Form.Label className={darkMode ? "text-white" : ""}>
+                Custom Request
+              </Form.Label>
               <Form.Control
                 as="textarea"
                 rows={2}
                 placeholder="Add other needs"
                 value={customRequest}
                 onChange={(e) => setCustomRequest(e.target.value)}
+                className={darkMode ? "bg-secondary text-white" : ""}
               />
             </Form.Group>
           </Form>
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className={darkMode ? "bg-dark border-secondary" : ""}>
           <Button
             variant="secondary"
             onClick={() => setShowDonationModal(false)}
@@ -250,14 +257,15 @@ const DonationRequest = ({
         show={showMessageModal}
         onHide={() => setShowMessageModal(false)}
         centered
+        contentClassName={darkMode ? "bg-dark text-white" : ""}
       >
         <Modal.Header closeButton className="bg-warning text-white">
           <Modal.Title>Message</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <p>{message}</p>
+        <Modal.Body className={darkMode ? "bg-dark" : ""}>
+          <p className={darkMode ? "text-white" : ""}>{message}</p>
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className={darkMode ? "bg-dark border-secondary" : ""}>
           <Button
             variant="warning"
             className="text-white"

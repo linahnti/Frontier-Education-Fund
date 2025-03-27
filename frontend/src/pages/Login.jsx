@@ -133,7 +133,7 @@ const Login = () => {
             fontSize: "1.5rem",
             color: "#007BFF",
             marginTop: "20px",
-            overflow: "hidden", 
+            overflow: "hidden",
             whiteSpace: "normal",
           }}
         >

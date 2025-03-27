@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { Table, Alert, Button, Modal } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
+import { useTheme } from "../contexts/ThemeContext";
 import axios from "axios";
 
 const Notifications = ({ notifications, setNotifications }) => {
+  const { darkMode } = useTheme();
   const [showModal, setShowModal] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState(null);
   const navigate = useNavigate();
@@ -119,11 +121,20 @@ const Notifications = ({ notifications, setNotifications }) => {
 
       {/* Modal for Notification Details */}
       {/* Modal for Notification Details */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton>
+      <Modal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        centered
+        contentClassName={darkMode ? "bg-dark text-white" : ""}
+      >
+        <Modal.Header
+          closeButton
+          closeVariant={darkMode ? "white" : undefined}
+          className={darkMode ? "bg-dark border-secondary" : ""}
+        >
           <Modal.Title>Notification Details</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className={darkMode ? "bg-dark" : ""}>
           {selectedNotification && (
             <>
               <p>

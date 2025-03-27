@@ -10,6 +10,7 @@ import {
   Badge,
 } from "react-bootstrap";
 import "../styles/Modal.css";
+import { useTheme } from "../contexts/ThemeContext";
 import ProfileCompletionProgress from "../components/ProfileCompletionProgress";
 import Notifications from "../components/Notifications";
 import ExploreSchools from "../components/ExploreSchools";
@@ -18,6 +19,7 @@ import ReportsTab from "../components/ReportsTab";
 
 const DonorDashboard = () => {
   const navigate = useNavigate();
+  const { darkMode } = useTheme();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -162,22 +164,31 @@ const DonorDashboard = () => {
     <div
       style={{
         minHeight: "100vh",
-        backgroundColor: "#ffffff",
+        backgroundColor: darkMode ? "#1a1a2e" : "#ffffff",
+        color: darkMode ? "#f8f9fa" : "#212529",
         padding: "20px",
+        transition: "background-color 0.3s, color 0.3s",
       }}
     >
       <div
         className="container mt-5"
         style={{
-          backgroundColor: "#f5f5f5",
+          backgroundColor: darkMode ? "#16213e" : "#f5f5f5",
+          color: darkMode ? "#e9ecef" : "#212529",
           borderRadius: "10px",
           padding: "20px",
-          boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+          boxShadow: darkMode
+            ? "0 4px 8px rgba(0, 0, 0, 0.3)"
+            : "0 4px 8px rgba(0, 0, 0, 0.1)",
         }}
       >
         <h2
           className="text-warning"
-          style={{ fontSize: "2.5rem", fontWeight: "bold" }}
+          style={{
+            fontSize: "2.5rem",
+            fontWeight: "bold",
+            color: darkMode ? "#ffc107" : "#ffc107",
+          }}
         >
           Welcome to the Donor Dashboard
         </h2>

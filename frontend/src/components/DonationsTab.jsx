@@ -1,20 +1,21 @@
 import React, { useState } from "react";
 import { Table, Button, Badge, Alert, Modal } from "react-bootstrap";
 import { useNavigate, Link } from "react-router-dom";
+import { useTheme } from "../contexts/ThemeContext";
 
 const DonationsTab = ({ donorId, donations, loading, error }) => {
+  const { darkMode } = useTheme();
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
-  console.log("Donations received in DonationsTab:", donations); 
+  console.log("Donations received in DonationsTab:", donations);
 
-  // Handle "Make a Donation" button click
   const handleMakeDonation = () => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user || !user.isProfileComplete) {
-      setShowModal(true); // Show modal if profile is incomplete
+      setShowModal(true);
     } else {
-      navigate("/donate"); // Redirect to the donation page
+      navigate("/donate");
     }
   };
 
@@ -30,7 +31,7 @@ const DonationsTab = ({ donorId, donations, loading, error }) => {
     <div>
       <h4>Your Donations</h4>
       {donations && donations.length > 0 ? (
-        <Table striped bordered hover>
+        <Table striped bordered hover variant={darkMode ? "dark" : undefined}>
           <thead>
             <tr>
               <th>#</th>
@@ -76,17 +77,28 @@ const DonationsTab = ({ donorId, donations, loading, error }) => {
         Donate
       </Button>
 
-      {/* Modal for Incomplete Profile */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton className="bg-warning text-white">
+      {/* Updated Modal for dark mode support */}
+      <Modal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        centered
+        contentClassName={darkMode ? "bg-dark text-white" : ""}
+      >
+        <Modal.Header
+          closeButton
+          closeVariant={darkMode ? "white" : undefined}
+          className={
+            darkMode ? "bg-dark border-secondary" : "bg-warning text-white"
+          }
+        >
           <Modal.Title>Profile Incomplete</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <p className="text-dark">
+        <Modal.Body className={darkMode ? "bg-dark" : ""}>
+          <p className={darkMode ? "text-white" : "text-dark"}>
             Please complete your profile to make a donation.
           </p>
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className={darkMode ? "bg-dark border-secondary" : ""}>
           <Button variant="secondary" onClick={() => setShowModal(false)}>
             Close
           </Button>
