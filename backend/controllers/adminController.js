@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const User = require("../models/user");
 const Donor = require("../models/donorDiscriminator");
 const DonationRequest = require("../models/donationRequest");
@@ -69,8 +70,10 @@ const approveDonation = async (req, res) => {
     );
 
     // Update the donation status in the school's donationsReceived array
-    const school = await User.findById(updatedDonation.schoolId);
-    if (school && school.role === "School") {
+    const school = await mongoose
+      .model("School")
+      .findById(updatedDonation.schoolId);
+    if (school) {
       const schoolDonation = school.donationsReceived.find(
         (donation) => donation.donorId.toString() === donor._id.toString()
       );
@@ -79,14 +82,19 @@ const approveDonation = async (req, res) => {
       }
 
       // Send a notification to the school
-      school.notifications.push({
+      console.log("Adding notification to school:", school._id);
+      const notification = {
         message: `Your donation request from ${donor.name} has been approved.`,
         type: "approval",
         date: new Date(),
         read: false,
-      });
+        donationId: updatedDonation._id,
+      };
 
+      console.log("Adding notification:", notification);
+      school.notifications.push(notification);
       await school.save();
+      console.log("Notification saved successfully");
     }
 
     // Populate the school name and include donation details in the notification
@@ -175,6 +183,7 @@ const completeDonation = async (req, res) => {
       }
 
       // Send a notification to the school
+      console.log("Adding notification to school:", school._id);
       school.notifications.push({
         message: `Your donation request from ${donor.name} has been completed.`,
         type: "completion",
@@ -183,6 +192,7 @@ const completeDonation = async (req, res) => {
       });
 
       await school.save();
+      console.log("Saved notifications:", school.notifications);
     }
 
     // Populate the school name and include donation details in the notification
@@ -245,29 +255,35 @@ const approveDonationRequest = async (req, res) => {
   const { requestId } = req.params;
 
   try {
-    const donationRequest = await DonationRequest.findByIdAndUpdate(
-      requestId,
-      { $set: { status: "Approved" } },
-      { new: true }
-    ).populate("schoolId", "schoolName location");
+    const donationRequest = await DonationRequest.findById(requestId).populate(
+      "schoolId",
+      "schoolName location donationNeeds"
+    );
 
     if (!donationRequest) {
       return res.status(404).json({ message: "Donation request not found" });
     }
 
-    // Send notification to the school
-    await User.findByIdAndUpdate(donationRequest.schoolId._id, {
-      $push: {
-        notifications: {
-          message: `Your donation request for ${donationRequest.donationNeeds.join(
-            ", "
-          )} has been approved.`,
-          type: "request_approval",
-          date: new Date(),
-          read: false,
-        },
-      },
-    });
+    const school = await mongoose
+      .model("School")
+      .findById(donationRequest.schoolId._id);
+    if (!school) {
+      return res.status(404).json({ message: "School not found" });
+    }
+
+    // Create complete notification
+    const notification = {
+      message: `Your donation request for ${donationRequest.donationNeeds.join(
+        ", "
+      )} has been approved.`,
+      type: "approval",
+      date: new Date(),
+      read: false,
+      donationId: donationRequest._id,
+    };
+
+    school.notifications.push(notification);
+    await school.save();
 
     // Send notification to the donor (if donorId exists)
     if (donationRequest.donorId) {
@@ -314,36 +330,36 @@ const completeDonationRequest = async (req, res) => {
       return res.status(404).json({ message: "Donation request not found" });
     }
 
-    // Send notification to the school
-    await User.findByIdAndUpdate(donationRequest.schoolId._id, {
-      $push: {
-        notifications: {
-          message: `Your donation request for ${donationRequest.donationNeeds.join(
-            ", "
-          )} has been completed.`,
-          type: "request_completion",
-          date: new Date(),
-          read: false,
-        },
-      },
-    });
+    const school = await mongoose.model("School").findById(donationRequest.schoolId._id);
+    if (!school) {
+      return res.status(404).json({ message: "School not found" });
+    }
+
+    const notification = {
+      message: `Your donation request for ${donationRequest.donationNeeds.join(", ")} has been completed.`,
+      type: "completion",
+      date: new Date(),
+      read: false,
+      donationId: donationRequest._id
+    };
+
+    school.notifications.push(notification);
+    await school.save();
+    console.log("Completion notification sent to school:", school._id);
 
     // Send notification to the donor (if donorId exists)
     if (donationRequest.donorId) {
-      await User.findByIdAndUpdate(donationRequest.donorId, {
-        $push: {
-          notifications: {
-            message: `Your donation to ${
-              donationRequest.schoolId.schoolName
-            } for ${donationRequest.donationNeeds.join(
-              ", "
-            )} has been completed.`,
-            type: "request_completion",
-            date: new Date(),
-            read: false,
-          },
-        },
-      });
+      const donor = await User.findById(donationRequest.donorId);
+      if (donor) {
+        donor.notifications.push({
+          message: `Your donation to ${donationRequest.schoolId.schoolName} has been completed.`,
+          type: "completion",
+          date: new Date(),
+          read: false
+        });
+        await donor.save();
+        console.log("Completion notification sent to donor:", donor._id);
+      }
     }
 
     res.status(200).json({
@@ -409,7 +425,9 @@ const rejectDonationRequest = async (req, res) => {
       await User.findByIdAndUpdate(donationRequest.donorId, {
         $push: {
           notifications: {
-            message: `Your donation to ${donationRequest.schoolId.schoolName} for ${donationRequest.donationNeeds.join(
+            message: `Your donation to ${
+              donationRequest.schoolId.schoolName
+            } for ${donationRequest.donationNeeds.join(
               ", "
             )} has been rejected.`,
             type: "request_rejection",

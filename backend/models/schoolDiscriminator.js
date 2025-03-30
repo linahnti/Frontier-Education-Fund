@@ -39,18 +39,18 @@ const schoolSchema = new mongoose.Schema({
     },
   ],
 
-  // New field for notifications
   notifications: [
     {
-      donorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      item: { type: String },
-      status: {
+      message: { type: String, required: true },
+      type: {
         type: String,
-        enum: ["Pending", "Approved", "Completed", "Rejected"],
-      }, // Status of the donation
+        enum: ["approval", "completion", "rejection", "new_request"],
+      },
       date: { type: Date, default: Date.now },
       read: { type: Boolean, default: false },
-      message: { type: String },
+      // Optional references:
+      donationId: { type: mongoose.Schema.Types.ObjectId },
+      donorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     },
   ],
 });
