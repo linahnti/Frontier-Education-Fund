@@ -86,11 +86,19 @@ const getDonorNotifications = async (req, res) => {
   const { donorId } = req.params;
 
   try {
-    const donor = await User.findById(donorId);
+    const donor = await User.findById(donorId).populate({
+      path: 'notifications.schoolId',
+      select: 'schoolName'
+    });
 
     if (!donor || donor.role !== "Donor") {
       return res.status(404).json({ message: "Donor not found" });
     }
+
+    const formattedNotifications = donor.notifications.map(notification => ({
+      ...notification.toObject(),
+      schoolName: notification.schoolId?.schoolName || "Unknown School"
+    }));
 
     // Return only the notifications array
     res.status(200).json({

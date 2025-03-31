@@ -62,6 +62,15 @@ const createDonation = async (req, res) => {
 
     // Add donation to donor's donationsMade
     donor.donationsMade.push(donation);
+
+    donor.notifications.push({
+      message: `Your donation to ${school.schoolName} has been submitted and is pending approval.`,
+      schoolName: school.schoolName, // Add this line to include the required schoolName
+      type: "donation_submission",
+      date: new Date(),
+      read: false,
+    });
+
     await donor.save();
 
     // Add donation to school's donationsReceived
@@ -70,6 +79,14 @@ const createDonation = async (req, res) => {
       item: type === "money" ? `KES ${amount}` : items.join(", "),
       status: "Pending",
       date: new Date(),
+    });
+
+    school.notifications.push({
+      message: `You received a new donation from ${donor.name}.`,
+      type: "new_donation",
+      donorId: donor._id,
+      date: new Date(),
+      read: false,
     });
     await school.save();
 

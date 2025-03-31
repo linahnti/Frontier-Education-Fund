@@ -1,29 +1,49 @@
 import React, { useState } from "react";
-import { Table, Alert, Button, Modal } from "react-bootstrap";
-import { Link, useNavigate } from "react-router-dom";
+import {
+  Table,
+  Alert,
+  Button,
+  Modal,
+  Form,
+  InputGroup,
+  Badge,
+} from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import axios from "axios";
+import { FiSearch } from "react-icons/fi";
+import "../styles/Notifications.css";
 
 const Notifications = ({ notifications, setNotifications }) => {
   const { darkMode } = useTheme();
   const [showModal, setShowModal] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const navigate = useNavigate();
 
-  // Reverse the notifications array to show the latest first
-  const reversedNotifications = [...notifications].reverse();
+  // Filter and reverse notifications
+  const filteredNotifications = notifications
+    .filter((note) => {
+      const messageMatch =
+        note.message?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
+      const schoolMatch =
+        note.schoolName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        false;
+      return messageMatch || schoolMatch;
+    })
+    .reverse();
 
-  const newNotificationsCount = reversedNotifications.filter(
+  const newNotificationsCount = notifications.filter(
     (note) => !note.read
   ).length;
 
-  // Handle View Details button click
   const handleViewDetails = (notification) => {
     setSelectedNotification(notification);
     setShowModal(true);
+    markAsRead(notification._id);
   };
 
-  // Handle Donate button click
   const handleDonate = () => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user || !user.isProfileComplete) {
@@ -34,14 +54,63 @@ const Notifications = ({ notifications, setNotifications }) => {
     }
   };
 
-  // Handle Delete Notification button click
+  const markAsRead = async (notificationId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user"));
+      const donorId = user.id;
+
+      await axios.put(
+        `http://localhost:5000/api/donors/${donorId}/notifications/${notificationId}/read`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setNotifications((prevNotifications) =>
+        prevNotifications.map((note) =>
+          note._id === notificationId ? { ...note, read: true } : note
+        )
+      );
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user"));
+      const donorId = user.id;
+
+      await axios.put(
+        `http://localhost:5000/api/donors/${donorId}/notifications/read-all`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setNotifications((prevNotifications) =>
+        prevNotifications.map((note) => ({ ...note, read: true }))
+      );
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+    }
+  };
+
   const handleDeleteNotification = async (notificationId) => {
     try {
       const token = localStorage.getItem("token");
       const user = JSON.parse(localStorage.getItem("user"));
       const donorId = user.id;
 
-      const response = await axios.delete(
+      await axios.delete(
         `http://localhost:5000/api/donors/${donorId}/notifications/${notificationId}`,
         {
           headers: {
@@ -50,27 +119,103 @@ const Notifications = ({ notifications, setNotifications }) => {
         }
       );
 
-      if (response.status === 200) {
-        // Remove the deleted notification from the local state
-        setNotifications((prevNotifications) =>
-          prevNotifications.filter((note) => note._id !== notificationId)
-        );
-      }
+      setNotifications((prevNotifications) =>
+        prevNotifications.filter((note) => note._id !== notificationId)
+      );
     } catch (error) {
       console.error("Error deleting notification:", error);
     }
   };
 
+  const handleDeleteAllNotifications = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user"));
+      const donorId = user.id;
+
+      await axios.delete(
+        `http://localhost:5000/api/donors/${donorId}/notifications`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setNotifications([]);
+      setShowDeleteAllModal(false);
+    } catch (error) {
+      console.error("Error deleting all notifications:", error);
+    }
+  };
+
   return (
-    <div>
-      {newNotificationsCount > 0 && (
-        <Alert variant="info">
+    <div
+      className={`p-4 ${darkMode ? "bg-dark text-white" : "bg-white"}`}
+      style={{ borderRadius: "10px" }}
+    >
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2
+          className="mb-0"
+          style={{ color: darkMode ? "#FFC107" : "#0d6efd" }}
+        >
+          Notifications
+          {newNotificationsCount > 0 && (
+            <Badge bg="warning" text="dark" className="ms-2">
+              {newNotificationsCount} new
+            </Badge>
+          )}
+        </h2>
+        <div>
+          <Button
+            variant="warning"
+            onClick={markAllAsRead}
+            className="me-2"
+            style={{ backgroundColor: "#FFC107", borderColor: "#FFC107" }}
+          >
+            Mark All as Read
+          </Button>
+          <Button variant="danger" onClick={() => setShowDeleteAllModal(true)}>
+            Delete All
+          </Button>
+        </div>
+      </div>
+
+      <InputGroup className="mb-4">
+        <Form.Control
+          placeholder="Search notifications by message, school..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className={darkMode ? "search-bar-dark" : "search-bar-light"}
+          style={{
+            borderRight: "none",
+            caretColor: "#FFC107", // Yellow cursor in both modes
+            color: darkMode ? "#ffffff" : "#000000", // White text in dark mode, black in light mode
+            backgroundColor: darkMode ? "#333" : "#fff", // Ensure dark background in dark mode
+          }}
+        />
+        <Button
+          variant={darkMode ? "outline-warning" : "outline-primary"}
+          style={{
+            backgroundColor: darkMode
+              ? "rgba(255, 193, 7, 0.1)"
+              : "transparent",
+            borderLeft: "none",
+          }}
+          //onClick={() => {}} // Add search functionality if needed
+        >
+          <FiSearch style={{ color: darkMode ? "#ffffff" : "#495057" }} />
+        </Button>
+      </InputGroup>
+
+      {/* {newNotificationsCount > 0 && (
+        <Alert variant="info" className="mb-4">
           You have {newNotificationsCount} new notifications.
         </Alert>
-      )}
+      )} */}
 
-      {reversedNotifications.length > 0 ? (
-        <Table striped bordered hover>
+      {filteredNotifications.length > 0 ? (
+        <Table striped bordered hover variant={darkMode ? "dark" : "light"}>
           <thead>
             <tr>
               <th>#</th>
@@ -81,31 +226,33 @@ const Notifications = ({ notifications, setNotifications }) => {
             </tr>
           </thead>
           <tbody>
-            {reversedNotifications.map((note, index) => (
-              <tr key={index}>
+            {filteredNotifications.map((note, index) => (
+              <tr key={index} style={{ fontWeight: "normal" }}>
                 <td>{index + 1}</td>
-                <td>{note.message}</td>
-                <td>{note.schoolName}</td>
-                <td>{new Date(note.date).toLocaleString()}</td>
+                <td style={{ color: darkMode ? "white" : "inherit" }}>
+                  {note.message}
+                </td>
+                <td style={{ color: darkMode ? "white" : "inherit" }}>
+                  {note.schoolName || "N/A"}
+                </td>
+                <td style={{ color: darkMode ? "white" : "inherit" }}>
+                  {new Date(note.date).toLocaleString()}
+                </td>
                 <td>
-                  <div style={{ display: "flex", gap: "8px" }}>
+                  <div className="d-flex gap-2">
                     <Button
-                      variant="info"
+                      variant="primary"
                       onClick={() => handleViewDetails(note)}
-                      style={{
-                        backgroundColor: "#17a2b8",
-                        borderColor: "#17a2b8",
-                      }} // Same color for both buttons
                     >
                       View Details
                     </Button>
                     <Button
-                      variant="info"
+                      variant="danger"
                       onClick={() => handleDeleteNotification(note._id)}
                       style={{
-                        backgroundColor: "#17a2b8",
-                        borderColor: "#17a2b8",
-                      }} // Same color for both buttons
+                        backgroundColor: "#0d6efd",
+                        borderColor: "#0d6efd",
+                      }}
                     >
                       Delete
                     </Button>
@@ -116,11 +263,12 @@ const Notifications = ({ notifications, setNotifications }) => {
           </tbody>
         </Table>
       ) : (
-        <p>No new notifications.</p>
+        <Alert variant="secondary" className="text-center py-4">
+          No notifications found.
+        </Alert>
       )}
 
-      {/* Modal for Notification Details */}
-      {/* Modal for Notification Details */}
+      {/* Notification Details Modal */}
       <Modal
         show={showModal}
         onHide={() => setShowModal(false)}
@@ -132,22 +280,24 @@ const Notifications = ({ notifications, setNotifications }) => {
           closeVariant={darkMode ? "white" : undefined}
           className={darkMode ? "bg-dark border-secondary" : ""}
         >
-          <Modal.Title>Notification Details</Modal.Title>
+          <Modal.Title style={{ color: "#FFC107" }}>
+            Notification Details
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body className={darkMode ? "bg-dark" : ""}>
           {selectedNotification && (
             <>
-              <p>
+              <p style={{ color: darkMode ? "white" : "inherit" }}>
                 <strong>Message:</strong> {selectedNotification.message}
               </p>
-              <p>
-                <strong>School:</strong> {selectedNotification.schoolName}
+              <p style={{ color: darkMode ? "white" : "inherit" }}>
+                <strong>School:</strong>{" "}
+                {selectedNotification.schoolName || "N/A"}
               </p>
-              <p>
+              <p style={{ color: darkMode ? "white" : "inherit" }}>
                 <strong>Date:</strong>{" "}
                 {new Date(selectedNotification.date).toLocaleString()}
               </p>
-              {/* Check if the message contains "new request" or if the type is "newRequest" */}
               {(selectedNotification.type === "newRequest" ||
                 (selectedNotification.message &&
                   selectedNotification.message
@@ -155,29 +305,49 @@ const Notifications = ({ notifications, setNotifications }) => {
                     .includes("new request"))) && (
                 <Button
                   variant="warning"
-                  style={{ backgroundColor: "#ffc107", borderColor: "#ffc107" }}
+                  style={{ backgroundColor: "#FFC107", borderColor: "#FFC107" }}
                   onClick={handleDonate}
                 >
                   Donate
                 </Button>
               )}
-              {selectedNotification.type === "approval" && (
-                <p>
-                  Your donation has been approved. Please wait for completion.
-                </p>
-              )}
-              {selectedNotification.type === "completion" && (
-                <p>
-                  Thank you for your donation! We will provide feedback on the
-                  progress soon.
-                </p>
-              )}
             </>
           )}
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className={darkMode ? "bg-dark border-secondary" : ""}>
           <Button variant="secondary" onClick={() => setShowModal(false)}>
             Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Delete All Confirmation Modal */}
+      <Modal
+        show={showDeleteAllModal}
+        onHide={() => setShowDeleteAllModal(false)}
+        centered
+        contentClassName={darkMode ? "bg-dark text-white" : ""}
+      >
+        <Modal.Header
+          closeButton
+          closeVariant={darkMode ? "white" : undefined}
+          className={darkMode ? "bg-dark border-secondary" : ""}
+        >
+          <Modal.Title>Confirm Deletion</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className={darkMode ? "bg-dark" : ""}>
+          Are you sure you want to delete all notifications? This action cannot
+          be undone.
+        </Modal.Body>
+        <Modal.Footer className={darkMode ? "bg-dark border-secondary" : ""}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowDeleteAllModal(false)}
+          >
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleDeleteAllNotifications}>
+            Delete All
           </Button>
         </Modal.Footer>
       </Modal>
