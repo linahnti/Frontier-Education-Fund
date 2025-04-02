@@ -20,6 +20,10 @@ const SchoolsNotifications = ({ notifications = [], setNotifications }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [notificationToDelete, setNotificationToDelete] = useState(null);
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [deletedCount, setDeletedCount] = useState(0);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState(null);
 
   // Filter and reverse notifications
   const filteredNotifications = notifications
@@ -127,6 +131,8 @@ const SchoolsNotifications = ({ notifications = [], setNotifications }) => {
         prev.filter((note) => note._id !== notificationId)
       );
       setShowDeleteModal(false);
+      setDeletedCount(1);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error("Error deleting notification:", error);
     }
@@ -146,10 +152,21 @@ const SchoolsNotifications = ({ notifications = [], setNotifications }) => {
         }
       );
 
+      const countBeforeDelete = notifications.length;
       setNotifications([]);
       setShowDeleteAllModal(false);
+      setDeletedCount(countBeforeDelete);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error("Error deleting all notifications:", error);
+    }
+  };
+
+  const handleViewDetails = (notification) => {
+    setSelectedNotification(notification);
+    setShowDetailsModal(true);
+    if (!notification.read) {
+      markAsRead(notification._id);
     }
   };
 
@@ -181,10 +198,9 @@ const SchoolsNotifications = ({ notifications = [], setNotifications }) => {
             Mark All as Read
           </Button>
           <Button
-            variant="primary"
+            variant="danger"
             onClick={() => setShowDeleteAllModal(true)}
             disabled={notifications.length === 0}
-            style={{ backgroundColor: "#0d6efd", borderColor: "#0d6efd" }}
           >
             Delete All
           </Button>
@@ -199,9 +215,9 @@ const SchoolsNotifications = ({ notifications = [], setNotifications }) => {
           className={darkMode ? "search-bar-dark" : "search-bar-light"}
           style={{
             borderRight: "none",
-            caretColor: "#FFC107", // Yellow cursor in both modes
-            color: darkMode ? "#ffffff" : "#000000", // White text in dark mode, black in light mode
-            backgroundColor: darkMode ? "#333" : "#fff", // Ensure dark background in dark mode
+            caretColor: "#FFC107",
+            color: darkMode ? "#ffffff" : "#000000",
+            backgroundColor: darkMode ? "#333" : "#fff",
           }}
         />
         <Button
@@ -212,17 +228,10 @@ const SchoolsNotifications = ({ notifications = [], setNotifications }) => {
               : "transparent",
             borderLeft: "none",
           }}
-          //onClick={() => {}} // Add search functionality if needed
         >
           <FiSearch style={{ color: darkMode ? "#ffffff" : "#495057" }} />
         </Button>
       </InputGroup>
-
-      {/* {unreadCount > 0 && (
-        <Alert variant="info" className="mb-4">
-          You have {unreadCount} new notifications.
-        </Alert>
-      )} */}
 
       {filteredNotifications.length > 0 ? (
         <Table striped bordered hover variant={darkMode ? "dark" : "light"}>
@@ -240,7 +249,13 @@ const SchoolsNotifications = ({ notifications = [], setNotifications }) => {
               <tr key={index} style={{ fontWeight: "normal" }}>
                 <td>{index + 1}</td>
                 <td>{getStatusBadge(note.type)}</td>
-                <td style={{ color: darkMode ? "white" : "inherit" }}>
+                <td 
+                  style={{ 
+                    color: darkMode ? "white" : "inherit",
+                    cursor: "pointer"
+                  }}
+                  onClick={() => handleViewDetails(note)}
+                >
                   {note.message}
                 </td>
                 <td style={{ color: darkMode ? "white" : "inherit" }}>
@@ -255,8 +270,8 @@ const SchoolsNotifications = ({ notifications = [], setNotifications }) => {
                         onClick={() => markAsRead(note._id)}
                         disabled={loading}
                         style={{
-                          backgroundColor: "#0d6efd",
-                          borderColor: "#0d6efd",
+                          backgroundColor: "#FFC107",
+                          borderColor: "#FFC107",
                         }}
                       >
                         Mark as read
@@ -270,10 +285,6 @@ const SchoolsNotifications = ({ notifications = [], setNotifications }) => {
                         setShowDeleteModal(true);
                       }}
                       disabled={loading}
-                      style={{
-                        backgroundColor: "#0d6efd",
-                        borderColor: "#0d6efd",
-                      }}
                     >
                       Delete
                     </Button>
@@ -288,6 +299,45 @@ const SchoolsNotifications = ({ notifications = [], setNotifications }) => {
           No notifications to display.
         </Alert>
       )}
+
+      {/* Notification Details Modal */}
+      <Modal
+        show={showDetailsModal}
+        onHide={() => setShowDetailsModal(false)}
+        centered
+        contentClassName={darkMode ? "bg-dark text-white" : ""}
+      >
+        <Modal.Header
+          closeButton
+          closeVariant={darkMode ? "white" : undefined}
+          className={darkMode ? "bg-dark border-secondary" : ""}
+        >
+          <Modal.Title style={{ color: "#FFC107" }}>
+            Notification Details
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className={darkMode ? "bg-dark" : ""}>
+          {selectedNotification && (
+            <>
+              <p style={{ color: darkMode ? "white" : "inherit" }}>
+                <strong>Status:</strong> {getStatusBadge(selectedNotification.type)}
+              </p>
+              <p style={{ color: darkMode ? "white" : "inherit" }}>
+                <strong>Message:</strong> {selectedNotification.message}
+              </p>
+              <p style={{ color: darkMode ? "white" : "inherit" }}>
+                <strong>Date:</strong>{" "}
+                {selectedNotification.date ? formatDate(selectedNotification.date) : "No date"}
+              </p>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer className={darkMode ? "bg-dark border-secondary" : ""}>
+          <Button variant="secondary" onClick={() => setShowDetailsModal(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       {/* Delete Single Notification Modal */}
       <Modal
@@ -347,6 +397,31 @@ const SchoolsNotifications = ({ notifications = [], setNotifications }) => {
           </Button>
           <Button variant="danger" onClick={handleDeleteAllNotifications}>
             Delete All
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Success Deletion Modal */}
+      <Modal
+        show={showSuccessModal}
+        onHide={() => setShowSuccessModal(false)}
+        centered
+        contentClassName={darkMode ? "bg-dark text-white" : ""}
+      >
+        <Modal.Header
+          closeButton
+          closeVariant={darkMode ? "white" : undefined}
+          className={darkMode ? "bg-dark border-secondary" : ""}
+        >
+          <Modal.Title style={{ color: "#28a745" }}>Success</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className={darkMode ? "bg-dark" : ""}>
+          Successfully deleted {deletedCount} notification
+          {deletedCount > 1 ? "s" : ""}!
+        </Modal.Body>
+        <Modal.Footer className={darkMode ? "bg-dark border-secondary" : ""}>
+          <Button variant="success" onClick={() => setShowSuccessModal(false)}>
+            OK
           </Button>
         </Modal.Footer>
       </Modal>

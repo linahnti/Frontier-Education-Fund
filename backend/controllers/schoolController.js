@@ -199,9 +199,9 @@ const getDonationRequests = async (req, res) => {
   }
 
   try {
-    const donationRequests = await DonationRequest.find({
-      schoolId,
-    }).populate("schoolId", "schoolName location");
+    const donationRequests = await DonationRequest.find({ schoolId })
+      .populate("schoolId", "schoolName location")
+      .populate("donors.donorId", "name email");
 
     res.status(200).json(donationRequests);
   } catch (error) {
@@ -261,23 +261,32 @@ const getSchoolReports = async (req, res) => {
   const { schoolId } = req.params;
 
   try {
-    const school = await User.findById(schoolId).populate(
-      "donationsReceived.donorId",
-      "name"
-    );
+    // Get school donations
+    const school = await User.findById(schoolId).populate({
+      path: "donationsReceived.donorId",
+      select: "name"
+    });
 
     if (!school || school.role !== "School") {
       return res.status(404).json({ message: "School not found" });
     }
 
-    const donations = school.donationsReceived.map((donation) => ({
-      donorName: donation.donorId.name,
-      item: donation.item,
-      status: donation.status,
-      date: donation.date,
-    }));
+    // Get donation requests
+    const donationRequests = await DonationRequest.find({ schoolId })
+      .populate("schoolId", "schoolName location")
+      .populate("donors.donorId", "name");
 
-    res.status(200).json({ donations });
+    // Structure the reports
+    const reports = {
+      pendingDonations: school.donationsReceived.filter(d => d.status === "Pending"),
+      approvedDonations: school.donationsReceived.filter(d => d.status === "Approved"),
+      receivedDonations: school.donationsReceived.filter(d => d.status === "Completed"),
+      pendingRequests: donationRequests.filter(r => r.status === "Pending"),
+      approvedRequests: donationRequests.filter(r => r.status === "Approved"),
+      completedRequests: donationRequests.filter(r => r.status === "Completed")
+    };
+
+    res.status(200).json(reports);
   } catch (error) {
     res.status(500).json({ message: "Error fetching school reports", error });
   }

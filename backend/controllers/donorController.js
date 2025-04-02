@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const User = require("../models/user");
 const DonationRequest = require("../models/donationRequest");
 
@@ -87,17 +88,17 @@ const getDonorNotifications = async (req, res) => {
 
   try {
     const donor = await User.findById(donorId).populate({
-      path: 'notifications.schoolId',
-      select: 'schoolName'
+      path: "notifications.schoolId",
+      select: "schoolName",
     });
 
     if (!donor || donor.role !== "Donor") {
       return res.status(404).json({ message: "Donor not found" });
     }
 
-    const formattedNotifications = donor.notifications.map(notification => ({
+    const formattedNotifications = donor.notifications.map((notification) => ({
       ...notification.toObject(),
-      schoolName: notification.schoolId?.schoolName || "Unknown School"
+      schoolName: notification.schoolId?.schoolName || "Unknown School",
     }));
 
     // Return only the notifications array
@@ -197,7 +198,7 @@ const deleteNotification = async (req, res) => {
       return res.status(404).json({ message: "Donor not found" });
     }
 
-    // Remove the notification from the donor's notifications array
+    // Remove the notification
     donor.notifications = donor.notifications.filter(
       (note) => note._id.toString() !== notificationId
     );
@@ -237,26 +238,45 @@ const getDonorReports = async (req, res) => {
   const { donorId } = req.params;
 
   try {
-    const donor = await User.findById(donorId).populate({
-      path: "donationsMade.schoolId",
-      model: "User", // Explicitly specify the model to populate from
-      select: "schoolName", // Only fetch the schoolName field
-    });
+    // First find the donor with donationsMade array
+    const donor = await User.findById(donorId);
 
     if (!donor || donor.role !== "Donor") {
       return res.status(404).json({ message: "Donor not found" });
     }
 
-    const donations = donor.donationsMade.map((donation) => ({
-      schoolName: donation.schoolId?.schoolName || "N/A", // Using optional chaining
-      type: donation.type,
-      amount: donation.amount,
-      items: donation.items,
-      status: donation.status,
-      date: donation.date,
-    }));
+    // Use a direct population approach
+    const donorWithPopulatedDonations = await User.findById(donorId)
+      .populate({
+        path: 'donationsMade.schoolId',
+        // Make sure to select all fields you need
+        select: 'schoolName name role'
+      });
 
-    res.status(200).json({ donations });
+    // Map each donation with correct school name
+    const populatedDonations = donorWithPopulatedDonations.donationsMade.map(donation => {
+      // Extract school info
+      const schoolInfo = donation.schoolId || {};
+      
+      // Use schoolName only if the document is a School, otherwise fallback to name
+      const schoolName = schoolInfo.role === "School" ? (schoolInfo.schoolName || schoolInfo.name) : "N/A";
+
+      return {
+        _id: donation._id,
+        schoolId: donation.schoolId?._id || donation.schoolId,
+        schoolName: schoolName,
+        type: donation.type,
+        amount: donation.amount,
+        items: donation.items,
+        status: donation.status,
+        date: donation.date,
+        approvalDate: donation.approvalDate,
+        completionDate: donation.completionDate
+      };
+    });
+
+    console.log("Populated donations:", populatedDonations);
+    res.status(200).json({ donations: populatedDonations });
   } catch (error) {
     console.error("Error fetching donor reports:", error);
     res.status(500).json({ message: "Error fetching donor reports", error });

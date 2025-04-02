@@ -52,7 +52,7 @@ const donorSchema = new mongoose.Schema({
       items: [{ type: String }],
       status: {
         type: String,
-        enum: ["Pending", "Approved", "Completed"],
+        enum: ["Pending", "Approved", "Completed", "Rejected"],
         default: "Pending",
       },
       date: { type: Date, default: Date.now },
@@ -67,11 +67,25 @@ const donorSchema = new mongoose.Schema({
   notifications: [
     {
       schoolId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      schoolName: { type: String, required: true},
+      schoolName: {
+        type: String,
+        required: function () {
+          return !!this.schoolId;
+        },
+      },
       message: { type: String, required: true },
       date: { type: Date, default: Date.now },
       read: { type: Boolean, default: false },
-      type: { type: String, enum: ["newRequest", "approval", "completion"] },
+      type: {
+        type: String,
+        enum: [
+          "newRequest",
+          "approval",
+          "completion",
+          "donation_submission",
+          "request_rejection",
+        ],
+      },
     },
   ],
   delivery: {

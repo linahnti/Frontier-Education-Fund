@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const User = require("../models/user");
 const Donor = require("../models/donorDiscriminator");
 const DonationRequest = require("../models/donationRequest");
+const { request } = require("express");
 
 const getAllDonations = async (req, res) => {
   try {
@@ -53,10 +54,16 @@ const approveDonation = async (req, res) => {
   const { donationId } = req.params;
 
   try {
-    // Find the donation and update its status to "Approved" in the donor's donationsMade array
+    const currentDate = new Date();
+
     const donor = await Donor.findOneAndUpdate(
       { "donationsMade._id": donationId },
-      { $set: { "donationsMade.$.status": "Approved" } },
+      {
+        $set: {
+          "donationsMade.$.status": "Approved",
+          "donationsMade.$.approvalDate": currentDate, // Add approval date
+        },
+      },
       { new: true }
     );
 
@@ -79,6 +86,7 @@ const approveDonation = async (req, res) => {
       );
       if (schoolDonation) {
         schoolDonation.status = "Approved";
+        schoolDonation.approvalDate = currentDate;
       }
 
       // Send a notification to the school
@@ -156,10 +164,16 @@ const completeDonation = async (req, res) => {
   const { donationId } = req.params;
 
   try {
-    // Find the donation and update its status to "Completed" in the donor's donationsMade array
+    const currentDate = new Date();
+
     const donor = await Donor.findOneAndUpdate(
       { "donationsMade._id": donationId },
-      { $set: { "donationsMade.$.status": "Completed" } },
+      {
+        $set: {
+          "donationsMade.$.status": "Completed",
+          "donationsMade.$.completionDate": currentDate,
+        },
+      },
       { new: true }
     );
 
@@ -180,6 +194,7 @@ const completeDonation = async (req, res) => {
       );
       if (schoolDonation) {
         schoolDonation.status = "Completed";
+        schoolDonation.completionDate = currentDate;
       }
 
       // Send a notification to the school
@@ -257,12 +272,17 @@ const getAllDonationRequests = async (req, res) => {
 // Approve a donation request
 const approveDonationRequest = async (req, res) => {
   const { requestId } = req.params;
+  const currentDate = new Date();
 
   try {
-    // Find and update the donation request status
     const donationRequest = await DonationRequest.findByIdAndUpdate(
       requestId,
-      { $set: { status: "Approved" } },
+      {
+        $set: {
+          status: "Approved",
+          requestApprovalDate: currentDate,
+        },
+      },
       { new: true }
     ).populate("schoolId", "schoolName location donationNeeds");
 
@@ -333,14 +353,19 @@ const approveDonationRequest = async (req, res) => {
   }
 };
 
-// Complete a donation request
 const completeDonationRequest = async (req, res) => {
   const { requestId } = req.params;
+  const currentDate = new Date();
 
   try {
     const donationRequest = await DonationRequest.findByIdAndUpdate(
       requestId,
-      { $set: { status: "Completed" } },
+      {
+        $set: {
+          status: "Completed",
+          requestCompletionDate: currentDate,
+        },
+      },
       { new: true }
     ).populate("schoolId", "schoolName location");
 
@@ -416,11 +441,17 @@ const deleteDonationRequest = async (req, res) => {
 
 const rejectDonationRequest = async (req, res) => {
   const { requestId } = req.params;
+  const currentDate = new Date();
 
   try {
     const donationRequest = await DonationRequest.findByIdAndUpdate(
       requestId,
-      { $set: { status: "Rejected" } },
+      {
+        $set: {
+          status: "Rejected",
+          requestRejectionDate: currentDate,
+        },
+      },
       { new: true }
     ).populate("schoolId", "schoolName location");
 

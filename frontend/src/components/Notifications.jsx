@@ -14,12 +14,14 @@ import axios from "axios";
 import { FiSearch } from "react-icons/fi";
 import "../styles/Notifications.css";
 
-const Notifications = ({ notifications, setNotifications }) => {
+const Notifications = ({ notifications = [], setNotifications }) => {
   const { darkMode } = useTheme();
   const [showModal, setShowModal] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [deletedCount, setDeletedCount] = useState(0);
   const navigate = useNavigate();
 
   // Filter and reverse notifications
@@ -122,6 +124,10 @@ const Notifications = ({ notifications, setNotifications }) => {
       setNotifications((prevNotifications) =>
         prevNotifications.filter((note) => note._id !== notificationId)
       );
+
+      setDeletedCount(1);
+      setShowSuccessModal(true);
+      fetchNotifications();
     } catch (error) {
       console.error("Error deleting notification:", error);
     }
@@ -142,10 +148,34 @@ const Notifications = ({ notifications, setNotifications }) => {
         }
       );
 
+      const countBeforeDelete = notifications.length;
       setNotifications([]);
       setShowDeleteAllModal(false);
+      setDeletedCount(countBeforeDelete);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error("Error deleting all notifications:", error);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user"));
+      const donorId = user.id;
+
+      const response = await axios.get(
+        `http://localhost:5000/api/donors/${donorId}/notifications`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setNotifications(response.data.notifications || []);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
     }
   };
 
@@ -189,9 +219,9 @@ const Notifications = ({ notifications, setNotifications }) => {
           className={darkMode ? "search-bar-dark" : "search-bar-light"}
           style={{
             borderRight: "none",
-            caretColor: "#FFC107", // Yellow cursor in both modes
-            color: darkMode ? "#ffffff" : "#000000", // White text in dark mode, black in light mode
-            backgroundColor: darkMode ? "#333" : "#fff", // Ensure dark background in dark mode
+            caretColor: "#FFC107",
+            color: darkMode ? "#ffffff" : "#000000",
+            backgroundColor: darkMode ? "#333" : "#fff",
           }}
         />
         <Button
@@ -202,17 +232,10 @@ const Notifications = ({ notifications, setNotifications }) => {
               : "transparent",
             borderLeft: "none",
           }}
-          //onClick={() => {}} // Add search functionality if needed
         >
           <FiSearch style={{ color: darkMode ? "#ffffff" : "#495057" }} />
         </Button>
       </InputGroup>
-
-      {/* {newNotificationsCount > 0 && (
-        <Alert variant="info" className="mb-4">
-          You have {newNotificationsCount} new notifications.
-        </Alert>
-      )} */}
 
       {filteredNotifications.length > 0 ? (
         <Table striped bordered hover variant={darkMode ? "dark" : "light"}>
@@ -249,10 +272,6 @@ const Notifications = ({ notifications, setNotifications }) => {
                     <Button
                       variant="danger"
                       onClick={() => handleDeleteNotification(note._id)}
-                      style={{
-                        backgroundColor: "#0d6efd",
-                        borderColor: "#0d6efd",
-                      }}
                     >
                       Delete
                     </Button>
@@ -348,6 +367,31 @@ const Notifications = ({ notifications, setNotifications }) => {
           </Button>
           <Button variant="danger" onClick={handleDeleteAllNotifications}>
             Delete All
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Success Deletion Modal */}
+      <Modal
+        show={showSuccessModal}
+        onHide={() => setShowSuccessModal(false)}
+        centered
+        contentClassName={darkMode ? "bg-dark text-white" : ""}
+      >
+        <Modal.Header
+          closeButton
+          closeVariant={darkMode ? "white" : undefined}
+          className={darkMode ? "bg-dark border-secondary" : ""}
+        >
+          <Modal.Title style={{ color: "#28a745" }}>Success</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className={darkMode ? "bg-dark" : ""}>
+          Successfully deleted {deletedCount} notification
+          {deletedCount > 1 ? "s" : ""}!
+        </Modal.Body>
+        <Modal.Footer className={darkMode ? "bg-dark border-secondary" : ""}>
+          <Button variant="success" onClick={() => setShowSuccessModal(false)}>
+            OK
           </Button>
         </Modal.Footer>
       </Modal>

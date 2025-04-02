@@ -64,8 +64,9 @@ const createDonation = async (req, res) => {
     donor.donationsMade.push(donation);
 
     donor.notifications.push({
-      message: `Your donation to ${school.schoolName} has been submitted and is pending approval.`,
-      schoolName: school.schoolName, // Add this line to include the required schoolName
+      message: `Your donation to ${school.schoolName} has been submitted...`,
+      schoolName: school.schoolName,
+      schoolId: school._id,
       type: "donation_submission",
       date: new Date(),
       read: false,

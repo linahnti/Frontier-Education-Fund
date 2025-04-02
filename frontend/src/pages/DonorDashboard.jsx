@@ -255,7 +255,10 @@ const DonorDashboard = () => {
             }
           >
             <div className="mt-4">
-              <Notifications notifications={notifications} />
+              <Notifications
+                notifications={notifications}
+                setNotifications={setNotifications}
+              />
             </div>
           </Tab>
         </Tabs>

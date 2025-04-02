@@ -7,28 +7,32 @@ const donationRequestSchema = new mongoose.Schema(
       ref: "User", // Reference to the school (role: "school")
       required: true,
     },
-    donationNeeds: { type: [String], default: [] }, // Array of strings for donation needs
-    customRequest: { type: String, default: null }, // Optional custom request
+    donationNeeds: { type: [String], default: [] },
+    customRequest: { type: String, default: null },
     status: {
       type: String,
-      enum: ["Pending", "Approved", "Completed"],
+      enum: ["Pending", "Approved", "Completed", "Rejected"], // Added "Rejected"
       default: "Pending",
     },
     donors: [
       {
         donorId: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "User", // Reference to the donor (role: "donor")
+          ref: "User",
         },
         status: {
           type: String,
-          enum: ["Pending", "Approved", "Completed", "rejected"],
+          enum: ["Pending", "Approved", "Completed", "Rejected"], // Fixed case consistency
           default: "Pending",
         },
-        date: { type: Date, default: Date.now }, // Date of the donor's response
+        date: { type: Date, default: Date.now },
       },
     ],
-    date: { type: Date, default: Date.now }, // Date of the request
+    // New date fields for tracking request lifecycle
+    requestApprovalDate: { type: Date }, // When request was approved
+    requestCompletionDate: { type: Date }, // When request was completed
+    requestRejectionDate: { type: Date }, // When request was rejected
+    date: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );

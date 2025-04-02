@@ -20,7 +20,7 @@ const schoolSchema = new mongoose.Schema({
       item: { type: String }, // Item donated (e.g., books, desks)
       status: {
         type: String,
-        enum: ["Pending", "Approved", "Completed"],
+        enum: ["Pending", "Approved", "Completed", "Rejected"],
         default: "Pending",
       }, // Status of the donation
       date: { type: Date, default: Date.now }, // Date of the donation
@@ -44,13 +44,19 @@ const schoolSchema = new mongoose.Schema({
       message: { type: String, required: true },
       type: {
         type: String,
-        enum: ["approval", "completion", "rejection", "new_request"],
+        enum: [
+          "new_donation",
+          "approval",
+          "completion",
+          "rejection",
+          "new_request",
+        ],
       },
+      donorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       date: { type: Date, default: Date.now },
       read: { type: Boolean, default: false },
       // Optional references:
       donationId: { type: mongoose.Schema.Types.ObjectId },
-      donorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     },
   ],
 });
