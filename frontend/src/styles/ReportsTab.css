@@ -11,3 +11,66 @@
   .table-hover tbody tr:hover {
     background-color: rgba(255, 193, 7, 0.2); /* Darker yellow on hover */
   }
+
+ /* Search and filter container */
+.search-filter-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: center;
+}
+
+.search-container {
+  flex-grow: 1;
+}
+
+.search-input {
+  width: 100%;
+  min-width: 300px;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  background-color: white !important;
+  color: black !important;
+}
+
+/* Placeholder color */
+.search-input::placeholder {
+  color: #6c757d !important;
+}
+
+/* Focus state */
+.search-input:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  background-color: white !important;
+  color: black !important;
+}
+
+.filter-container {
+  min-width: 180px;
+}
+
+.status-filter {
+  padding: 10px 15px;
+  border-radius: 8px;
+}
+
+/* Dark mode styles for filter only */
+.dark-filter {
+  background-color: #343a40;
+  color: white;
+  border-color: #495057;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .search-filter-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-input {
+    min-width: 100%;
+  }
+}

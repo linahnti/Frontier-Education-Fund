@@ -1,0 +1,142 @@
+/* Support Tab Styles */
+.support-tab .accordion-button:not(.collapsed) {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+  }
+  
+  .support-tab .accordion-button:focus {
+    box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
+  }
+  
+  /* Dark mode specific styles */
+  .dark .support-tab .accordion-button {
+    background-color: #343a40;
+    color: #f8f9fa;
+  }
+  
+  .dark .support-tab .accordion-button:not(.collapsed) {
+    background-color: #495057;
+    color: #ffc107;
+  }
+  
+  .dark .support-tab .card {
+    border-color: #495057;
+  }
+  
+  /* Contact Cards */
+  .contact-card {
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .contact-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Icons */
+  .icon-wrapper {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  /* Ensure icons are visible and properly sized */
+  .icon-wrapper .bi {
+    font-size: 1.75rem; /* Adjust icon size */
+    width: 100%;
+    text-align: center;
+  }
+  
+  /* Platform-specific icon colors */
+  .icon-email {
+    color: #0d6efd !important; /* Bootstrap primary blue */
+  }
+  
+  .icon-phone {
+    color: #0dcaf0 !important; /* Bootstrap info teal */
+  }
+  
+  .icon-whatsapp {
+    color: #25D366 !important; /* WhatsApp green */
+  }
+  
+  /* Background colors for light mode */
+  .bg-light-primary {
+    background-color: rgba(13, 110, 253, 0.1);
+    border-color: rgba(13, 110, 253, 0.2) !important;
+  }
+  
+  .bg-light-info {
+    background-color: rgba(13, 202, 240, 0.1);
+    border-color: rgba(13, 202, 240, 0.2) !important;
+  }
+  
+  .bg-light-success {
+    background-color: rgba(25, 135, 84, 0.1);
+    border-color: rgba(25, 135, 84, 0.2) !important;
+  }
+  
+  /* Action links */
+  .action-link {
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .contact-card:hover .action-link {
+    transform: translateX(5px);
+  }
+  
+  /* Dark mode adjustments */
+  [data-bs-theme="dark"] .contact-card {
+    background-color: var(--bs-dark) !important;
+    border-color: var(--bs-gray-700) !important;
+  }
+  
+  [data-bs-theme="dark"] .contact-card:hover {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  }
+  
+  [data-bs-theme="dark"] .icon-wrapper {
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Make links in dark mode more visible */
+  [data-bs-theme="dark"] a {
+    color: #6ea8fe;
+  }
+  
+  [data-bs-theme="dark"] a:hover {
+    color: #8bb9fe;
+  }
+  /* Form field styling */
+.modal-body .form-control,
+.modal-body .form-select {
+  background-color: #f8f9fa !important; /* Light grey background */
+  border: 1px solid #ced4da !important;
+}
+
+.modal-body .form-control:focus,
+.modal-body .form-select:focus {
+  background-color: white !important;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Dark mode adjustments */
+[data-bs-theme="dark"] .modal-body .form-control,
+[data-bs-theme="dark"] .modal-body .form-select {
+  background-color: var(--bs-dark) !important;
+  border-color: var(--bs-gray-700) !important;
+  color: white;
+}
+
+/* Read-only field styling */
+.modal-body .form-control[readonly] {
+  background-color: #e9ecef !important;
+}

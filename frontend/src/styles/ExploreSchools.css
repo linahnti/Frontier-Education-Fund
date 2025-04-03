@@ -1,0 +1,21 @@
+/* Pagination Dark Mode Styles */
+.pagination-dark .page-link {
+  background-color: var(--color-card);
+  border-color: var(--color-bg-secondary);
+  color: var(--color-text);
+}
+
+.pagination-dark .page-item.active .page-link {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.pagination-dark .page-item.disabled .page-link {
+  background-color: var(--color-card);
+  color: #6c757d;
+}
+
+.dark-page-item .page-link {
+  color: var(--color-text);
+}

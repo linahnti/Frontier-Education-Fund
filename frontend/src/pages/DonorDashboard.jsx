@@ -16,6 +16,7 @@ import Notifications from "../components/Notifications";
 import ExploreSchools from "../components/ExploreSchools";
 import DonationsTab from "../components/DonationsTab";
 import ReportsTab from "../components/ReportsTab";
+import DonorSupport from "../components/DonorSupport";
 
 const DonorDashboard = () => {
   const navigate = useNavigate();
@@ -259,6 +260,11 @@ const DonorDashboard = () => {
                 notifications={notifications}
                 setNotifications={setNotifications}
               />
+            </div>
+          </Tab>
+          <Tab eventKey="support" title="Support">
+            <div className="mt-4">
+              <DonorSupport />
             </div>
           </Tab>
         </Tabs>

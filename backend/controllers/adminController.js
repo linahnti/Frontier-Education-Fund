@@ -61,7 +61,7 @@ const approveDonation = async (req, res) => {
       {
         $set: {
           "donationsMade.$.status": "Approved",
-          "donationsMade.$.approvalDate": currentDate, // Add approval date
+          "donationsMade.$.approvalDate": currentDate,
         },
       },
       { new: true }

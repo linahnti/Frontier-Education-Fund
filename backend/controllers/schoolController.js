@@ -261,10 +261,10 @@ const getSchoolReports = async (req, res) => {
   const { schoolId } = req.params;
 
   try {
-    // Get school donations
+    // Get school with populated donations
     const school = await User.findById(schoolId).populate({
       path: "donationsReceived.donorId",
-      select: "name"
+      select: "name",
     });
 
     if (!school || school.role !== "School") {
@@ -276,14 +276,59 @@ const getSchoolReports = async (req, res) => {
       .populate("schoolId", "schoolName location")
       .populate("donors.donorId", "name");
 
-    // Structure the reports
+    // Structure the reports with proper filtering
     const reports = {
-      pendingDonations: school.donationsReceived.filter(d => d.status === "Pending"),
-      approvedDonations: school.donationsReceived.filter(d => d.status === "Approved"),
-      receivedDonations: school.donationsReceived.filter(d => d.status === "Completed"),
-      pendingRequests: donationRequests.filter(r => r.status === "Pending"),
-      approvedRequests: donationRequests.filter(r => r.status === "Approved"),
-      completedRequests: donationRequests.filter(r => r.status === "Completed")
+      pendingDonations: school.donationsReceived
+        .filter((d) => d.status === "Pending")
+        .map((d) => ({
+          donorName: d.donorId?.name || "Unknown Donor",
+          item: d.item,
+          status: d.status,
+          date: d.date,
+          _id: d._id,
+        })),
+      approvedDonations: school.donationsReceived
+        .filter((d) => d.status === "Approved")
+        .map((d) => ({
+          donorName: d.donorId?.name || "Unknown Donor",
+          item: d.item,
+          status: d.status,
+          date: d.approvalDate || d.date,
+          _id: d._id,
+        })),
+      receivedDonations: school.donationsReceived
+        .filter((d) => d.status === "Completed")
+        .map((d) => ({
+          donorName: d.donorId?.name || "Unknown Donor",
+          item: d.item,
+          status: d.status,
+          date: d.completionDate || d.date,
+          _id: d._id,
+        })),
+      pendingRequests: donationRequests
+        .filter((r) => r.status === "Pending")
+        .map((r) => ({
+          donationNeeds: r.donationNeeds,
+          status: r.status,
+          date: r.date,
+          _id: r._id,
+        })),
+      approvedRequests: donationRequests
+        .filter((r) => r.status === "Approved")
+        .map((r) => ({
+          donationNeeds: r.donationNeeds,
+          status: r.status,
+          date: r.requestApprovalDate || r.date,
+          _id: r._id,
+        })),
+      completedRequests: donationRequests
+        .filter((r) => r.status === "Completed")
+        .map((r) => ({
+          donationNeeds: r.donationNeeds,
+          status: r.status,
+          date: r.requestCompletionDate || r.date,
+          _id: r._id,
+        })),
     };
 
     res.status(200).json(reports);

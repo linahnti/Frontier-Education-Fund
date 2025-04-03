@@ -17,6 +17,7 @@ import ProfileCompletionProgress from "../components/ProfileCompletionProgress";
 import SchoolsDonationTab from "../components/SchoolsDonationTab";
 import SchoolsNotifications from "../components/SchoolsNotifications";
 import ReportsTab from "../components/ReportsTab";
+import SupportTab from "../components/SchoolSupport";
 
 const SchoolDashboard = () => {
   const navigate = useNavigate();
@@ -223,11 +224,7 @@ const SchoolDashboard = () => {
           </Tab>
           <Tab eventKey="support" title="Support">
             <div className="mt-4">
-              <h4>FAQs & Help</h4>
-              <p>
-                How to request donations, contact support, etc. (to be
-                implemented).
-              </p>
+              <SupportTab />
             </div>
           </Tab>
         </Tabs>
