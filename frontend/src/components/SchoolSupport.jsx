@@ -2,16 +2,20 @@ import React, { useState, useEffect } from "react";
 import { Card, Accordion, Button, Modal, Form, Alert } from "react-bootstrap";
 import { useTheme } from "../contexts/ThemeContext";
 import { useProfile } from "../contexts/ProfileContext";
-import emailjs from "@emailjs/browser";
 import "../styles/SchoolSupport.css";
+import ProfileCompletionModal from "./ProfileCompletionModal";
+import ErrorModal from "./ErrorModal";
 
 const SchoolSupport = () => {
   const { darkMode } = useTheme();
-  const { currentUser } = useProfile();
+  const { currentUser, isProfileComplete } = useProfile();
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [ticketNumber, setTicketNumber] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [ticketData, setTicketData] = useState({
     userEmail: currentUser?.email || "",
     subject: "",
@@ -26,13 +30,6 @@ const SchoolSupport = () => {
     }
   }, [currentUser]);
 
-  // Generate ticket number when modal opens
-  useEffect(() => {
-    if (showModal) {
-      setTicketNumber(`TKT-${Date.now().toString().slice(-6)}`);
-    }
-  }, [showModal]);
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setTicketData((prev) => ({ ...prev, [name]: value }));
@@ -44,7 +41,7 @@ const SchoolSupport = () => {
 
     try {
       // 1. Save to MongoDB
-      const response = await fetch("/api/tickets", {
+      const response = await fetch("http://localhost:5000/api/tickets", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -54,27 +51,30 @@ const SchoolSupport = () => {
           subject: ticketData.subject,
           message: ticketData.message,
           urgency: ticketData.urgency,
+          userType: "School",
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to save ticket");
+      const responseData = await response.json();
 
-      // 2. Send email notification
-      await emailjs.send(
-        process.env.REACT_APP_EMAILJS_SERVICE_ID,
-        process.env.REACT_APP_EMAILJS_TEMPLATE_ID,
-        {
-          ...ticketData,
-          ticketNumber,
-          to_email: "support@yourschool.edu",
-        },
-        process.env.REACT_APP_EMAILJS_USER_ID
-      );
+      if (!response.ok) {
+        if (responseData.message?.includes("profile")) {
+          setShowProfileModal(true);
+          setShowModal(false);
+          throw new Error(responseData.message);
+        }
+        throw new Error(responseData.message || "Failed to save ticket");
+      }
 
       setShowSuccess(true);
     } catch (error) {
       console.error("Error submitting ticket:", error);
-      alert("Failed to submit ticket. Please try again.");
+      if (!error.message.includes("profile")) {
+        setErrorMessage(
+          error.message || "Failed to submit ticket. Please try again."
+        );
+        setShowErrorModal(true);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -129,10 +129,10 @@ const SchoolSupport = () => {
     },
     {
       method: "Phone Support",
-      details: "+254 747 530 804",
+      details: "+254 703 530 804",
       icon: "bi-telephone-fill",
       iconClass: "text-info",
-      action: "tel:+254747530804",
+      action: "tel:+254703530804",
       bgClass: darkMode ? "bg-dark" : "bg-light-info",
     },
     {
@@ -141,7 +141,7 @@ const SchoolSupport = () => {
       icon: "bi-whatsapp",
       iconClass: "text-success",
       action:
-        "https://wa.me/254705151634?text=Hello%20Support,%20I%20need%20help%20with...",
+        "https://wa.me/254703530804?text=Hello%20Support,%20I%20need%20help%20with...",
       bgClass: darkMode ? "bg-dark" : "bg-light-success",
     },
   ];
@@ -237,18 +237,35 @@ const SchoolSupport = () => {
           <div className="mt-4">
             <Button
               variant={darkMode ? "outline-light" : "primary"}
-              onClick={() => setShowModal(true)}
+              onClick={() => {
+                if (!currentUser) return;
+                if (!isProfileComplete) {
+                  setShowProfileModal(true);
+                } else {
+                  setShowModal(true);
+                }
+              }}
               disabled={!currentUser}
             >
               <i className="bi bi-ticket-detailed me-2"></i>
               Open Support Ticket
               {!currentUser && <span className="ms-2">(Login Required)</span>}
             </Button>
+
+            <ProfileCompletionModal
+              show={showProfileModal}
+              onHide={() => setShowProfileModal(false)}
+            />
           </div>
         </Card.Body>
       </Card>
 
-      {/* Support Ticket Modal */}
+      <ErrorModal
+        show={showErrorModal}
+        onHide={() => setShowErrorModal(false)}
+        message={errorMessage}
+      />
+
       <Modal
         show={showModal}
         onHide={() => !isSubmitting && setShowModal(false)}
@@ -268,7 +285,7 @@ const SchoolSupport = () => {
             <Alert variant="success" className="text-center">
               <i className="bi bi-check-circle-fill fs-1 text-success"></i>
               <h4>Ticket Submitted!</h4>
-              <p>Your ticket #{ticketNumber} has been received.</p>
+              <p>Your ticket has been received.</p>
               <p>We've sent a confirmation to {ticketData.userEmail}</p>
               <Button
                 variant="success"

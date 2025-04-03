@@ -25,6 +25,10 @@ const Schools = lazy(() => import("./pages/Schools"));
 const Donations = lazy(() => import("./pages/Donations"));
 const Testimonials = lazy(() => import("./pages/Testimonials"));
 const Donate = lazy(() => import("./pages/DonatePage"));
+const EmailVerification = lazy(() => import("./components/EmailVerification"));
+const ResendVerification = lazy(() =>
+  import("./components/ResendVerification")
+);
 
 // Loading Component
 const Loading = () => (
@@ -57,58 +61,56 @@ const App = () => {
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route
+              path="/verify-email/:token"
+              element={<EmailVerification />}
+            />
+            <Route
+              path="/resend-verification"
+              element={<ResendVerification />}
+            />
             <Route path="/logout" element={<Logout />} />
           </Route>
 
           {/* ✅ Protected Routes - Require authentication */}
           <Route element={<GeneralLayout />}>
-            {/* Dashboard */}
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
             </Route>
 
-            {/* Donor Dashboard */}
             <Route element={<ProtectedRoute allowedRole="donor" />}>
               <Route path="/donor-dashboard" element={<DonorDashboard />} />
             </Route>
 
-            {/* School Dashboard */}
             <Route element={<ProtectedRoute allowedRole="school" />}>
               <Route path="/school-dashboard" element={<SchoolDashboard />} />
             </Route>
 
-            {/* Profile Page */}
             <Route element={<ProtectedRoute />}>
               <Route path="/profile" element={<ProfilePage />} />
             </Route>
 
-            {/* Authenticated About */}
             <Route element={<ProtectedRoute />}>
               <Route path="/about" element={<About />} />
             </Route>
 
-            {/* Authenticated Schools */}
             <Route element={<ProtectedRoute />}>
               <Route path="/schools" element={<Schools />} />
             </Route>
 
-            {/* Authenticated Donations */}
             <Route element={<ProtectedRoute />}>
               <Route path="/donations" element={<Donations />} />
             </Route>
 
-            {/* Authenticated Testimonials */}
             <Route element={<ProtectedRoute />}>
               <Route path="/testimonials" element={<Testimonials />} />
             </Route>
 
-            {/* Authenticated Donate */}
             <Route element={<ProtectedRoute />}>
               <Route path="/donate" element={<Donate />} />
             </Route>
           </Route>
 
-          {/*  Admin Dashboard - Uses its own layout (AdminNavbar is inside AdminDashboard) */}
           <Route element={<ProtectedRoute allowedRole="admin" />}>
             <Route path="/admin-dashboard" element={<AdminDashboard />} />
           </Route>

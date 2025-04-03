@@ -11,16 +11,20 @@ import {
 } from "react-bootstrap";
 import { useTheme } from "../contexts/ThemeContext";
 import { useProfile } from "../contexts/ProfileContext";
-import emailjs from "@emailjs/browser";
 import "../styles/SchoolSupport.css";
+import ProfileCompletionModal from "./ProfileCompletionModal";
+import ErrorModal from "./ErrorModal";
 
 const DonorSupport = () => {
   const { darkMode } = useTheme();
-  const { currentUser } = useProfile();
+  const { currentUser, isProfileComplete } = useProfile();
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [ticketNumber, setTicketNumber] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [activeTab, setActiveTab] = useState("faqs");
   const [ticketData, setTicketData] = useState({
     userEmail: currentUser?.email || "",
@@ -36,13 +40,6 @@ const DonorSupport = () => {
     }
   }, [currentUser]);
 
-  // Generate ticket number when modal opens
-  useEffect(() => {
-    if (showModal) {
-      setTicketNumber(`TKT-${Date.now().toString().slice(-6)}`);
-    }
-  }, [showModal]);
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setTicketData((prev) => ({ ...prev, [name]: value }));
@@ -53,8 +50,7 @@ const DonorSupport = () => {
     setIsSubmitting(true);
 
     try {
-      // 1. Save to MongoDB
-      const response = await fetch("/api/tickets", {
+      const response = await fetch("http://localhost:5000/api/tickets", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -64,28 +60,30 @@ const DonorSupport = () => {
           subject: ticketData.subject,
           message: ticketData.message,
           urgency: ticketData.urgency,
-          userType: "donor",
+          userType: "Donor",
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to save ticket");
+      const responseData = await response.json();
 
-      // 2. Send emails via EmailJS
-      await emailjs.send(
-        process.env.REACT_APP_EMAILJS_SERVICE_ID,
-        process.env.REACT_APP_EMAILJS_TEMPLATE_ID,
-        {
-          ...ticketData,
-          ticketNumber,
-          to_email: "donor-support@yourschool.edu",
-        },
-        process.env.REACT_APP_EMAILJS_USER_ID
-      );
+      if (!response.ok) {
+        if (responseData.message?.includes("profile")) {
+          setShowProfileModal(true);
+          setShowModal(false);
+          throw new Error(responseData.message);
+        }
+        throw new Error(responseData.message || "Failed to save ticket");
+      }
 
       setShowSuccess(true);
     } catch (error) {
       console.error("Error submitting ticket:", error);
-      alert("Failed to submit ticket. Please try again.");
+      if (!error.message.includes("profile")) {
+        setErrorMessage(
+          error.message || "Failed to submit ticket. Please try again."
+        );
+        setShowErrorModal(true);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -133,18 +131,18 @@ const DonorSupport = () => {
   const contactInfo = [
     {
       method: "Donor Support Email",
-      details: "donor-support@yourschool.edu",
+      details: "llyntri@gmail.com",
       icon: "bi-envelope-fill",
       iconClass: "text-primary",
-      action: "mailto:donor-support@yourschool.edu",
+      action: "mailto:llyntri@gmail.com",
       bgClass: darkMode ? "bg-dark" : "bg-light-primary",
     },
     {
       method: "Donor Helpline",
-      details: "+254 700 123 456",
+      details: "+254 703 530 804",
       icon: "bi-telephone-fill",
       iconClass: "text-info",
-      action: "tel:+254700123456",
+      action: "tel:+254703530804",
       bgClass: darkMode ? "bg-dark" : "bg-light-info",
     },
     {
@@ -153,7 +151,7 @@ const DonorSupport = () => {
       icon: "bi-whatsapp",
       iconClass: "text-success",
       action:
-        "https://wa.me/254700123456?text=Hello%20Donor%20Support,%20I%20need%20help%20with...",
+        "https://wa.me/254703530804?text=Hello%20Donor%20Support,%20I%20need%20help%20with...",
       bgClass: darkMode ? "bg-dark" : "bg-light-success",
     },
   ];
@@ -262,16 +260,33 @@ const DonorSupport = () => {
       <div className="mt-4">
         <Button
           variant={darkMode ? "outline-light" : "primary"}
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            if (!currentUser) return;
+            if (!isProfileComplete) {
+              setShowProfileModal(true);
+            } else {
+              setShowModal(true);
+            }
+          }}
           disabled={!currentUser}
         >
           <i className="bi bi-ticket-detailed me-2"></i>
           Open Support Ticket
-          {!currentUser && <span className="ms-2">(Login Required)</span>}
+          {!currentUser && <span className="ms-2"></span>}
         </Button>
+
+        <ProfileCompletionModal
+          show={showProfileModal}
+          onHide={() => setShowProfileModal(false)}
+        />
       </div>
 
-      {/* Support Ticket Modal */}
+      <ErrorModal
+        show={showErrorModal}
+        onHide={() => setShowErrorModal(false)}
+        message={errorMessage}
+      />
+
       <Modal
         show={showModal}
         onHide={() => !isSubmitting && setShowModal(false)}
@@ -291,7 +306,7 @@ const DonorSupport = () => {
             <Alert variant="success" className="text-center">
               <i className="bi bi-check-circle-fill fs-1 text-success"></i>
               <h4>Ticket Submitted!</h4>
-              <p>Your ticket #{ticketNumber} has been received.</p>
+              <p>Your ticket has been received.</p>
               <p>We've sent a confirmation to {ticketData.userEmail}</p>
               <Button
                 variant="success"

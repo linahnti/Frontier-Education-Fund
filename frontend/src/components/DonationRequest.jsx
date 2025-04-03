@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Button, Modal, Form } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
+import { useProfile } from "../contexts/ProfileContext";
 
 const DonationRequest = ({
   user,
@@ -9,6 +11,8 @@ const DonationRequest = ({
   profileData,
 }) => {
   const { darkMode } = useTheme();
+  const { isProfileComplete } = useProfile();
+  const navigate = useNavigate();
   const [showDonationModal, setShowDonationModal] = useState(false);
   const [showProfileWarningModal, setShowProfileWarningModal] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false);
@@ -88,7 +92,7 @@ const DonationRequest = ({
 
   // Handle clicking the "Post a Donation Request" button
   const handlePostDonationClick = () => {
-    if (completionPercentage < 100) {
+    if (!isProfileComplete) {
       setShowProfileWarningModal(true);
       return;
     }

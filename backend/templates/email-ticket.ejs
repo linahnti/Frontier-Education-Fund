@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+      }
+      .ticket-header {
+        color: #2c3e50;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+      }
+      .ticket-details {
+        margin: 15px 0;
+        padding: 15px;
+        background: #f9f9f9;
+        border-left: 4px solid #3498db;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 class="ticket-header">Hello <%= user.name %>,</h1>
+
+    <div class="ticket-details">
+      <h3>Your ticket (#<%= ticket.ticketNumber %>) has been received</h3>
+      <p><strong>Subject:</strong> <%= ticket.subject %></p>
+      <p><strong>Urgency:</strong> <%= ticket.urgency %></p>
+    </div>
+
+    <p>
+      Our <%= typeof ticket.userType !== 'undefined' ?
+      ticket.userType.toLowerCase() : 'support' %> team will respond within:
+    </p>
+    <ul>
+      <% if (ticket.urgency && ['high','critical'].includes(ticket.urgency)) {
+      %>
+      <li><strong>24 hours</strong> (high urgency)</li>
+      <% } else { %>
+      <li><strong>48 hours</strong> (standard)</li>
+      <% } %>
+    </ul>
+  </body>
+</html>

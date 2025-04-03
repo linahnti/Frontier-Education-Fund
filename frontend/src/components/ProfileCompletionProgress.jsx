@@ -2,11 +2,14 @@ import React, { useState, useEffect } from "react";
 import { ProgressBar } from "react-bootstrap";
 import axios from "axios";
 import { calculateProfileCompletion } from "./ProfileUtils";
+import { useProfile } from "../contexts/ProfileContext";
 
 const ProfileCompletionProgress = ({ user, setCompletionPercentage }) => {
+  const { isProfileComplete, setIsProfileComplete } = useProfile();
   const [profileData, setProfileData] = useState(null);
-  const [completionPercentage, setLocalCompletionPercentage] = useState(0); // Define local state
+  const [completionPercentage, setLocalCompletionPercentage] = useState(0);
 
+  // Fetch profile data on component mount
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
@@ -17,8 +20,6 @@ const ProfileCompletionProgress = ({ user, setCompletionPercentage }) => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-
-        console.log("Fetched Profile Data:", response.data);
         setProfileData(response.data);
       } catch (error) {
         console.error("Error fetching profile data:", error);
@@ -28,21 +29,24 @@ const ProfileCompletionProgress = ({ user, setCompletionPercentage }) => {
     fetchProfileData();
   }, []);
 
+  // Calculate profile completion when user or profileData changes
   useEffect(() => {
     if (!user || !profileData) return;
 
-    // Use the shared function to calculate completion
     const { completionPercentage, isProfileComplete } =
       calculateProfileCompletion(user, profileData);
-    setLocalCompletionPercentage(completionPercentage); // Update local state
-    setCompletionPercentage(completionPercentage); // Update parent state
 
-    // Update the user object if the profile is complete
+    setLocalCompletionPercentage(completionPercentage);
+    setCompletionPercentage(completionPercentage);
+    setIsProfileComplete(isProfileComplete);
+
+    setIsProfileComplete(isProfileComplete);
+
     if (isProfileComplete) {
       const updatedUser = { ...user, isProfileComplete: true };
       localStorage.setItem("user", JSON.stringify(updatedUser));
     }
-  }, [user, profileData, setCompletionPercentage]);
+  }, [user, profileData, setCompletionPercentage, setIsProfileComplete]);
 
   return (
     <div>

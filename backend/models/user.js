@@ -48,6 +48,7 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
     isProfileComplete: { type: Boolean, default: false },
+    isVerified: { type: Boolean, default: false },
   },
   {
     timestamps: true,

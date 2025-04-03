@@ -1,8 +1,85 @@
+const nodemailer = require("nodemailer");
 const User = require("../models/user");
 const Donor = require("../models/donorDiscriminator");
 const School = require("../models/schoolDiscriminator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+require("dotenv").config();
+
+const sendVerificationEmail = async (user) => {
+  try {
+    // Create verification token
+    const verificationToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: "24h" }
+    );
+
+    const verificationLink = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_APP_PASSWORD,
+      },
+    });
+
+    const mailOptions = {
+      from: `"Frontier Education Fund" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: "Verify Your Email - Frontier Education Fund",
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
+          <h2 style="color: #4a6da7; text-align: center;">Email Verification</h2>
+          <p>Hello ${user.name},</p>
+          <p>Thank you for registering with Frontier Education Fund. Please verify your email address by clicking the button below:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationLink}" style="background-color: #4a6da7; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verify Email</a>
+          </div>
+          <p>This link will expire in 24 hours. If you did not create an account, please ignore this email.</p>
+          <p>Thank you,<br>The Frontier Education Fund Team</p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error("Error sending verification email:", error);
+    throw error;
+  }
+};
+
+// Verify email
+const verifyEmail = async (req, res) => {
+  const { token } = req.params;
+
+  try {
+    // Verify the token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
+    // Find the user and update their verification status
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: "Email already verified" });
+    }
+
+    user.isVerified = true;
+    await user.save();
+
+    return res.status(200).json({ message: "Email successfully verified" });
+  } catch (error) {
+    console.error(error);
+    if (error.name === "TokenExpiredError") {
+      return res.status(400).json({ message: "Verification link has expired" });
+    }
+    return res.status(400).json({ message: "Invalid or expired token" });
+  }
+};
 
 // Register User
 const registerUser = async (req, res) => {
@@ -58,6 +135,7 @@ const registerUser = async (req, res) => {
         email,
         contactNumber,
         password: hashedPassword,
+        isVerified: false,
       });
     } else if (role.toLowerCase() === "school") {
       user = new School({
@@ -65,6 +143,7 @@ const registerUser = async (req, res) => {
         email,
         contactNumber,
         password: hashedPassword,
+        isVerified: false,
       });
     } else {
       user = new User({
@@ -73,10 +152,13 @@ const registerUser = async (req, res) => {
         contactNumber,
         password: hashedPassword,
         role: role.toLowerCase(),
+        isVerified: false,
       });
     }
 
     await user.save();
+
+    await sendVerificationEmail(user);
 
     // Send success response
     res.status(201).json({
@@ -84,6 +166,8 @@ const registerUser = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      message:
+        "Registration successful! Please check your email to verify your account.",
     });
   } catch (error) {
     console.error("Registration error:", error.stack);
@@ -104,6 +188,14 @@ const loginUser = async (req, res) => {
       return res
         .status(404)
         .json({ message: "User not found. Please check your email." });
+    }
+
+    if (!user.isVerified) {
+      return res.status(403).json({
+        message:
+          "Email not verified. Please check your email for verification instructions.",
+        userId: user._id,
+      });
     }
 
     // Check if the password is correct
@@ -135,6 +227,28 @@ const loginUser = async (req, res) => {
     res.status(500).json({
       message: error.message || "Login failed. Please try again.",
     });
+  }
+};
+
+const resendVerificationEmail = async (req, res) => {
+  const { userId } = req.body;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ message: "Email already verified" });
+    }
+
+    await sendVerificationEmail(user);
+
+    res.status(200).json({ message: "Verification email resent successfully" });
+  } catch (error) {
+    console.error("Error resending verification email:", error);
+    res.status(500).json({ message: "Failed to resend verification email" });
   }
 };
 
@@ -379,4 +493,6 @@ module.exports = {
   loginUser,
   getUserProfile,
   updateUserProfile,
+  verifyEmail,
+  resendVerificationEmail,
 };

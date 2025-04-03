@@ -24,6 +24,7 @@ const donorRoutes = require("./routes/donorRoutes.js");
 const donationRoutes = require("./routes/donationRoutes.js");
 const adminRoutes = require("./routes/adminRoutes.js");
 const ticketRoutes = require("./routes/ticketRoutes.js");
+const forgotPasswordRoutes = require("./routes/forgotPasswordRoutes.js");
 
 // User Routes
 app.use("/api/users", userRoutes);
@@ -33,6 +34,7 @@ app.use("/api/donors", donorRoutes);
 app.use("/api/donations", donationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/tickets", ticketRoutes);
+app.use("/api/forgot-password", forgotPasswordRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

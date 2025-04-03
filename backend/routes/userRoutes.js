@@ -4,16 +4,16 @@ const {
   loginUser,
   getUserProfile,
   updateUserProfile,
+  verifyEmail,
+  resendVerificationEmail,
 } = require("../controllers/userController.js");
 const { protect } = require("../middleware/authMiddleware.js");
 
 const router = express.Router();
 
-// Public Routes
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 
-// Protected Routes
 router.get("/profile", protect, getUserProfile);
 router.get("/validate-token", protect, async (req, res) => {
   try {
@@ -22,7 +22,10 @@ router.get("/validate-token", protect, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-//router.get("/profile/check", protect, checkUserProfile);
+
 router.put("/profile/update", protect, updateUserProfile);
+
+router.get("/verify-email/:token", verifyEmail);
+router.post("/resend-verification", resendVerificationEmail);
 
 module.exports = router;
