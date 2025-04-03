@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { API_URL } from "../config";
 
 const EmailVerification = () => {
   const { token } = useParams();
@@ -15,7 +16,7 @@ const EmailVerification = () => {
     const verifyEmail = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:5000/api/users/verify-email/${token}`
+          `${API_URL}/api/users/verify-email/${token}`
         );
         setMessage(response.data.message);
         toast.success(response.data.message);
@@ -25,10 +26,12 @@ const EmailVerification = () => {
       } catch (err) {
         console.error("Verification error:", err.response?.data);
         setError(
-          err.response?.data?.message || "Email verification failed. Please try again."
+          err.response?.data?.message ||
+            "Email verification failed. Please try again."
         );
         toast.error(
-          err.response?.data?.message || "Email verification failed. Please try again."
+          err.response?.data?.message ||
+            "Email verification failed. Please try again."
         );
       } finally {
         setLoading(false);
@@ -40,7 +43,10 @@ const EmailVerification = () => {
 
   return (
     <div className="container d-flex justify-content-center align-items-center min-vh-100">
-      <div className="card shadow-lg" style={{ maxWidth: "450px", width: "100%" }}>
+      <div
+        className="card shadow-lg"
+        style={{ maxWidth: "450px", width: "100%" }}
+      >
         <div
           className="card-header text-center"
           style={{ background: "#4a6da7", padding: "20px 0" }}

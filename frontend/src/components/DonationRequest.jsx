@@ -3,6 +3,7 @@ import { Button, Modal, Form } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { useProfile } from "../contexts/ProfileContext";
+import { API_URL } from "../config";
 
 const DonationRequest = ({
   user,
@@ -48,7 +49,7 @@ const DonationRequest = ({
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/schools/${schoolId}/donation-needs`,
+        `${API_URL}/api/schools/${schoolId}/donation-needs`,
         {
           method: "POST",
           headers: {

@@ -12,6 +12,7 @@ import axios from "axios";
 import { FiSearch } from "react-icons/fi";
 import { useTheme } from "../contexts/ThemeContext";
 import "../styles/Notifications.css";
+import { API_URL } from "../config";
 
 const SchoolsNotifications = ({ notifications = [], setNotifications }) => {
   const { darkMode } = useTheme();
@@ -68,7 +69,7 @@ const SchoolsNotifications = ({ notifications = [], setNotifications }) => {
       const userId = JSON.parse(localStorage.getItem("user"))._id;
 
       await axios.put(
-        `http://localhost:5000/api/users/${userId}/notifications/${notificationId}/read`,
+        `${API_URL}/api/users/${userId}/notifications/${notificationId}/read`,
         {},
         {
           headers: {
@@ -96,7 +97,7 @@ const SchoolsNotifications = ({ notifications = [], setNotifications }) => {
       const userId = JSON.parse(localStorage.getItem("user"))._id;
 
       await axios.put(
-        `http://localhost:5000/api/users/${userId}/notifications/read-all`,
+        `${API_URL}/api/users/${userId}/notifications/read-all`,
         {},
         {
           headers: {
@@ -119,7 +120,7 @@ const SchoolsNotifications = ({ notifications = [], setNotifications }) => {
       const userId = JSON.parse(localStorage.getItem("user"))._id;
 
       await axios.delete(
-        `http://localhost:5000/api/users/${userId}/notifications/${notificationId}`,
+        `${API_URL}/api/users/${userId}/notifications/${notificationId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -144,7 +145,7 @@ const SchoolsNotifications = ({ notifications = [], setNotifications }) => {
       const userId = JSON.parse(localStorage.getItem("user"))._id;
 
       await axios.delete(
-        `http://localhost:5000/api/users/${userId}/notifications`,
+        `${API_URL}/api/users/${userId}/notifications`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

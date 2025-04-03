@@ -4,32 +4,27 @@ import { jsPDF } from "jspdf";
 import { useTheme } from "../contexts/ThemeContext";
 import "../styles/ReportsTab.css";
 import assets from "../assets/images/assets";
+import { API_URL } from "../config";
 
 const ReportsTab = ({ userId, role }) => {
   const { darkMode } = useTheme();
   const [data, setData] = useState([]);
   const [requests, setRequests] = useState([]);
   const [userName, setUserName] = useState("");
-  // New state variables for search and filter
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
 
   useEffect(() => {
-    // Get user name from local storage
     const storedUserName = localStorage.getItem("userName");
     if (storedUserName) {
       setUserName(storedUserName);
     } else {
-      // Fetch user name from API if not in localStorage
       const fetchUserName = async () => {
         try {
           const token = localStorage.getItem("token");
-          const response = await fetch(
-            "http://localhost:5000/api/users/profile",
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
+          const response = await fetch(`${API_URL}/api/users/profile`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
 
           if (response.ok) {
             const userData = await response.json();
@@ -49,8 +44,8 @@ const ReportsTab = ({ userId, role }) => {
         const token = localStorage.getItem("token");
         const endpoint =
           role === "Donor"
-            ? `http://localhost:5000/api/donors/${userId}/reports`
-            : `http://localhost:5000/api/schools/${userId}/reports`;
+            ? `${API_URL}/api/donors/${userId}/reports`
+            : `${API_URL}/api/schools/${userId}/reports`;
 
         const response = await fetch(endpoint, {
           method: "GET",
@@ -65,10 +60,9 @@ const ReportsTab = ({ userId, role }) => {
 
         const result = await response.json();
 
-        // For schools, handle the structured reports data
         if (role === "School") {
           console.log("School reports data:", result);
-          // Set donations data based on the different categories
+
           setData([
             ...result.pendingDonations.map((item) => ({
               ...item,
@@ -113,13 +107,11 @@ const ReportsTab = ({ userId, role }) => {
     fetchReports();
   }, [userId, role]);
 
-  // Filter function for both search and status filtering
   const getFilteredData = (dataArray, type) => {
     return dataArray.filter((item) => {
       const statusMatch =
         filterStatus === "All" || item.status === filterStatus;
 
-      // For search term matching
       let searchMatch = true;
       if (searchTerm.trim() !== "") {
         const searchTermLower = searchTerm.toLowerCase();
@@ -168,7 +160,6 @@ const ReportsTab = ({ userId, role }) => {
     if (reportType === "donation") {
       return `${entityType} Report: ${status} Donations`;
     } else {
-      // Modified to remove repetition
       return `${entityType} Report: ${status} Donation Requests`;
     }
   };
@@ -196,7 +187,7 @@ const ReportsTab = ({ userId, role }) => {
 
     let dataToExport;
     let reportType = isDonationReport ? "donation" : "request";
-    const requestStatus = status.split(" ")[0]; // "Pending", "Approved", or "Completed"
+    const requestStatus = status.split(" ")[0];
 
     if (isDonationReport) {
       dataToExport = data.filter((item) => item.status === status);
@@ -213,7 +204,6 @@ const ReportsTab = ({ userId, role }) => {
       img.src = assets.favicon;
 
       img.onload = function () {
-        // Move logo to top left with more space
         doc.addImage(img, "PNG", 14, 10, 20, 20);
 
         completeReport();
@@ -232,7 +222,6 @@ const ReportsTab = ({ userId, role }) => {
       const title = getReportTitle(status, reportType);
       const subtitle = getReportSubtitle(status, reportType);
 
-      // Move title to the right to avoid overlap with logo
       doc.setFontSize(18);
       doc.setTextColor(40, 40, 40);
       doc.text(title, 105, 20, { align: "center" });

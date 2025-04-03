@@ -5,6 +5,7 @@ import { useProfile } from "../contexts/ProfileContext";
 import "../styles/SchoolSupport.css";
 import ProfileCompletionModal from "./ProfileCompletionModal";
 import ErrorModal from "./ErrorModal";
+import { API_URL } from "../config";
 
 const SchoolSupport = () => {
   const { darkMode } = useTheme();
@@ -23,7 +24,7 @@ const SchoolSupport = () => {
     urgency: "medium",
   });
 
-  // Update email when currentUser changes
+  
   useEffect(() => {
     if (currentUser?.email) {
       setTicketData((prev) => ({ ...prev, userEmail: currentUser.email }));
@@ -41,7 +42,7 @@ const SchoolSupport = () => {
 
     try {
       // 1. Save to MongoDB
-      const response = await fetch("http://localhost:5000/api/tickets", {
+      const response = await fetch(`${API_URL}/api/tickets`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

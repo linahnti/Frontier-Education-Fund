@@ -17,6 +17,7 @@ import ExploreSchools from "../components/ExploreSchools";
 import DonationsTab from "../components/DonationsTab";
 import ReportsTab from "../components/ReportsTab";
 import DonorSupport from "../components/DonorSupport";
+import { API_URL } from "../config";
 
 const DonorDashboard = () => {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ const DonorDashboard = () => {
       const donorId = user.id;
 
       const response = await fetch(
-        `http://localhost:5000/api/donors/${donorId}/notifications`,
+        `${API_URL}/api/donors/${donorId}/notifications`,
         {
           method: "GET",
           headers: {
@@ -100,7 +101,7 @@ const DonorDashboard = () => {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/donors/${donorId}/donations`,
+        `${API_URL}/api/donors/${donorId}/donations`,
         {
           method: "GET",
           headers: {

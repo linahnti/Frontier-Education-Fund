@@ -9,15 +9,15 @@ const Footer = () => {
       id="footer-section"
       className="text-white py-4 position-relative"
       style={{
-        backgroundImage: `url(${assets.footer3})`, // Add your background image path here
+        backgroundImage: `url(${assets.footer3})`, 
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
     >
-      {/* Dark overlay to reduce contrast */}
+      
       <div
         className="position-absolute top-0 start-0 w-100 h-100"
-        style={{ backgroundColor: "rgba(0, 0, 0, 0.6)" }} // Adjust opacity (0.6) for darkness
+        style={{ backgroundColor: "rgba(0, 0, 0, 0.6)" }} 
       ></div>
 
       <Container className="position-relative">

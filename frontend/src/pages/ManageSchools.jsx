@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Table, Button, Badge, ButtonGroup } from "react-bootstrap";
 import axios from "axios";
+import { API_URL } from "../config";
 
 const ManageSchools = () => {
   const [schools, setSchools] = useState([]);
@@ -10,7 +11,7 @@ const ManageSchools = () => {
   useEffect(() => {
     const fetchSchools = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/schools");
+        const response = await axios.get(`${API_URL}/api/schools`);
         setSchools(response.data);
         setLoading(false);
       } catch (error) {

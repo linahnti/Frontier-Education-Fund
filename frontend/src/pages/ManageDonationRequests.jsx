@@ -8,6 +8,7 @@ import {
   Modal,
 } from "react-bootstrap";
 import axios from "axios";
+import { API_URL } from "../config";
 
 const ManageDonationRequests = () => {
   const [donationRequests, setDonationRequests] = useState([]);
@@ -27,7 +28,7 @@ const ManageDonationRequests = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        "http://localhost:5000/api/admin/donation-requests",
+        `${API_URL}/api/admin/donation-requests`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -57,7 +58,7 @@ const ManageDonationRequests = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.put(
-        `http://localhost:5000/api/admin/donation-requests/${requestId}/approve`,
+        `${API_URL}/api/admin/donation-requests/${requestId}/approve`,
         {},
         {
           headers: {
@@ -69,10 +70,10 @@ const ManageDonationRequests = () => {
       if (response.status === 200) {
         showTemporaryFeedback("Donation request approved successfully");
         // Update the state directly instead of refetching all data
-        setDonationRequests(prevRequests => 
-          prevRequests.map(request => 
-            request._id === requestId 
-              ? {...request, status: "Approved"} 
+        setDonationRequests((prevRequests) =>
+          prevRequests.map((request) =>
+            request._id === requestId
+              ? { ...request, status: "Approved" }
               : request
           )
         );
@@ -88,7 +89,7 @@ const ManageDonationRequests = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.put(
-        `http://localhost:5000/api/admin/donation-requests/${requestId}/reject`,
+        `${API_URL}/api/admin/donation-requests/${requestId}/reject`,
         {},
         {
           headers: {
@@ -100,10 +101,10 @@ const ManageDonationRequests = () => {
       if (response.status === 200) {
         showTemporaryFeedback("Donation request rejected successfully");
         // Update the state directly instead of refetching all data
-        setDonationRequests(prevRequests => 
-          prevRequests.map(request => 
-            request._id === requestId 
-              ? {...request, status: "Rejected"} 
+        setDonationRequests((prevRequests) =>
+          prevRequests.map((request) =>
+            request._id === requestId
+              ? { ...request, status: "Rejected" }
               : request
           )
         );
@@ -119,7 +120,7 @@ const ManageDonationRequests = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.put(
-        `http://localhost:5000/api/admin/donation-requests/${requestId}/complete`,
+        `${API_URL}/api/admin/donation-requests/${requestId}/complete`,
         {},
         {
           headers: {
@@ -131,10 +132,10 @@ const ManageDonationRequests = () => {
       if (response.status === 200) {
         showTemporaryFeedback("Donation request marked as completed");
         // Update the state directly instead of refetching all data
-        setDonationRequests(prevRequests => 
-          prevRequests.map(request => 
-            request._id === requestId 
-              ? {...request, status: "Completed"} 
+        setDonationRequests((prevRequests) =>
+          prevRequests.map((request) =>
+            request._id === requestId
+              ? { ...request, status: "Completed" }
               : request
           )
         );
@@ -156,7 +157,7 @@ const ManageDonationRequests = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.delete(
-        `http://localhost:5000/api/admin/donation-requests/${requestToDelete}`,
+        `${API_URL}/api/admin/donation-requests/${requestToDelete}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -166,9 +167,9 @@ const ManageDonationRequests = () => {
 
       if (response.status === 200) {
         showTemporaryFeedback("Donation request deleted successfully");
-        // Filter out the deleted request instead of refetching all data
-        setDonationRequests(prevRequests => 
-          prevRequests.filter(request => request._id !== requestToDelete)
+
+        setDonationRequests((prevRequests) =>
+          prevRequests.filter((request) => request._id !== requestToDelete)
         );
       }
       setShowModal(false);

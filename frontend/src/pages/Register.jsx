@@ -5,6 +5,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import assets from "../assets/images/assets";
 import { motion } from "framer-motion";
+import {API_URL} from "../config";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -160,7 +161,7 @@ const Register = () => {
 
       // Send a POST request to the backend
       const response = await axios.post(
-        "http://localhost:5000/api/users/register",
+        `${API_URL}/api/users/register`,
         {
           name,
           email: formData.email,

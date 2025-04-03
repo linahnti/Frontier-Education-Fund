@@ -6,6 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { motion } from "framer-motion";
 import assets from "../assets/images/assets";
+import {API_URL} from "../config";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -68,7 +69,7 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/users/login",
+        `${API_URL}/api/users/login`,
         {
           email,
           password,
@@ -80,7 +81,7 @@ const Login = () => {
       console.log("User Role:", user.role);
 
       const profileResponse = await axios.get(
-        "http://localhost:5000/api/users/profile",
+        `${API_URL}/api/users/profile`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

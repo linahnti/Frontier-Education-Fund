@@ -11,6 +11,7 @@ import {
 import axios from "axios";
 import DonationRequest from "./DonationRequest";
 import { useTheme } from "../contexts/ThemeContext";
+import { API_URL } from "../config";
 
 const SchoolsDonationTab = ({ schoolId }) => {
   const { darkMode } = useTheme();
@@ -38,7 +39,7 @@ const SchoolsDonationTab = ({ schoolId }) => {
 
       // Fetch donations received
       const donationsResponse = await axios.get(
-        `http://localhost:5000/api/schools/${schoolId}/donations-received`,
+        `${API_URL}/api/schools/${schoolId}/donations-received`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -49,7 +50,7 @@ const SchoolsDonationTab = ({ schoolId }) => {
 
       // Fetch all donation requests
       const requestsResponse = await axios.get(
-        `http://localhost:5000/api/schools/${schoolId}/donation-requests`,
+        `${API_URL}/api/schools/${schoolId}/donation-requests`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -60,7 +61,7 @@ const SchoolsDonationTab = ({ schoolId }) => {
 
       // Fetch active donors
       const activeDonorsResponse = await axios.get(
-        `http://localhost:5000/api/schools/${schoolId}/active-donors`,
+        `${API_URL}/api/schools/${schoolId}/active-donors`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

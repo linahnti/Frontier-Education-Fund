@@ -16,6 +16,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import ThemeToggle from "./ThemeToggle";
+import { API_URL } from "../config";
 
 const ExploreSchools = () => {
   const { darkMode } = useTheme();
@@ -34,7 +35,7 @@ const ExploreSchools = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/schools")
+      .get(`${API_URL}/api/schools`)
       .then((response) => {
         setSchools(response.data);
         setFilteredSchools(response.data);
@@ -77,7 +78,7 @@ const ExploreSchools = () => {
   const fetchDonationRequests = async (schoolId) => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/donation-requests/school/${schoolId}`
+        `${API_URL}/api/donation-requests/school/${schoolId}`
       );
 
       const activeRequests = response.data

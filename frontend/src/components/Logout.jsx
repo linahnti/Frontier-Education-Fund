@@ -8,17 +8,17 @@ const Logout = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    logout(); // Call the logout function from AuthContext
+    logout(); 
     toast.success("Logged out successfully!", {
       position: "top-center",
       autoClose: 3000,
       hideProgressBar: false,
       style: { backgroundColor: "#ffc107", color: "#000" },
     });
-    navigate("/login"); // Redirect to login after logout
+    navigate("/login"); 
   }, [logout, navigate]);
 
-  return null; // This component doesn't render anything
+  return null; 
 };
 
 export default Logout;

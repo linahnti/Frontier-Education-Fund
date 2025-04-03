@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../styles/ProfilePage.css";
+import { API_URL } from "../config";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -9,7 +10,7 @@ const ProfilePage = () => {
     name: "",
     email: "",
     contactNumber: "",
-    role: "", // Will be 'school' or 'donor'
+    role: "", 
     isProfileComplete: false,
     schoolDetails: {
       schoolName: "",
@@ -52,7 +53,7 @@ const ProfilePage = () => {
     }
 
     axios
-      .get("http://localhost:5000/api/users/profile", {
+      .get(`${API_URL}/api/users/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
@@ -187,11 +188,11 @@ const ProfilePage = () => {
     console.log("Submitting updated user info:", updatedUserInfo);
 
     axios
-      .put("http://localhost:5000/api/users/profile/update", updatedUserInfo, {
+      .put(`${API_URL}/api/users/profile/update`, updatedUserInfo, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
-        const { user } = response.data; // Destructure the updated user object from the response
+        const { user } = response.data; 
         console.log("Updated user data from backend:", user);
 
         // Update the frontend state with the updated user object

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Table, Button, Badge, ButtonGroup, Alert } from "react-bootstrap";
 import axios from "axios";
+import { API_URL } from "../config";
 
 const ManageDonations = () => {
   const [donations, setDonations] = useState([]);
@@ -17,14 +18,11 @@ const ManageDonations = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:5000/api/admin/donations",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axios.get("${API_URL}/api/admin/donations", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setDonations(response.data);
       setError(null);
     } catch (error) {
@@ -48,7 +46,7 @@ const ManageDonations = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.put(
-        `http://localhost:5000/api/admin/donations/${donationId}/approve`,
+        `${API_URL}/api/admin/donations/${donationId}/approve`,
         {},
         {
           headers: {
@@ -79,7 +77,7 @@ const ManageDonations = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.put(
-        `http://localhost:5000/api/admin/donations/${donationId}/complete`,
+        `${API_URL}/api/admin/donations/${donationId}/complete`,
         {},
         {
           headers: {

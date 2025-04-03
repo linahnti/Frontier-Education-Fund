@@ -1,6 +1,7 @@
 import { createContext, useState, useContext, useEffect } from "react";
 import axios from "axios";
 import { calculateProfileCompletion } from "../components/ProfileUtils";
+import { API_URL } from "../config";
 
 const ProfileContext = createContext();
 
@@ -13,7 +14,7 @@ export const ProfileProvider = ({ children }) => {
   const fetchUser = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/users/profile`,
+        `${API_URL}/api/users/profile`,
         {
           headers: {
             "Content-Type": "application/json",

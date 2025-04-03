@@ -14,6 +14,7 @@ import { useProfile } from "../contexts/ProfileContext";
 import "../styles/SchoolSupport.css";
 import ProfileCompletionModal from "./ProfileCompletionModal";
 import ErrorModal from "./ErrorModal";
+import {API_URL} from "../config";
 
 const DonorSupport = () => {
   const { darkMode } = useTheme();
@@ -50,7 +51,7 @@ const DonorSupport = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/tickets", {
+      const response = await fetch(`${API_URL}/api/tickets`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

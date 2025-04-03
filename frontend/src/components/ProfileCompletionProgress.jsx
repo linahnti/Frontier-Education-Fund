@@ -3,6 +3,7 @@ import { ProgressBar } from "react-bootstrap";
 import axios from "axios";
 import { calculateProfileCompletion } from "./ProfileUtils";
 import { useProfile } from "../contexts/ProfileContext";
+import { API_URL } from "../config";
 
 const ProfileCompletionProgress = ({ user, setCompletionPercentage }) => {
   const { isProfileComplete, setIsProfileComplete } = useProfile();
@@ -14,12 +15,9 @@ const ProfileCompletionProgress = ({ user, setCompletionPercentage }) => {
     const fetchProfileData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get(
-          "http://localhost:5000/api/users/profile",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const response = await axios.get(`${API_URL}/api/users/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setProfileData(response.data);
       } catch (error) {
         console.error("Error fetching profile data:", error);
@@ -29,7 +27,6 @@ const ProfileCompletionProgress = ({ user, setCompletionPercentage }) => {
     fetchProfileData();
   }, []);
 
-  // Calculate profile completion when user or profileData changes
   useEffect(() => {
     if (!user || !profileData) return;
 

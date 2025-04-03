@@ -11,6 +11,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import assets from "../assets/images/assets";
+import { API_URL } from "../config";
 
 const DonatePage = () => {
   const [donationType, setDonationType] = useState("money");
@@ -18,7 +19,7 @@ const DonatePage = () => {
   const [items, setItems] = useState("");
   const [schoolId, setSchoolId] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [preferredDate, setPreferredDate] = useState(""); // Preferred delivery date state
+  const [preferredDate, setPreferredDate] = useState(""); 
   const [schools, setSchools] = useState([]);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ const DonatePage = () => {
   useEffect(() => {
     const fetchSchools = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/schools");
+        const response = await axios.get(`${API_URL}/api/schools`);
         setSchools(response.data);
       } catch (error) {
         console.error("Error fetching schools:", error);
@@ -65,7 +66,7 @@ const DonatePage = () => {
       const donorId = JSON.parse(localStorage.getItem("user")).id;
 
       const response = await axios.post(
-        "http://localhost:5000/api/donations",
+        `${API_URL}/api/donations`,
         {
           donorId,
           schoolId,
@@ -108,7 +109,7 @@ const DonatePage = () => {
       const token = localStorage.getItem("token");
 
       const response = await axios.post(
-        "http://localhost:5000/api/mpesa/stkpush",
+        `${API_URL}/api/mpesa/stkpush`,
         {
           phoneNumber,
           amount,

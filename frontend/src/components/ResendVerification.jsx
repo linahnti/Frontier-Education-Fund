@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { API_URL } from "../config";
 
 const ResendVerification = () => {
   const location = useLocation();
@@ -17,7 +18,7 @@ const ResendVerification = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/users/resend-verification",
+        `${API_URL}/api/users/resend-verification`,
         { userId }
       );
       toast.success(response.data.message);

@@ -1,4 +1,3 @@
-// utils/profileUtils.js
 export const calculateProfileCompletion = (user, profileData) => {
   if (!user || !profileData)
     return { completionPercentage: 0, isProfileComplete: false };
@@ -34,7 +33,6 @@ export const calculateProfileCompletion = (user, profileData) => {
       "donorDetails.donationFrequency",
     ];
 
-    // Add organizationAffiliation to required fields only if donorType is not "Individual"
     if (profileData.donorDetails?.donorType !== "Individual") {
       requiredFields.push("donorDetails.organizationAffiliation");
     }

@@ -13,6 +13,7 @@ import { useTheme } from "../contexts/ThemeContext";
 import axios from "axios";
 import { FiSearch } from "react-icons/fi";
 import "../styles/Notifications.css";
+import {API_URL} from "../config";
 
 const Notifications = ({ notifications = [], setNotifications }) => {
   const { darkMode } = useTheme();
@@ -63,7 +64,7 @@ const Notifications = ({ notifications = [], setNotifications }) => {
       const donorId = user.id;
 
       await axios.put(
-        `http://localhost:5000/api/donors/${donorId}/notifications/${notificationId}/read`,
+        `${API_URL}/api/donors/${donorId}/notifications/${notificationId}/read`,
         {},
         {
           headers: {
@@ -89,7 +90,7 @@ const Notifications = ({ notifications = [], setNotifications }) => {
       const donorId = user.id;
 
       await axios.put(
-        `http://localhost:5000/api/donors/${donorId}/notifications/read-all`,
+        `${API_URL}/api/donors/${donorId}/notifications/read-all`,
         {},
         {
           headers: {
@@ -113,7 +114,7 @@ const Notifications = ({ notifications = [], setNotifications }) => {
       const donorId = user.id;
 
       await axios.delete(
-        `http://localhost:5000/api/donors/${donorId}/notifications/${notificationId}`,
+        `${API_URL}/api/donors/${donorId}/notifications/${notificationId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -140,7 +141,7 @@ const Notifications = ({ notifications = [], setNotifications }) => {
       const donorId = user.id;
 
       await axios.delete(
-        `http://localhost:5000/api/donors/${donorId}/notifications`,
+        `${API_URL}/api/donors/${donorId}/notifications`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -165,7 +166,7 @@ const Notifications = ({ notifications = [], setNotifications }) => {
       const donorId = user.id;
 
       const response = await axios.get(
-        `http://localhost:5000/api/donors/${donorId}/notifications`,
+        `${API_URL}/api/donors/${donorId}/notifications`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

@@ -18,6 +18,7 @@ import SchoolsDonationTab from "../components/SchoolsDonationTab";
 import SchoolsNotifications from "../components/SchoolsNotifications";
 import ReportsTab from "../components/ReportsTab";
 import SupportTab from "../components/SchoolSupport";
+import { API_URL } from "../config";
 
 const SchoolDashboard = () => {
   const navigate = useNavigate();
@@ -53,16 +54,13 @@ const SchoolDashboard = () => {
         parsedUser.isProfileComplete = Boolean(parsedUser.isProfileComplete);
 
         // Fetch the complete user profile from the backend
-        const profileResponse = await fetch(
-          `http://localhost:5000/api/users/profile`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const profileResponse = await fetch(`${API_URL}/api/users/profile`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (!profileResponse.ok) {
           throw new Error("Failed to fetch user profile");
@@ -79,7 +77,7 @@ const SchoolDashboard = () => {
 
         // Fetch notifications from the backend
         const notificationsResponse = await fetch(
-          `http://localhost:5000/api/schools/${updatedUser.id}/notifications`, // Use updatedUser.id
+          `${API_URL}/api/schools/${updatedUser.id}/notifications`,
           {
             method: "GET",
             headers: {
@@ -93,7 +91,7 @@ const SchoolDashboard = () => {
         }
 
         const notificationsData = await notificationsResponse.json();
-        setNotifications(notificationsData.notifications || []); // Set notifications from backend
+        setNotifications(notificationsData.notifications || []);
       } catch (error) {
         console.error("Error fetching user data:", error);
       } finally {
@@ -127,7 +125,6 @@ const SchoolDashboard = () => {
     );
   }
 
-  // Do not render the dashboard if the user is not found
   if (!user) {
     return null;
   }
