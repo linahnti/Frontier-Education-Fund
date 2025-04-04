@@ -112,7 +112,7 @@ const App = () => {
           </Route>
 
           <Route element={<ProtectedRoute allowedRole="admin" />}>
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route path="/admin-dashboard/*" element={<AdminDashboard />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

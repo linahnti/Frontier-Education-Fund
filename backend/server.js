@@ -23,6 +23,7 @@ const schoolRoutes = require("./routes/schoolRoutes.js");
 const donorRoutes = require("./routes/donorRoutes.js");
 const donationRoutes = require("./routes/donationRoutes.js");
 const adminRoutes = require("./routes/adminRoutes.js");
+const adminReportRoutes = require("./routes/adminReportRoutes.js");
 const ticketRoutes = require("./routes/ticketRoutes.js");
 const forgotPasswordRoutes = require("./routes/forgotPasswordRoutes.js");
 
@@ -33,6 +34,7 @@ app.use("/api/schools", schoolRoutes);
 app.use("/api/donors", donorRoutes);
 app.use("/api/donations", donationRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/admin/reports", adminReportRoutes);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/forgot-password", forgotPasswordRoutes);
 

@@ -1,0 +1,25 @@
+
+
+.hover-effect {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.hover-effect:after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  background: #ffffff;
+  left: 0;
+  bottom: -5px;
+  transition: width 0.3s ease;
+}
+
+.hover-effect:hover:after {
+  width: 100%;
+}
+
+.hover-effect:hover {
+  transform: translateY(-2px);
+}

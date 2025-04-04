@@ -55,15 +55,35 @@ const verifyEmail = async (req, res) => {
   const { token } = req.params;
 
   try {
-    // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-
-    // Find the user and update their verification status
     const user = await User.findById(decoded.userId);
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // List of test emails to auto-verify
+    const TEST_EMAILS = [
+      "hinata@gmail.com",
+      "ashito@gmail.com",
+      "isagi11@gmail.com",
+      "naruto@gmail.com",
+      "fefadmin@gmail.com",
+    ];
+
+    // Auto-verify test emails without checking token
+    if (TEST_EMAILS.includes(user.email)) {
+      if (!user.isVerified) {
+        user.isVerified = true;
+        await user.save();
+      }
+      return res.status(200).json({
+        message: "Test email automatically verified",
+        isTestAccount: true,
+      });
+    }
+
+    // Normal verification flow for real users
     if (user.isVerified) {
       return res.status(400).json({ message: "Email already verified" });
     }
@@ -181,6 +201,14 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
+  const TEST_EMAILS = [
+    "hinata@gmail.com",
+    "isagi11@gmail.com",
+    "naruto@gmail.com",
+    "ashito@gmail.com",
+    "fefadmin@gmail.com",
+  ];
+
   try {
     // Check if the user exists
     const user = await User.findOne({ email });
@@ -190,7 +218,7 @@ const loginUser = async (req, res) => {
         .json({ message: "User not found. Please check your email." });
     }
 
-    if (!user.isVerified) {
+    if (!TEST_EMAILS.includes(email) && !user.isVerified) {
       return res.status(403).json({
         message:
           "Email not verified. Please check your email for verification instructions.",

@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { motion } from "framer-motion";
 import assets from "../assets/images/assets";
-import {API_URL} from "../config";
+import { API_URL } from "../config";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -67,27 +67,43 @@ const Login = () => {
     setError("");
     setLoading(true);
 
+    const TEST_EMAILS = [
+      "hinata@gmail.com",
+      "isagi11@gmail.com",
+      "naruto@gmail.com",
+      "ashito@gmail.com",
+      "fefadmin@gmail.com",
+    ];
+
     try {
-      const response = await axios.post(
-        `${API_URL}/api/users/login`,
-        {
-          email,
-          password,
-        }
-      );
+      const response = await axios.post(`${API_URL}/api/users/login`, {
+        email,
+        password,
+      });
 
       const { token, user } = response.data;
       console.log("API Response:", response.data);
       console.log("User Role:", user.role);
 
-      const profileResponse = await axios.get(
-        `${API_URL}/api/users/profile`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      if (TEST_EMAILS.includes(email)) {
+        console.log("Bypassing verification for test account:", email);
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+
+        toast.success("Login successful! Redirecting to dashboard...");
+
+        const role = user.role.toLowerCase();
+        if (role === "admin") navigate("/admin-dashboard");
+        else if (role === "donor") navigate("/donor-dashboard");
+        else if (role === "school") navigate("/school-dashboard");
+        return;
+      }
+
+      const profileResponse = await axios.get(`${API_URL}/api/users/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       const completeUser = profileResponse.data;
       console.log("Complete User:", completeUser);
@@ -116,6 +132,29 @@ const Login = () => {
         console.error("Unknown role:", user.role);
       }
     } catch (err) {
+      if (TEST_EMAILS.includes(email)) {
+        console.log(
+          "Test account login failed, attempting to force verify:",
+          email
+        );
+        try {
+          // Try to force verify the test account
+          await axios.post(`${API_URL}/api/users/force-verify`, { email });
+          // Retry login after verification
+          const retryResponse = await axios.post(`${API_URL}/api/users/login`, {
+            email,
+            password,
+          });
+          const { token, user } = retryResponse.data;
+          localStorage.setItem("token", token);
+          localStorage.setItem("user", JSON.stringify(user));
+          navigate(user.role.toLowerCase() + "-dashboard");
+          return;
+        } catch (forceVerifyError) {
+          console.error("Force verify failed:", forceVerifyError);
+        }
+      }
+
       if (
         err.response &&
         err.response.status === 403 &&

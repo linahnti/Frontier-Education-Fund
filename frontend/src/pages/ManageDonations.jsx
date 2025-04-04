@@ -1,13 +1,28 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Badge, ButtonGroup, Alert } from "react-bootstrap";
+import {
+  Table,
+  Button,
+  Badge,
+  ButtonGroup,
+  Alert,
+  Form,
+  Dropdown,
+  InputGroup,
+  Row,
+  Col,
+} from "react-bootstrap";
 import axios from "axios";
 import { API_URL } from "../config";
+import SearchInput from "../components/SearchInput";
 
 const ManageDonations = () => {
   const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [feedback, setFeedback] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [typeFilter, setTypeFilter] = useState("All");
 
   // Fetch donations from the backend
   useEffect(() => {
@@ -18,12 +33,14 @@ const ManageDonations = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await axios.get("${API_URL}/api/admin/donations", {
+      const response = await axios.get(`${API_URL}/api/admin/donations`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      setDonations(response.data);
+
+      const donationsArray = Array.isArray(response.data) ? response.data : [];
+      setDonations(donationsArray);
       setError(null);
     } catch (error) {
       console.error("Error fetching donations:", error);
@@ -32,6 +49,23 @@ const ManageDonations = () => {
       setLoading(false);
     }
   };
+
+  const filteredDonations = donations.filter((donation) => {
+    const matchesSearch =
+      donation.donorId?.name
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      donation.schoolId?.schoolName
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === "All" || donation.status === statusFilter;
+    const matchesType =
+      typeFilter === "All" || donation.type === typeFilter.toLowerCase();
+
+    return matchesSearch && matchesStatus && matchesType;
+  });
 
   // Show feedback for a few seconds
   const showTemporaryFeedback = (message, type = "success") => {
@@ -108,7 +142,7 @@ const ManageDonations = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.delete(
-        `http://localhost:5000/api/admin/donations/${donationId}`,
+        `${API_URL}/api/admin/donations/${donationId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -150,8 +184,65 @@ const ManageDonations = () => {
 
       {error && <Alert variant="danger">{error}</Alert>}
 
-      {donations.length === 0 ? (
-        <Alert variant="info">No donations available.</Alert>
+      <div className="search-filter-container mb-4">
+        <Row className="g-3">
+          <Col md={6}>
+            <SearchInput
+              placeholder="Search by donor or school"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </Col>
+          <Col md={3}>
+            <Dropdown>
+              <Dropdown.Toggle
+                variant="outline-secondary"
+                id="dropdown-status-filter"
+              >
+                Status: {statusFilter}
+              </Dropdown.Toggle>
+              <Dropdown.Menu className="filter-dropdown">
+                <Dropdown.Item onClick={() => setStatusFilter("All")}>
+                  All
+                </Dropdown.Item>
+                <Dropdown.Item onClick={() => setStatusFilter("Pending")}>
+                  Pending
+                </Dropdown.Item>
+                <Dropdown.Item onClick={() => setStatusFilter("Approved")}>
+                  Approved
+                </Dropdown.Item>
+                <Dropdown.Item onClick={() => setStatusFilter("Completed")}>
+                  Completed
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+          </Col>
+          <Col md={3}>
+            <Dropdown>
+              <Dropdown.Toggle
+                variant="outline-secondary"
+                id="dropdown-type-filter"
+              >
+                Type: {typeFilter}
+              </Dropdown.Toggle>
+              <Dropdown.Menu className="filter-dropdown">
+                <Dropdown.Item onClick={() => setTypeFilter("All")}>
+                  All
+                </Dropdown.Item>
+                <Dropdown.Item onClick={() => setTypeFilter("Money")}>
+                  Money
+                </Dropdown.Item>
+                <Dropdown.Item onClick={() => setTypeFilter("Items")}>
+                  Items
+                </Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+          </Col>
+        </Row>
+      </div>
+
+      {filteredDonations.length === 0 ? (
+        <Alert variant="info">No donations match your criteria.</Alert>
       ) : (
         <Table striped bordered hover responsive>
           <thead>

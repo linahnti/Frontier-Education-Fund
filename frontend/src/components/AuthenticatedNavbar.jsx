@@ -1,12 +1,26 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import assets from "../assets/images/assets";
 import ThemeToggle from "./ThemeToggle";
+import { Dropdown, Badge, Button } from "react-bootstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faBell,
+  faUser,
+  faSignOutAlt,
+  faCog,
+  faUserCircle,
+  faTachometerAlt,
+} from "@fortawesome/free-solid-svg-icons";
+import "../styles/AuthenticatedNavbar.css";
 
 const AuthenticatedNavbar = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const userRole = user ? user.role : null;
+  const [notifications, setNotifications] = useState([]);
+  // Add this state to track any new notifications
+  const [newNotificationsCount, setNewNotificationsCount] = useState(0);
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -26,11 +40,79 @@ const AuthenticatedNavbar = () => {
     }
   };
 
+  const renderNavLinks = () => {
+    const commonLinks = (
+      <>
+        <Link to="/about" className="nav-link text-white mx-2 hover-effect">
+          About
+        </Link>
+        <Link to="/schools" className="nav-link text-white mx-2 hover-effect">
+          Schools
+        </Link>
+        <Link to="/donations" className="nav-link text-white mx-2 hover-effect">
+          Donations
+        </Link>
+        <Link
+          to="/testimonials"
+          className="nav-link text-white mx-2 hover-effect"
+        >
+          Testimonials
+        </Link>
+      </>
+    );
+
+    // Role-specific links
+    if (userRole === "donor") {
+      return (
+        <>
+          {commonLinks}
+          <Link
+            to="/donor-dashboard"
+            className="nav-link text-white mx-2 hover-effect"
+          >
+            <FontAwesomeIcon icon={faTachometerAlt} className="me-1" />{" "}
+            Dashboard
+          </Link>
+        </>
+      );
+    } else if (userRole === "school") {
+      return (
+        <>
+          {commonLinks}
+          <Link
+            to="/school-dashboard"
+            className="nav-link text-white mx-2 hover-effect"
+          >
+            <FontAwesomeIcon icon={faTachometerAlt} className="me-1" />{" "}
+            Dashboard
+          </Link>
+        </>
+      );
+    } else if (userRole === "admin") {
+      return (
+        <>
+          {commonLinks}
+          <Link
+            to="/admin-dashboard"
+            className="nav-link text-white mx-2 hover-effect"
+          >
+            <FontAwesomeIcon icon={faTachometerAlt} className="me-1" /> Admin
+            Dashboard
+          </Link>
+        </>
+      );
+    }
+
+    return commonLinks;
+  };
+
   return (
     <header
-      className="shadow-sm py-2"
+      className="py-3"
       style={{
-        background: "linear-gradient(135deg, #1E3A8A, #3B82F6)",
+        background: "linear-gradient(135deg, #1E293B, #374151)",
+        boxShadow:
+          "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
       }}
     >
       <div className="container-fluid d-flex justify-content-between align-items-center">
@@ -43,89 +125,157 @@ const AuthenticatedNavbar = () => {
           <img
             src={assets.favicon}
             alt="Frontier Education Fund Logo"
-            className="h-8 w-8 me-2"
+            className="me-2"
+            style={{ height: "40px", width: "auto" }}
           />
-          <span className="h5 text-white mb-0">Frontier Education Fund</span>
+          <span
+            className="h4 text-white mb-0 fw-bold"
+            style={{
+              background: "linear-gradient(90deg, #ffffff, #a5b4fc)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            Frontier Education Fund
+          </span>
         </div>
 
         {/* Navbar Links */}
-        <div className="d-flex align-items-center">
-          <Link to="/about" className="text-white text-decoration-none me-3">
-            About
-          </Link>
-          <Link to="/schools" className="text-white text-decoration-none me-3">
-            Schools
-          </Link>
-          <Link
-            to="/donations"
-            className="text-white text-decoration-none me-3"
-          >
-            Donations
-          </Link>
-          <Link
-            to="/testimonials"
-            className="text-white text-decoration-none me-3"
-          >
-            Testimonials
-          </Link>
+        <div className="d-none d-md-flex align-items-center">
+          {renderNavLinks()}
         </div>
 
-        {/* Theme Toggle and User Menu */}
+        {/* Right Section: Theme Toggle, Notifications, User Menu */}
         <div className="d-flex align-items-center">
-          <ThemeToggle className="text-white mx-2 d-flex align-items-center gap-3" />
+          <ThemeToggle className="mx-2 d-flex align-items-center gap-3" />
 
-          <div className="dropdown me-3">
-            <button
-              className="btn btn-link text-white p-0 dropdown-toggle"
-              type="button"
-              id="notificationsDropdown"
-              data-bs-toggle="dropdown"
+          {/* Notifications Dropdown */}
+          <Dropdown className="me-3">
+            <Dropdown.Toggle
+              variant="link"
+              id="dropdown-notifications"
+              className="nav-link text-white p-0 position-relative"
+              style={{ background: "none", border: "none" }}
             >
-              <i className="fas fa-bell"></i>
-            </button>
-            <ul className="dropdown-menu dropdown-menu-end">
-              <li>
-                <span className="dropdown-item">No new notifications</span>
-              </li>
-            </ul>
-          </div>
+              <FontAwesomeIcon icon={faBell} size="lg" />
+              {newNotificationsCount > 0 && (
+                <Badge
+                  bg="danger"
+                  className="position-absolute"
+                  style={{ top: "-5px", right: "-5px", fontSize: "0.6rem" }}
+                  pill
+                >
+                  {newNotificationsCount}
+                </Badge>
+              )}
+            </Dropdown.Toggle>
 
-          <div className="dropdown">
-            <button
-              className="btn btn-link text-white p-0 dropdown-toggle"
-              type="button"
-              id="profileDropdown"
-              data-bs-toggle="dropdown"
+            <Dropdown.Menu
+              align="end"
+              className="shadow-lg border-0"
+              style={{ minWidth: "300px" }}
             >
-              <i className="fas fa-user-circle"></i>
-            </button>
-            <ul className="dropdown-menu dropdown-menu-end">
-              <li>
-                <Link to="/profile" className="dropdown-item">
-                  Profile
+              <div className="p-2 border-bottom d-flex justify-content-between align-items-center">
+                <h6 className="mb-0">Notifications</h6>
+                <Badge bg="primary" pill>
+                  {notifications.length}
+                </Badge>
+              </div>
+              {notifications.length > 0 ? (
+                notifications.map((notification, index) => (
+                  <Dropdown.Item key={index} className="border-bottom">
+                    <div className="d-flex w-100 justify-content-between">
+                      <p className="mb-1">{notification.message}</p>
+                      <small>{notification.time}</small>
+                    </div>
+                  </Dropdown.Item>
+                ))
+              ) : (
+                <Dropdown.Item className="text-muted text-center">
+                  No new notifications
+                </Dropdown.Item>
+              )}
+              <div className="p-2 border-top text-center">
+                <Link
+                  to="/notifications"
+                  className="btn btn-sm btn-link text-decoration-none"
+                >
+                  View all notifications
                 </Link>
-              </li>
+              </div>
+            </Dropdown.Menu>
+          </Dropdown>
+
+          {/* User Menu Dropdown */}
+          <Dropdown>
+            <Dropdown.Toggle
+              variant="link"
+              id="dropdown-user"
+              className="nav-link text-white p-0 d-flex align-items-center"
+              style={{ background: "none", border: "none" }}
+            >
+              <div className="d-flex align-items-center">
+                <div
+                  className="rounded-circle bg-light d-flex align-items-center justify-content-center me-1"
+                  style={{ width: "36px", height: "36px", overflow: "hidden" }}
+                >
+                  <FontAwesomeIcon
+                    icon={faUserCircle}
+                    size="lg"
+                    className="text-primary"
+                  />
+                </div>
+                <span className="d-none d-md-inline ms-1">
+                  {user?.name || "User"}
+                </span>
+              </div>
+            </Dropdown.Toggle>
+
+            <Dropdown.Menu align="end" className="shadow-lg border-0 py-0">
+              <div className="p-3 border-bottom bg-light">
+                <div className="d-flex align-items-center">
+                  <div
+                    className="rounded-circle bg-primary d-flex align-items-center justify-content-center me-3"
+                    style={{ width: "45px", height: "45px" }}
+                  >
+                    <FontAwesomeIcon
+                      icon={faUser}
+                      size="lg"
+                      className="text-white"
+                    />
+                  </div>
+                  <div>
+                    <h6 className="mb-0">{user?.name || "User"}</h6>
+                    <small className="text-muted">{user?.email || ""}</small>
+                  </div>
+                </div>
+              </div>
+
+              <Dropdown.Item as={Link} to="/profile" className="py-2">
+                <FontAwesomeIcon icon={faUser} className="me-2" /> My Profile
+              </Dropdown.Item>
+
               {user?.isProfileComplete && (
-                <li>
-                  <Link to="/profile" className="dropdown-item">
-                    Profile Completed
-                  </Link>
-                </li>
+                <Dropdown.Item as={Link} to="/profile" className="py-2">
+                  <FontAwesomeIcon icon={faCog} className="me-2" /> Account
+                  Settings
+                </Dropdown.Item>
               )}
+
               {userRole === "admin" && (
-                <li>
-                  <Link to="/admin-settings" className="dropdown-item">
-                    Admin Settings
-                  </Link>
-                </li>
+                <Dropdown.Item as={Link} to="/admin-settings" className="py-2">
+                  <FontAwesomeIcon icon={faCog} className="me-2" /> Admin
+                  Settings
+                </Dropdown.Item>
               )}
-              <li>
-                <button className="dropdown-item" onClick={logout}>
-                  Logout
-                </button>
-              </li>
-            </ul>
-          </div>
+
+              <Dropdown.Divider className="my-0" />
+
+              <Dropdown.Item onClick={logout} className="py-2 text-danger">
+                <FontAwesomeIcon icon={faSignOutAlt} className="me-2" /> Logout
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
         </div>
       </div>
     </header>
