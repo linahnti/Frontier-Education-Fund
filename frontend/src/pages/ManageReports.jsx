@@ -6,6 +6,8 @@ import { saveAs } from "file-saver";
 import { useTheme } from "../contexts/ThemeContext";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
+import AlertModal from "../components/AlertModal";
+import "../App.css";
 
 const ManageReports = () => {
   const [reportType, setReportType] = useState("donations");
@@ -35,6 +37,53 @@ const ManageReports = () => {
     { value: "Received", label: "Received" },
   ];
 
+  const [alertModal, setAlertModal] = useState({
+    show: false,
+    title: "",
+    message: "",
+    variant: "danger",
+  });
+
+  const showError = (title, message, variant = "danger") => {
+    setAlertModal({
+      show: true,
+      title,
+      message,
+      variant,
+    });
+  };
+
+  const hideAlert = () => {
+    setAlertModal((prev) => ({ ...prev, show: false }));
+  };
+
+  // Get a friendly date string for file naming
+  const getFormattedDate = () => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}${month}${day}`;
+  };
+
+  // Generate unique file names for different report types
+  const getReportFileName = (reportType, format) => {
+    const dateStr = getFormattedDate();
+    const timeStamp = Date.now();
+    const reportNames = {
+      donations: "donation-summary",
+      donors: "donor-activity",
+      schools: "school-requests",
+      financial: "financial-summary",
+      activity: "system-activity",
+      users: "user-management",
+    };
+
+    const baseName = reportNames[reportType] || reportType;
+    const extension = format === "pdf" ? "pdf" : "xlsx";
+    return `${baseName}-${dateStr}-${timeStamp}.${extension}`;
+  };
+
   const generateReport = async () => {
     setIsGenerating(true);
     try {
@@ -45,39 +94,63 @@ const ManageReports = () => {
           reportType,
           startDate: dateRange.start.toISOString(),
           endDate: dateRange.end.toISOString(),
-          format,
+          format: format,
           status: filterStatus !== "All" ? filterStatus : undefined,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
-          responseType: format === "pdf" ? "blob" : "arraybuffer",
+          responseType: "arraybuffer",
         }
       );
 
-      if (format === "pdf") {
-        // For PDF, we'll generate it client-side for better formatting
-        await generatePDFReport();
-      } else {
-        const extension = "xlsx";
-        const blob = new Blob([response.data], {
-          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        });
-        saveAs(blob, `${reportType}-report-${Date.now()}.${extension}`);
-      }
+      const contentType =
+        format === "pdf"
+          ? "application/pdf"
+          : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+      const fileName = getReportFileName(reportType, format);
+
+      const blob = new Blob([response.data], { type: contentType });
+      saveAs(blob, fileName);
     } catch (error) {
       console.error("Error generating report:", error);
-      alert(error.response?.data?.message || "Failed to generate report");
+      showError(
+        "Report Generation Failed",
+        error.response?.data?.message ||
+          "Failed to generate report. Please try again later."
+      );
     } finally {
       setIsGenerating(false);
     }
   };
 
+  // Get report title based on report type
+  const getReportTitle = (reportType) => {
+    const titles = {
+      donations: "Donations Summary Report",
+      donors: "Donor Activity Analysis",
+      schools: "School Requests Report",
+      financial: "Financial Performance Summary",
+      activity: "System Activity Log",
+      users: "User Management Report",
+    };
+
+    return titles[reportType] || "Generated Report";
+  };
+
+  // Generate PDF report with proper tables
   const generatePDFReport = async () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `${API_URL}/api/admin/report-data?reportType=${reportType}&startDate=${dateRange.start.toISOString()}&endDate=${dateRange.end.toISOString()}&status=${filterStatus}`,
+        `${API_URL}/api/admin/reports/report-data`,
         {
+          params: {
+            reportType,
+            startDate: dateRange.start.toISOString(),
+            endDate: dateRange.end.toISOString(),
+            status: filterStatus !== "All" ? filterStatus : undefined,
+          },
           headers: { Authorization: `Bearer ${token}` },
         }
       );
@@ -85,14 +158,16 @@ const ManageReports = () => {
       const data = response.data;
       const doc = new jsPDF();
 
-      // Add header
+      // Get dynamic title based on report type
+      const reportTitle = getReportTitle(reportType);
+
+      // Add header with dynamic title
       doc.setFontSize(18);
       doc.setTextColor(40, 40, 40);
-      doc.text(`${reportType.toUpperCase()} REPORT`, 105, 15, {
-        align: "center",
-      });
+      doc.text(reportTitle, 105, 15, { align: "center" });
 
-      doc.setFontSize(12);
+      // Report details
+      doc.setFontSize(10);
       doc.setTextColor(80, 80, 80);
       doc.text(
         `From ${dateRange.start.toLocaleDateString()} to ${dateRange.end.toLocaleDateString()}`,
@@ -102,10 +177,12 @@ const ManageReports = () => {
       );
 
       if (filterStatus !== "All") {
-        doc.text(`Status: ${filterStatus}`, 105, 29, { align: "center" });
+        doc.text(`Status Filter: ${filterStatus}`, 105, 29, {
+          align: "center",
+        });
       }
 
-      doc.setFontSize(10);
+      doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
       doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 40);
 
@@ -120,7 +197,7 @@ const ManageReports = () => {
             "Donor",
             "School",
             "Type",
-            "Amount/Items",
+            "Details",
             "Status",
             "Date",
           ];
@@ -128,11 +205,11 @@ const ManageReports = () => {
             index + 1,
             item.donorName || "Anonymous",
             item.schoolName || "N/A",
-            item.type,
+            item.type || "Unknown",
             item.type === "money"
-              ? `KES ${item.amount}`
-              : item.items?.join(", "),
-            item.status,
+              ? `KES ${item.amount || 0}`
+              : item.items?.join(", ") || "N/A",
+            item.status || "N/A",
             new Date(item.date).toLocaleDateString(),
           ]);
           break;
@@ -147,10 +224,10 @@ const ManageReports = () => {
           ];
           rows = data.map((item, index) => [
             index + 1,
-            item.name,
-            item.email,
-            item.donorType,
-            item.totalDonations,
+            item.name || "Unknown",
+            item.email || "N/A",
+            item.donorType || "Individual",
+            item.totalDonations || 0,
             item.lastDonation
               ? new Date(item.lastDonation).toLocaleDateString()
               : "N/A",
@@ -167,23 +244,138 @@ const ManageReports = () => {
           ];
           rows = data.map((item, index) => [
             index + 1,
-            item.name,
-            item.location,
-            item.totalDonations,
-            item.pendingRequests,
+            item.name || "Unknown",
+            item.location || "N/A",
+            item.totalDonations || 0,
+            item.pendingRequests || 0,
             item.lastDonation
               ? new Date(item.lastDonation).toLocaleDateString()
               : "N/A",
           ]);
           break;
+        case "financial":
+          // Add financial summary section
+          doc.setFontSize(12);
+          doc.setTextColor(50, 50, 50);
+          doc.text("Financial Overview", 14, 45);
+
+          const summaryTable = [
+            [
+              "Total Amount",
+              `KES ${data.summary.totalAmount.toLocaleString() || 0}`,
+            ],
+            [
+              "Average Donation",
+              `KES ${data.summary.averageDonation.toLocaleString() || 0}`,
+            ],
+          ];
+
+          doc.autoTable({
+            startY: 50,
+            head: [["Metric", "Value"]],
+            body: summaryTable,
+            theme: "grid",
+            headStyles: {
+              fillColor: darkMode ? [51, 51, 51] : [41, 128, 185],
+              textColor: 255,
+              fontStyle: "bold",
+            },
+          });
+
+          // Add school breakdown if available
+          if (
+            data.summary.bySchool &&
+            Object.keys(data.summary.bySchool).length > 0
+          ) {
+            const schoolRows = Object.entries(data.summary.bySchool).map(
+              ([school, amount]) => [school, `KES ${amount.toLocaleString()}`]
+            );
+
+            doc.autoTable({
+              startY: doc.previousAutoTable.finalY + 10,
+              head: [["School", "Total Amount"]],
+              body: schoolRows,
+              theme: "grid",
+              headStyles: {
+                fillColor: darkMode ? [51, 51, 51] : [41, 128, 185],
+                textColor: 255,
+                fontStyle: "bold",
+              },
+            });
+          }
+
+          // Add donations details
+          headers = ["#", "Donor", "School", "Amount", "Date"];
+          rows = data.donations.map((item, index) => [
+            index + 1,
+            item.donorName || "Anonymous",
+            item.schoolName || "N/A",
+            `KES ${item.amount || 0}`,
+            new Date(item.date).toLocaleDateString(),
+          ]);
+
+          doc.setFontSize(12);
+          doc.text("Donation Details", 14, doc.previousAutoTable.finalY + 15);
+          break;
+        case "activity":
+          // Add activity summary section
+          doc.setFontSize(12);
+          doc.setTextColor(50, 50, 50);
+          doc.text("Activity Summary", 14, 45);
+
+          const activitySummary = [
+            ["New Users", data.newUsers || 0],
+            ["New Donations", data.newDonations || 0],
+            ["New Requests", data.newRequests || 0],
+          ];
+
+          doc.autoTable({
+            startY: 50,
+            head: [["Metric", "Count"]],
+            body: activitySummary,
+            theme: "grid",
+            headStyles: {
+              fillColor: darkMode ? [51, 51, 51] : [41, 128, 185],
+              textColor: 255,
+              fontStyle: "bold",
+            },
+          });
+
+          headers = ["#", "Name", "Role", "Last Active"];
+          rows = data.userActivity.map((item, index) => [
+            index + 1,
+            item.name || "Unknown",
+            item.role || "User",
+            new Date(item.lastActive).toLocaleString(),
+          ]);
+
+          doc.setFontSize(12);
+          doc.text(
+            "User Activity Details",
+            14,
+            doc.previousAutoTable.finalY + 15
+          );
+          break;
         case "users":
-          headers = ["#", "Name", "Email", "Role", "Last Active"];
+          headers = [
+            "#",
+            "Name",
+            "Email",
+            "Role",
+            "Registered",
+            "Last Login",
+            "Status",
+          ];
           rows = data.map((item, index) => [
             index + 1,
-            item.name,
-            item.email,
-            item.role,
-            new Date(item.lastActive).toLocaleString(),
+            item.name || "Unknown",
+            item.email || "N/A",
+            item.role || "User",
+            new Date(item.createdAt).toLocaleDateString(),
+            item.lastLogin
+              ? new Date(item.lastLogin).toLocaleDateString()
+              : "N/A",
+            item.status || "Active",
           ]);
           break;
         default:
@@ -191,24 +383,33 @@ const ManageReports = () => {
           rows = data.map((item, index) => [index + 1, JSON.stringify(item)]);
       }
 
-      // Add table
+      // Add main table with consistent styling
+      const startY =
+        reportType === "financial" || reportType === "activity"
+          ? doc.previousAutoTable.finalY + 20
+          : 45;
+
       doc.autoTable({
+        startY: startY,
         head: [headers],
         body: rows,
-        startY: 45,
         styles: {
           fontSize: 8,
           cellPadding: 2,
           overflow: "linebreak",
         },
         headStyles: {
-          fillColor: [41, 128, 185],
+          fillColor: darkMode ? [51, 51, 51] : [41, 128, 185],
           textColor: 255,
           fontSize: 9,
+          fontStyle: "bold",
         },
         alternateRowStyles: {
-          fillColor: [245, 245, 245],
+          fillColor: darkMode ? [68, 68, 68] : [245, 245, 245],
+          textColor: darkMode ? 255 : 0,
         },
+        theme: "grid",
+        margin: { top: 50 },
       });
 
       // Add footer
@@ -217,14 +418,20 @@ const ManageReports = () => {
       doc.text(
         "© 2025 School Donation Management System - Confidential Report",
         105,
-        285,
+        doc.internal.pageSize.height - 10,
         { align: "center" }
       );
 
-      doc.save(`${reportType}-report-${Date.now()}.pdf`);
+      // Save with unique name
+      const fileName = getReportFileName(reportType, "pdf");
+      doc.save(fileName);
     } catch (error) {
       console.error("Error generating PDF:", error);
-      throw error;
+      showError(
+        "PDF Generation Failed",
+        error.response?.data?.message ||
+          "Failed to generate PDF report. Please try again later."
+      );
     }
   };
 
@@ -321,7 +528,7 @@ const ManageReports = () => {
 
             <Button
               variant="primary"
-              onClick={generateReport}
+              onClick={format === "pdf" ? generatePDFReport : generateReport}
               disabled={isGenerating}
               className="mt-3"
             >
@@ -352,6 +559,8 @@ const ManageReports = () => {
                   start: new Date(new Date().setDate(new Date().getDate() - 7)),
                   end: new Date(),
                 });
+                setFormat("pdf"); // Set to PDF for quick reports
+                generatePDFReport(); // Auto-generate report
               }}
             >
               Last 7 Days Donations
@@ -366,6 +575,8 @@ const ManageReports = () => {
                   start: new Date(new Date().getFullYear(), 0, 1),
                   end: new Date(),
                 });
+                setFormat("pdf");
+                generatePDFReport();
               }}
             >
               Year-to-Date Financials
@@ -382,6 +593,8 @@ const ManageReports = () => {
                   ),
                   end: new Date(),
                 });
+                setFormat("pdf");
+                generatePDFReport();
               }}
             >
               Pending School Requests
@@ -398,6 +611,8 @@ const ManageReports = () => {
                   ),
                   end: new Date(),
                 });
+                setFormat("pdf");
+                generatePDFReport();
               }}
             >
               Recent User Activity
@@ -405,6 +620,13 @@ const ManageReports = () => {
           </div>
         </Card.Body>
       </Card>
+      <AlertModal
+        show={alertModal.show}
+        onHide={hideAlert}
+        title={alertModal.title}
+        message={alertModal.message}
+        variant={alertModal.variant}
+      />
     </div>
   );
 };

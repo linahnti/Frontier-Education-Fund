@@ -1,0 +1,35 @@
+/* Modal animations */
+.modal {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  /* Light theme specific styles */
+  .light-theme-modal .modal-content {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Dark theme specific styles */
+  .dark-theme-modal .modal-content {
+    background-color: #121212;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .dark-theme-modal .modal-header,
+  .dark-theme-modal .modal-footer {
+    border-color: #333;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 576px) {
+    .modal-dialog {
+      margin: 1rem;
+      max-width: calc(100% - 2rem);
+    }
+  }

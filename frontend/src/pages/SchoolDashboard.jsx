@@ -32,6 +32,7 @@ import {
   faQuestionCircle,
   faCalendarAlt,
   faSchool,
+  faUsers,
 } from "@fortawesome/free-solid-svg-icons";
 
 const SchoolDashboard = () => {
@@ -49,8 +50,80 @@ const SchoolDashboard = () => {
     completedRequests: 0,
     totalDonors: 0,
   });
+  const [showDonationModal, setShowDonationModal] = useState(false);
+  const [showActiveDonorsModal, setShowActiveDonorsModal] = useState(false);
+  const [activeDonors, setActiveDonors] = useState([]);
 
-  // Fetch user data from localStorage and API on component mount
+  const fetchStats = async (userId) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      // Fetch donations received with amounts
+      const donationsRes = await fetch(
+        `${API_URL}/api/schools/${userId}/donations-received`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const donationsData = await donationsRes.json();
+
+      // Calculate total donations in KSH
+      const totalDonations = donationsData.reduce((sum, donation) => {
+        return sum + (donation.amount || 0);
+      }, 0);
+
+      // Fetch donation requests
+      const requestsRes = await fetch(
+        `${API_URL}/api/schools/${userId}/donation-requests`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const requestsData = await requestsRes.json();
+
+      // Fetch active donors
+      const donorsRes = await fetch(
+        `${API_URL}/api/schools/${userId}/active-donors`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const donorsData = await donorsRes.json();
+
+      setStats({
+        totalDonations,
+        pendingRequests: requestsData.filter((r) => r.status === "Pending")
+          .length,
+        completedRequests: requestsData.filter((r) => r.status === "Completed")
+          .length,
+        totalDonors: donorsData.activeDonors.length,
+      });
+
+      setActiveDonors(donorsData.activeDonors || []);
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  };
+
+  const handleQuickAction = (action) => {
+    switch (action) {
+      case "donation":
+        setShowDonationModal(true);
+        break;
+      case "profile":
+        navigate("/profile");
+        break;
+      case "reports":
+        setActiveTab("reports");
+        break;
+      case "support":
+        setActiveTab("support");
+        break;
+      default:
+        break;
+    }
+  };
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -63,17 +136,14 @@ const SchoolDashboard = () => {
 
         const parsedUser = JSON.parse(storedUser);
 
-        // Ensure the user object has an `id` field
         if (!parsedUser.id) {
           throw new Error("User ID is undefined");
         }
 
-        // Capitalize the role for consistency
         parsedUser.role =
           parsedUser.role.charAt(0).toUpperCase() + parsedUser.role.slice(1);
         parsedUser.isProfileComplete = Boolean(parsedUser.isProfileComplete);
 
-        // Fetch the complete user profile from the backend
         const profileResponse = await fetch(`${API_URL}/api/users/profile`, {
           method: "GET",
           headers: {
@@ -88,14 +158,10 @@ const SchoolDashboard = () => {
 
         const profileData = await profileResponse.json();
         setProfileData(profileData);
-        console.log("Fetched profile data:", profileData);
 
-        // Merge the stored user with the profile data
         const updatedUser = { ...parsedUser, ...profileData };
         setUser(updatedUser);
-        console.log("User data successfully loaded:", updatedUser);
 
-        // Fetch notifications from the backend
         const notificationsResponse = await fetch(
           `${API_URL}/api/schools/${updatedUser.id}/notifications`,
           {
@@ -113,13 +179,7 @@ const SchoolDashboard = () => {
         const notificationsData = await notificationsResponse.json();
         setNotifications(notificationsData.notifications || []);
 
-        // Mock stats data - replace with actual API call when available
-        setStats({
-          totalDonations: 12500,
-          pendingRequests: 3,
-          completedRequests: 7,
-          totalDonors: 15,
-        });
+        await fetchStats(updatedUser.id);
       } catch (error) {
         console.error("Error fetching user data:", error);
       } finally {
@@ -128,6 +188,13 @@ const SchoolDashboard = () => {
     };
 
     fetchUserData();
+
+    const intervalId = setInterval(() => {
+      const userId = JSON.parse(localStorage.getItem("user"))?.id;
+      if (userId) fetchStats(userId);
+    }, 30000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   useEffect(() => {
@@ -141,7 +208,6 @@ const SchoolDashboard = () => {
     }
   }, [loading, user, navigate]);
 
-  // Show loading state while fetching user data
   if (loading) {
     return (
       <div className="container mt-5 text-center">
@@ -228,6 +294,8 @@ const SchoolDashboard = () => {
     >
       <Container fluid className="px-4">
         {/* Dashboard Header Section */}
+        {/* Dashboard Header Section */}
+        {/* Dashboard Header Section */}
         <div
           className="mb-4 p-4 rounded"
           style={{
@@ -240,6 +308,7 @@ const SchoolDashboard = () => {
           }}
         >
           <Row className="align-items-center">
+            {/* Left side - School info */}
             <Col md={8}>
               <div className="d-flex align-items-center mb-2">
                 <FontAwesomeIcon
@@ -282,17 +351,43 @@ const SchoolDashboard = () => {
                 Manage your school profile, donation requests, and more.
               </p>
             </Col>
-            <Col md={4} className="text-end">
-              <div className="d-flex flex-column align-items-end">
-                <div className="mb-2">
+
+            {/* Right side - Actions and profile info */}
+            <Col md={4}>
+              <div className="d-flex justify-content-end align-items-center gap-3">
+                {/* Ask for Support Button */}
+                <Button
+                  variant="warning"
+                  className="text-white shadow-sm"
+                  onClick={() => setShowDonationModal(true)}
+                  disabled={loading}
+                  style={{
+                    fontWeight: "600",
+                    padding: "8px 16px",
+                  }}
+                >
+                  <FontAwesomeIcon icon={faHandHoldingHeart} className="me-2" />
+                  Ask for Support
+                </Button>
+
+                {/* Profile Completion Badge */}
+                <div className="d-flex align-items-center">
                   <Badge
                     bg={completionPercentage === 100 ? "success" : "warning"}
-                    className="py-2 px-3 mb-2"
-                    style={{ fontSize: "0.9rem" }}
+                    className="py-2 px-3"
+                    style={{
+                      fontSize: "0.9rem",
+                      backgroundColor:
+                        completionPercentage === 100 ? "#198754" : "#ffc107",
+                    }}
                   >
                     Profile: {completionPercentage}% Complete
                   </Badge>
                 </div>
+              </div>
+
+              {/* Last login info below */}
+              <div className="text-end mt-2">
                 <div className="text-muted" style={{ fontSize: "0.9rem" }}>
                   <FontAwesomeIcon icon={faCalendarAlt} className="me-1" />
                   Last login: {new Date().toLocaleDateString()}
@@ -301,118 +396,155 @@ const SchoolDashboard = () => {
             </Col>
           </Row>
         </div>
-
         {/* Stats Cards */}
         <Row className="mb-4 g-3">
-          <Col sm={6} xl={3}>
-            <Card style={statCardStyle} className="h-100 text-center">
-              <Card.Body className="d-flex flex-column justify-content-center">
-                <div
-                  className="icon-circle mb-3 mx-auto"
-                  style={{
-                    backgroundColor: darkMode
-                      ? "rgba(255, 193, 7, 0.1)"
-                      : "rgba(255, 193, 7, 0.1)",
-                    color: "#ffc107",
-                    width: "60px",
-                    height: "60px",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <FontAwesomeIcon icon={faHandHoldingHeart} size="lg" />
-                </div>
-                <h2 style={{ fontWeight: "700", fontSize: "2rem" }}>
-                  ${stats.totalDonations.toLocaleString()}
-                </h2>
-                <p className="text-muted mb-0">Total Donations Received</p>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col sm={6} xl={3}>
-            <Card style={statCardStyle} className="h-100 text-center">
-              <Card.Body className="d-flex flex-column justify-content-center">
-                <div
-                  className="icon-circle mb-3 mx-auto"
-                  style={{
-                    backgroundColor: darkMode
-                      ? "rgba(13, 110, 253, 0.1)"
-                      : "rgba(13, 110, 253, 0.1)",
-                    color: "#0d6efd",
-                    width: "60px",
-                    height: "60px",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <FontAwesomeIcon icon={faChartLine} size="lg" />
-                </div>
-                <h2 style={{ fontWeight: "700", fontSize: "2rem" }}>
-                  {stats.pendingRequests}
-                </h2>
-                <p className="text-muted mb-0">Pending Requests</p>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col sm={6} xl={3}>
-            <Card style={statCardStyle} className="h-100 text-center">
-              <Card.Body className="d-flex flex-column justify-content-center">
-                <div
-                  className="icon-circle mb-3 mx-auto"
-                  style={{
-                    backgroundColor: darkMode
-                      ? "rgba(25, 135, 84, 0.1)"
-                      : "rgba(25, 135, 84, 0.1)",
-                    color: "#198754",
-                    width: "60px",
-                    height: "60px",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <FontAwesomeIcon icon={faGraduationCap} size="lg" />
-                </div>
-                <h2 style={{ fontWeight: "700", fontSize: "2rem" }}>
-                  {stats.completedRequests}
-                </h2>
-                <p className="text-muted mb-0">Completed Requests</p>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col sm={6} xl={3}>
-            <Card style={statCardStyle} className="h-100 text-center">
-              <Card.Body className="d-flex flex-column justify-content-center">
-                <div
-                  className="icon-circle mb-3 mx-auto"
-                  style={{
-                    backgroundColor: darkMode
-                      ? "rgba(220, 53, 69, 0.1)"
-                      : "rgba(220, 53, 69, 0.1)",
-                    color: "#dc3545",
-                    width: "60px",
-                    height: "60px",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <FontAwesomeIcon icon={faUserEdit} size="lg" />
-                </div>
-                <h2 style={{ fontWeight: "700", fontSize: "2rem" }}>
-                  {stats.totalDonors}
-                </h2>
-                <p className="text-muted mb-0">Active Donors</p>
-              </Card.Body>
-            </Card>
-          </Col>
+          {[
+            {
+              key: "totalDonations",
+              title: "Total Donations",
+              value: `KSH ${stats.totalDonations.toLocaleString()}`,
+              icon: faHandHoldingHeart,
+              color: "#ffc107",
+            },
+            {
+              key: "pendingRequests",
+              title: "Pending Requests",
+              value: stats.pendingRequests,
+              icon: faChartLine,
+              color: "#0d6efd",
+            },
+            {
+              key: "completedRequests",
+              title: "Completed Requests",
+              value: stats.completedRequests,
+              icon: faGraduationCap,
+              color: "#198754",
+            },
+            {
+              key: "totalDonors",
+              title: "Active Donors",
+              value: stats.totalDonors,
+              icon: faUsers,
+              color: "#dc3545",
+              onClick: () => setShowActiveDonorsModal(true),
+            },
+          ].map((stat) => (
+            <Col sm={6} xl={3} key={stat.key}>
+              <Card
+                style={{
+                  ...statCardStyle,
+                  borderTop: `4px solid ${stat.color}`,
+                  transition: "all 0.3s ease",
+                  cursor: stat.onClick ? "pointer" : "default",
+                }}
+                className="h-100 hover-effect"
+                onClick={stat.onClick}
+              >
+                <Card.Body className="d-flex flex-column justify-content-center text-center">
+                  <div
+                    className="icon-circle mb-3 mx-auto"
+                    style={{
+                      backgroundColor: `${stat.color}20`,
+                      color: stat.color,
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <FontAwesomeIcon icon={stat.icon} size="lg" />
+                  </div>
+                  <h2
+                    style={{
+                      fontWeight: "700",
+                      fontSize: "2rem",
+                      color: darkMode ? "#ffffff" : "#212529",
+                    }}
+                  >
+                    {stat.value}
+                  </h2>
+                  <p
+                    className="mb-0"
+                    style={{
+                      color: darkMode ? "#adb5bd" : "#6c757d",
+                    }}
+                  >
+                    {stat.title}
+                  </p>
+                </Card.Body>
+              </Card>
+            </Col>
+          ))}
         </Row>
+
+        {/* Active Donors Modal */}
+        <Modal
+          show={showActiveDonorsModal}
+          onHide={() => setShowActiveDonorsModal(false)}
+          contentClassName={darkMode ? "bg-dark text-light" : ""}
+          centered
+          size="lg"
+        >
+          <Modal.Header
+            closeButton
+            closeVariant={darkMode ? "white" : undefined}
+            className={
+              darkMode
+                ? "bg-dark text-light border-secondary"
+                : "bg-primary text-white"
+            }
+          >
+            <Modal.Title>Active Donors</Modal.Title>
+          </Modal.Header>
+          <Modal.Body className={darkMode ? "bg-dark text-light" : ""}>
+            <Table
+              responsive
+              striped
+              bordered
+              hover
+              variant={darkMode ? "dark" : undefined}
+            >
+              <thead
+                className={
+                  darkMode ? "bg-secondary text-light" : "bg-primary text-white"
+                }
+              >
+                <tr>
+                  <th>Donor Name</th>
+                  <th>Email</th>
+                  <th>Donations Made</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeDonors.length > 0 ? (
+                  activeDonors.map((donor, index) => (
+                    <tr key={index}>
+                      <td>{donor.name}</td>
+                      <td>{donor.email}</td>
+                      <td>{donor.donationsMade?.length || 0}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="text-center">
+                      No active donors found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
+          </Modal.Body>
+          <Modal.Footer className={darkMode ? "bg-dark border-secondary" : ""}>
+            <Button
+              variant={darkMode ? "outline-light" : "primary"}
+              onClick={() => setShowActiveDonorsModal(false)}
+            >
+              Close
+            </Button>
+          </Modal.Footer>
+        </Modal>
 
         {/* Main Dashboard Content */}
         <Card style={cardStyle}>
@@ -445,13 +577,15 @@ const SchoolDashboard = () => {
                 <div className="p-4">
                   <SchoolsDonationTab
                     schoolId={user.id}
-                    user={user}
-                    profileData={profileData}
-                    loading={loading}
-                    completionPercentage={completionPercentage}
+                    showDonationModal={showDonationModal}
+                    setShowDonationModal={setShowDonationModal}
+                    showActiveDonorsModal={showActiveDonorsModal}
+                    setShowActiveDonorsModal={setShowActiveDonorsModal}
+                    activeDonors={activeDonors}
                   />
                 </div>
               </Tab>
+
               <Tab
                 eventKey="profile"
                 title={
@@ -480,6 +614,7 @@ const SchoolDashboard = () => {
                   </Button>
                 </div>
               </Tab>
+
               <Tab
                 eventKey="reports"
                 title={
@@ -496,6 +631,7 @@ const SchoolDashboard = () => {
                   <ReportsTab userId={user?.id} role="School" />
                 </div>
               </Tab>
+
               <Tab
                 eventKey="messages"
                 title={
@@ -513,6 +649,7 @@ const SchoolDashboard = () => {
                   <p>Communicate with donors (to be implemented).</p>
                 </div>
               </Tab>
+
               <Tab
                 eventKey="notifications"
                 title={
@@ -534,6 +671,7 @@ const SchoolDashboard = () => {
                   <SchoolsNotifications notifications={notifications} />
                 </div>
               </Tab>
+
               <Tab
                 eventKey="support"
                 title={
@@ -570,22 +708,38 @@ const SchoolDashboard = () => {
                   md={8}
                   className="d-flex flex-wrap justify-content-center gap-2"
                 >
-                  <Button variant="outline-primary" size="sm">
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    onClick={() => setShowDonationModal(true)}
+                  >
                     <FontAwesomeIcon
                       icon={faHandHoldingHeart}
                       className="me-2"
                     />
                     New Donation Request
                   </Button>
-                  <Button variant="outline-success" size="sm">
+                  <Button
+                    variant="outline-success"
+                    size="sm"
+                    onClick={() => navigate("/profile")}
+                  >
                     <FontAwesomeIcon icon={faUserEdit} className="me-2" />
                     Update Profile
                   </Button>
-                  <Button variant="outline-info" size="sm">
+                  <Button
+                    variant="outline-info"
+                    size="sm"
+                    onClick={() => setActiveTab("reports")}
+                  >
                     <FontAwesomeIcon icon={faChartLine} className="me-2" />
                     View Reports
                   </Button>
-                  <Button variant="outline-secondary" size="sm">
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    onClick={() => setActiveTab("support")}
+                  >
                     <FontAwesomeIcon icon={faQuestionCircle} className="me-2" />
                     Help Center
                   </Button>
