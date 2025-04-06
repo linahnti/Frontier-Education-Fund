@@ -5,7 +5,6 @@ import { API_URL } from "../config";
 import { saveAs } from "file-saver";
 import { useTheme } from "../contexts/ThemeContext";
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
 import AlertModal from "../components/AlertModal";
 import "../App.css";
 
@@ -19,6 +18,7 @@ const ManageReports = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [filterStatus, setFilterStatus] = useState("All");
   const { darkMode } = useTheme();
+  const [filterRole, setFilterRole] = useState("All");
 
   const reportTypes = [
     { value: "donations", label: "Donation Summary" },
@@ -57,7 +57,6 @@ const ManageReports = () => {
     setAlertModal((prev) => ({ ...prev, show: false }));
   };
 
-  // Get a friendly date string for file naming
   const getFormattedDate = () => {
     const date = new Date();
     const year = date.getFullYear();
@@ -66,7 +65,6 @@ const ManageReports = () => {
     return `${year}${month}${day}`;
   };
 
-  // Generate unique file names for different report types
   const getReportFileName = (reportType, format) => {
     const dateStr = getFormattedDate();
     const timeStamp = Date.now();
@@ -84,47 +82,6 @@ const ManageReports = () => {
     return `${baseName}-${dateStr}-${timeStamp}.${extension}`;
   };
 
-  const generateReport = async () => {
-    setIsGenerating(true);
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        `${API_URL}/api/admin/reports`,
-        {
-          reportType,
-          startDate: dateRange.start.toISOString(),
-          endDate: dateRange.end.toISOString(),
-          format: format,
-          status: filterStatus !== "All" ? filterStatus : undefined,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: "arraybuffer",
-        }
-      );
-
-      const contentType =
-        format === "pdf"
-          ? "application/pdf"
-          : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
-      const fileName = getReportFileName(reportType, format);
-
-      const blob = new Blob([response.data], { type: contentType });
-      saveAs(blob, fileName);
-    } catch (error) {
-      console.error("Error generating report:", error);
-      showError(
-        "Report Generation Failed",
-        error.response?.data?.message ||
-          "Failed to generate report. Please try again later."
-      );
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  // Get report title based on report type
   const getReportTitle = (reportType) => {
     const titles = {
       donations: "Donations Summary Report",
@@ -138,8 +95,45 @@ const ManageReports = () => {
     return titles[reportType] || "Generated Report";
   };
 
-  // Generate PDF report with proper tables
   const generatePDFReport = async () => {
+    setIsGenerating(true);
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await axios.post(
+        `${API_URL}/api/admin/reports`,
+        {
+          reportType,
+          startDate: dateRange.start.toISOString(),
+          endDate: dateRange.end.toISOString(),
+          format: "pdf",
+          status: filterStatus !== "All" ? filterStatus : undefined,
+          role: filterRole !== "All" ? filterRole : undefined,
+          clientGenerated: false,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: "arraybuffer",
+        }
+      );
+
+      const fileName = getReportFileName(reportType, "pdf");
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      saveAs(blob, fileName);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      showError(
+        "PDF Generation Failed",
+        "Server-side PDF generation failed. Trying client-side generation instead..."
+      );
+      await generateSimplePDF();
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const generateSimplePDF = async () => {
+    setIsGenerating(true);
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
@@ -150,288 +144,388 @@ const ManageReports = () => {
             startDate: dateRange.start.toISOString(),
             endDate: dateRange.end.toISOString(),
             status: filterStatus !== "All" ? filterStatus : undefined,
+            role: filterRole !== "All" ? filterRole : undefined,
           },
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
+  
       const data = response.data;
       const doc = new jsPDF();
-
+  
+      // Set margins and page width
+      const margin = 15;
+      const pageWidth = doc.internal.pageSize.getWidth() - 2 * margin;
+      
       // Get dynamic title based on report type
       const reportTitle = getReportTitle(reportType);
-
+  
       // Add header with dynamic title
       doc.setFontSize(18);
       doc.setTextColor(40, 40, 40);
-      doc.text(reportTitle, 105, 15, { align: "center" });
-
+      doc.text(reportTitle, margin, 20);
+  
       // Report details
       doc.setFontSize(10);
       doc.setTextColor(80, 80, 80);
       doc.text(
-        `From ${dateRange.start.toLocaleDateString()} to ${dateRange.end.toLocaleDateString()}`,
-        105,
-        22,
-        { align: "center" }
+        `Period: ${dateRange.start.toLocaleDateString()} to ${dateRange.end.toLocaleDateString()}`,
+        margin,
+        30
       );
-
+  
       if (filterStatus !== "All") {
-        doc.text(`Status Filter: ${filterStatus}`, 105, 29, {
-          align: "center",
-        });
+        doc.text(`Status Filter: ${filterStatus}`, margin, 35);
       }
-
+  
+      if (reportType === "users" && filterRole !== "All") {
+        doc.text(`Role Filter: ${filterRole}`, margin, 40);
+      }
+  
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
-      doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 40);
-
-      // Prepare table data based on report type
-      let headers = [];
-      let rows = [];
-
+      doc.text(
+        `Generated on: ${new Date().toLocaleString()}`,
+        doc.internal.pageSize.getWidth() - margin,
+        35,
+        { align: "right" }
+      );
+  
+      // Improved table drawing function
+      const drawTable = (headers, rows, startY) => {
+        const columnCount = headers.length;
+        let currentY = startY || 45;
+  
+        // Calculate column widths based on content
+        const colWidths = headers.map((header, index) => {
+          // Fixed widths for certain columns
+          if (header === "#") return 10;
+          if (header === "Date" || header === "Status") return 25;
+          if (header === "Type") return 20;
+          
+          // Calculate remaining width for other columns
+          const fixedWidths = 10 + 25 + 25 + 20; // Sum of fixed widths
+          const remainingWidth = pageWidth - fixedWidths;
+          const remainingCols = columnCount - 4; // Number of flexible columns
+          
+          // Distribute remaining width (give more to Details/Description columns)
+          if (header === "Details" || header === "Description") {
+            return remainingWidth * 0.5;
+          }
+          return remainingWidth * 0.5 / (remainingCols - 1);
+        });
+  
+        // Draw header row
+        doc.setFillColor(70, 130, 180); // Steel blue background
+        doc.setTextColor(255, 255, 255); // White text
+        doc.setFont("helvetica", "bold");
+        
+        let xPos = margin;
+        headers.forEach((header, index) => {
+          doc.rect(xPos, currentY, colWidths[index], 10, "F");
+          doc.text(
+            header,
+            xPos + 2,
+            currentY + 7,
+            { maxWidth: colWidths[index] - 4 }
+          );
+          xPos += colWidths[index];
+        });
+        currentY += 10;
+  
+        // Draw data rows
+        doc.setFillColor(255, 255, 255);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont("helvetica", "normal");
+  
+        rows.forEach((row, rowIndex) => {
+          // Alternate row colors for better readability
+          if (rowIndex % 2 === 0) {
+            doc.setFillColor(245, 245, 245); // Light gray
+          } else {
+            doc.setFillColor(255, 255, 255); // White
+          }
+  
+          xPos = margin;
+          let maxHeight = 10; // Track the tallest cell in this row
+  
+          // First pass to calculate row height
+          row.forEach((cell, colIndex) => {
+            const text = String(cell || "N/A");
+            const textHeight = doc.getTextDimensions(text, {
+              maxWidth: colWidths[colIndex] - 4
+            }).h;
+            if (textHeight > maxHeight) maxHeight = textHeight;
+          });
+  
+          // Draw cell backgrounds
+          doc.rect(margin, currentY, pageWidth, maxHeight, "F");
+  
+          // Draw cell content
+          xPos = margin;
+          row.forEach((cell, colIndex) => {
+            const text = String(cell || "N/A");
+            doc.text(
+              text,
+              xPos + 2,
+              currentY + 7,
+              { maxWidth: colWidths[colIndex] - 4 }
+            );
+            xPos += colWidths[colIndex];
+          });
+  
+          currentY += maxHeight;
+  
+          // Add page if needed
+          if (currentY > doc.internal.pageSize.getHeight() - 20) {
+            doc.addPage();
+            currentY = 20;
+            
+            // Redraw header on new page if needed
+            if (headers.length > 0) {
+              doc.setFillColor(70, 130, 180);
+              doc.setTextColor(255, 255, 255);
+              doc.setFont("helvetica", "bold");
+              
+              xPos = margin;
+              headers.forEach((header, index) => {
+                doc.rect(xPos, currentY, colWidths[index], 10, "F");
+                doc.text(
+                  header,
+                  xPos + 2,
+                  currentY + 7,
+                  { maxWidth: colWidths[index] - 4 }
+                );
+                xPos += colWidths[index];
+              });
+              currentY += 10;
+              
+              doc.setFillColor(255, 255, 255);
+              doc.setTextColor(0, 0, 0);
+              doc.setFont("helvetica", "normal");
+            }
+          }
+        });
+  
+        return currentY;
+      };
+  
+      // Generate appropriate table based on report type
+      let currentY = 45;
       switch (reportType) {
         case "donations":
-          headers = [
-            "#",
-            "Donor",
-            "School",
-            "Type",
-            "Details",
-            "Status",
-            "Date",
-          ];
-          rows = data.map((item, index) => [
+          const donationHeaders = ["#", "Donor", "School", "Type", "Details", "Status", "Date"];
+          const donationRows = (Array.isArray(data) ? data : []).map((donation, index) => [
             index + 1,
-            item.donorName || "Anonymous",
-            item.schoolName || "N/A",
-            item.type || "Unknown",
-            item.type === "money"
-              ? `KES ${item.amount || 0}`
-              : item.items?.join(", ") || "N/A",
-            item.status || "N/A",
-            new Date(item.date).toLocaleDateString(),
+            donation.donorName || "Anonymous",
+            donation.schoolName || "N/A",
+            donation.type || "N/A",
+            donation.type === "money"
+              ? `KES ${donation.amount || 0}`
+              : (donation.items && Array.isArray(donation.items))
+                ? donation.items.join(", ")
+                : "N/A",
+            donation.status || "N/A",
+            donation.date ? new Date(donation.date).toLocaleDateString() : "N/A"
           ]);
+          currentY = drawTable(donationHeaders, donationRows, currentY);
           break;
+  
         case "donors":
-          headers = [
-            "#",
-            "Name",
-            "Email",
-            "Type",
-            "Total Donations",
-            "Last Donation",
-          ];
-          rows = data.map((item, index) => [
+          const donorHeaders = ["#", "Name", "Email", "Type", "Total Donations", "Last Donation"];
+          const donorRows = (Array.isArray(data) ? data : []).map((donor, index) => [
             index + 1,
-            item.name || "Unknown",
-            item.email || "N/A",
-            item.donorType || "Individual",
-            item.totalDonations || 0,
-            item.lastDonation
-              ? new Date(item.lastDonation).toLocaleDateString()
-              : "N/A",
+            donor.name || "Unknown",
+            donor.email || "N/A",
+            donor.donorType || "N/A",
+            donor.totalDonations || 0,
+            donor.lastDonation
+              ? new Date(donor.lastDonation).toLocaleDateString()
+              : "N/A"
           ]);
+          currentY = drawTable(donorHeaders, donorRows, currentY);
           break;
+  
         case "schools":
-          headers = [
-            "#",
-            "School",
-            "Location",
-            "Total Donations",
-            "Pending Requests",
-            "Last Donation",
-          ];
-          rows = data.map((item, index) => [
+          const schoolHeaders = ["#", "School", "Location", "Total Donations", "Pending Requests", "Last Donation"];
+          const schoolRows = (Array.isArray(data) ? data : []).map((school, index) => [
             index + 1,
-            item.name || "Unknown",
-            item.location || "N/A",
-            item.totalDonations || 0,
-            item.pendingRequests || 0,
-            item.lastDonation
-              ? new Date(item.lastDonation).toLocaleDateString()
-              : "N/A",
+            school.name || "Unknown School",
+            school.location || "N/A",
+            school.totalDonations || 0,
+            school.pendingRequests || 0,
+            school.lastDonation
+              ? new Date(school.lastDonation).toLocaleDateString()
+              : "N/A"
           ]);
+          currentY = drawTable(schoolHeaders, schoolRows, currentY);
           break;
+  
         case "financial":
-          // Add financial summary section
+          // Summary section
           doc.setFontSize(12);
-          doc.setTextColor(50, 50, 50);
-          doc.text("Financial Overview", 14, 45);
-
-          const summaryTable = [
-            [
-              "Total Amount",
-              `KES ${data.summary.totalAmount.toLocaleString() || 0}`,
-            ],
-            [
-              "Average Donation",
-              `KES ${data.summary.averageDonation.toLocaleString() || 0}`,
-            ],
-          ];
-
-          doc.autoTable({
-            startY: 50,
-            head: [["Metric", "Value"]],
-            body: summaryTable,
-            theme: "grid",
-            headStyles: {
-              fillColor: darkMode ? [51, 51, 51] : [41, 128, 185],
-              textColor: 255,
-              fontStyle: "bold",
-            },
-          });
-
-          // Add school breakdown if available
-          if (
-            data.summary.bySchool &&
-            Object.keys(data.summary.bySchool).length > 0
-          ) {
-            const schoolRows = Object.entries(data.summary.bySchool).map(
-              ([school, amount]) => [school, `KES ${amount.toLocaleString()}`]
-            );
-
-            doc.autoTable({
-              startY: doc.previousAutoTable.finalY + 10,
-              head: [["School", "Total Amount"]],
-              body: schoolRows,
-              theme: "grid",
-              headStyles: {
-                fillColor: darkMode ? [51, 51, 51] : [41, 128, 185],
-                textColor: 255,
-                fontStyle: "bold",
-              },
-            });
-          }
-
-          // Add donations details
-          headers = ["#", "Donor", "School", "Amount", "Date"];
-          rows = data.donations.map((item, index) => [
-            index + 1,
-            item.donorName || "Anonymous",
-            item.schoolName || "N/A",
-            `KES ${item.amount || 0}`,
-            new Date(item.date).toLocaleDateString(),
-          ]);
-
-          doc.setFontSize(12);
-          doc.text("Donation Details", 14, doc.previousAutoTable.finalY + 15);
-          break;
-        case "activity":
-          // Add activity summary section
-          doc.setFontSize(12);
-          doc.setTextColor(50, 50, 50);
-          doc.text("Activity Summary", 14, 45);
-
-          const activitySummary = [
-            ["New Users", data.newUsers || 0],
-            ["New Donations", data.newDonations || 0],
-            ["New Requests", data.newRequests || 0],
-          ];
-
-          doc.autoTable({
-            startY: 50,
-            head: [["Metric", "Count"]],
-            body: activitySummary,
-            theme: "grid",
-            headStyles: {
-              fillColor: darkMode ? [51, 51, 51] : [41, 128, 185],
-              textColor: 255,
-              fontStyle: "bold",
-            },
-          });
-
-          headers = ["#", "Name", "Role", "Last Active"];
-          rows = data.userActivity.map((item, index) => [
-            index + 1,
-            item.name || "Unknown",
-            item.role || "User",
-            new Date(item.lastActive).toLocaleString(),
-          ]);
-
-          doc.setFontSize(12);
+          doc.setFont("helvetica", "bold");
+          doc.text("Financial Summary:", margin, currentY);
+          currentY += 10;
+  
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "normal");
           doc.text(
-            "User Activity Details",
-            14,
-            doc.previousAutoTable.finalY + 15
+            `Total Amount: KES ${data.summary?.totalAmount?.toLocaleString() || 0}`,
+            margin + 5,
+            currentY
           );
-          break;
-        case "users":
-          headers = [
-            "#",
-            "Name",
-            "Email",
-            "Role",
-            "Registered",
-            "Last Login",
-            "Status",
-          ];
-          rows = data.map((item, index) => [
+          currentY += 8;
+          doc.text(
+            `Average Donation: KES ${data.summary?.averageDonation?.toLocaleString() || 0}`,
+            margin + 5,
+            currentY
+          );
+          currentY += 15;
+  
+          // Transactions table
+          const financialHeaders = ["#", "Donor", "School", "Amount", "Date"];
+          const financialRows = (data.donations && Array.isArray(data.donations) ? data.donations : []).map((donation, index) => [
             index + 1,
-            item.name || "Unknown",
-            item.email || "N/A",
-            item.role || "User",
-            new Date(item.createdAt).toLocaleDateString(),
-            item.lastLogin
-              ? new Date(item.lastLogin).toLocaleDateString()
-              : "N/A",
-            item.status || "Active",
+            donation.donorName || "Anonymous",
+            donation.schoolName || "N/A",
+            `KES ${donation.amount || 0}`,
+            donation.date ? new Date(donation.date).toLocaleDateString() : "N/A"
           ]);
+          currentY = drawTable(financialHeaders, financialRows, currentY);
           break;
+  
+        case "activity":
+          // Summary section
+          doc.setFontSize(12);
+          doc.setFont("helvetica", "bold");
+          doc.text("Activity Summary:", margin, currentY);
+          currentY += 10;
+  
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "normal");
+          doc.text(
+            `New Users: ${data.newUsers || 0}`,
+            margin + 5,
+            currentY
+          );
+          currentY += 8;
+          doc.text(
+            `New Donations: ${data.newDonations || 0}`,
+            margin + 5,
+            currentY
+          );
+          currentY += 8;
+          doc.text(
+            `New Requests: ${data.newRequests || 0}`,
+            margin + 5,
+            currentY
+          );
+          currentY += 15;
+  
+          // User activity table
+          const activityHeaders = ["#", "Name", "Role", "Last Active"];
+          const activityRows = (data.userActivity && Array.isArray(data.userActivity) ? data.userActivity : []).map((user, index) => [
+            index + 1,
+            user.name || "Unknown",
+            user.role || "User",
+            user.lastActive ? new Date(user.lastActive).toLocaleString() : "N/A"
+          ]);
+          currentY = drawTable(activityHeaders, activityRows, currentY);
+          break;
+  
+        case "users":
+          const userHeaders = ["#", "Name", "Email", "Role", "Registered", "Last Login", "Status"];
+          const userRows = (Array.isArray(data) ? data : []).map((user, index) => [
+            index + 1,
+            user.name || "Unknown",
+            user.email || "N/A",
+            user.role || "User",
+            user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A",
+            user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "N/A",
+            user.status || "Active"
+          ]);
+          currentY = drawTable(userHeaders, userRows, currentY);
+          break;
+  
         default:
-          headers = ["#", "Data"];
-          rows = data.map((item, index) => [index + 1, JSON.stringify(item)]);
+          // Generic table for unknown report types
+          const headers = ["#", "Field", "Value"];
+          const rows = (Array.isArray(data) ? data : []).map((item, index) => [
+            index + 1,
+            "Data",
+            typeof item === "object" ? JSON.stringify(item) : String(item || "N/A")
+          ]);
+          currentY = drawTable(headers, rows, currentY);
       }
-
-      // Add main table with consistent styling
-      const startY =
-        reportType === "financial" || reportType === "activity"
-          ? doc.previousAutoTable.finalY + 20
-          : 45;
-
-      doc.autoTable({
-        startY: startY,
-        head: [headers],
-        body: rows,
-        styles: {
-          fontSize: 8,
-          cellPadding: 2,
-          overflow: "linebreak",
-        },
-        headStyles: {
-          fillColor: darkMode ? [51, 51, 51] : [41, 128, 185],
-          textColor: 255,
-          fontSize: 9,
-          fontStyle: "bold",
-        },
-        alternateRowStyles: {
-          fillColor: darkMode ? [68, 68, 68] : [245, 245, 245],
-          textColor: darkMode ? 255 : 0,
-        },
-        theme: "grid",
-        margin: { top: 50 },
-      });
-
+  
       // Add footer
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
       doc.text(
         "© 2025 School Donation Management System - Confidential Report",
-        105,
-        doc.internal.pageSize.height - 10,
+        doc.internal.pageSize.getWidth() / 2,
+        doc.internal.pageSize.getHeight() - 10,
         { align: "center" }
       );
-
+  
       // Save with unique name
       const fileName = getReportFileName(reportType, "pdf");
       doc.save(fileName);
     } catch (error) {
-      console.error("Error generating PDF:", error);
+      console.error("Error generating simple PDF:", error);
       showError(
         "PDF Generation Failed",
         error.response?.data?.message ||
           "Failed to generate PDF report. Please try again later."
       );
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const generateExcelReport = async () => {
+    setIsGenerating(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `${API_URL}/api/admin/reports`,
+        {
+          reportType,
+          startDate: dateRange.start.toISOString(),
+          endDate: dateRange.end.toISOString(),
+          format: "excel",
+          status: filterStatus !== "All" ? filterStatus : undefined,
+          role: filterRole !== "All" ? filterRole : undefined,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: "arraybuffer",
+        }
+      );
+
+      const fileName = getReportFileName(reportType, "xlsx");
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      saveAs(blob, fileName);
+    } catch (error) {
+      console.error("Error generating Excel report:", error);
+      showError(
+        "Excel Generation Failed",
+        error.response?.data?.message ||
+          "Failed to generate Excel report. Please try again later."
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleGenerateReport = () => {
+    if (format === "pdf") {
+      generatePDFReport();
+    } else {
+      generateExcelReport();
     }
   };
 
@@ -459,6 +553,24 @@ const ManageReports = () => {
                   </Form.Select>
                 </Form.Group>
               </Col>
+
+              {reportType === "users" && (
+                <Col md={2}>
+                  <Form.Group>
+                    <Form.Label>Role</Form.Label>
+                    <Form.Select
+                      value={filterRole}
+                      onChange={(e) => setFilterRole(e.target.value)}
+                      className={darkMode ? "bg-dark text-light" : ""}
+                    >
+                      <option value="All">All Roles</option>
+                      <option value="Admin">Admin</option>
+                      <option value="School">School</option>
+                      <option value="Donor">Donor</option>
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+              )}
 
               <Col md={2}>
                 <Form.Group>
@@ -526,21 +638,33 @@ const ManageReports = () => {
               </Col>
             </Row>
 
-            <Button
-              variant="primary"
-              onClick={format === "pdf" ? generatePDFReport : generateReport}
-              disabled={isGenerating}
-              className="mt-3"
-            >
-              {isGenerating ? (
-                <>
-                  <Spinner as="span" size="sm" animation="border" />
-                  <span className="ms-2">Generating...</span>
-                </>
-              ) : (
-                "Generate Report"
+            <div className="d-flex mt-3">
+              <Button
+                variant="primary"
+                onClick={handleGenerateReport}
+                disabled={isGenerating}
+                className="me-2"
+              >
+                {isGenerating ? (
+                  <>
+                    <Spinner as="span" size="sm" animation="border" />
+                    <span className="ms-2">Generating...</span>
+                  </>
+                ) : (
+                  "Generate Report"
+                )}
+              </Button>
+
+              {format === "pdf" && (
+                <Button
+                  variant="outline-secondary"
+                  onClick={generateSimplePDF}
+                  disabled={isGenerating}
+                >
+                  Generate Simple PDF
+                </Button>
               )}
-            </Button>
+            </div>
           </Form>
         </Card.Body>
       </Card>
@@ -559,8 +683,8 @@ const ManageReports = () => {
                   start: new Date(new Date().setDate(new Date().getDate() - 7)),
                   end: new Date(),
                 });
-                setFormat("pdf"); // Set to PDF for quick reports
-                generatePDFReport(); // Auto-generate report
+                setFormat("pdf");
+                generatePDFReport();
               }}
             >
               Last 7 Days Donations

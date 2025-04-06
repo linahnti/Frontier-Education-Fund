@@ -11,6 +11,7 @@ import {
   Dropdown,
   Row,
   Col,
+  Pagination,
 } from "react-bootstrap";
 import axios from "axios";
 import { API_URL } from "../config";
@@ -26,8 +27,9 @@ const ManageDonationRequests = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [locationFilter, setLocationFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [requestsPerPage] = useState(10);
 
-  // Fetch donation requests from the backend
   useEffect(() => {
     fetchDonationRequests();
   }, []);
@@ -79,7 +81,6 @@ const ManageDonationRequests = () => {
     return matchesSearch && matchesStatus && matchesLocation;
   });
 
-  // Get unique locations for filter
   const uniqueLocations = [
     ...new Set(
       donationRequests
@@ -88,7 +89,6 @@ const ManageDonationRequests = () => {
     ),
   ];
 
-  // Show feedback for a few seconds
   const showTemporaryFeedback = (message, type = "success") => {
     setFeedback({ message, type });
     setTimeout(() => {
@@ -96,7 +96,15 @@ const ManageDonationRequests = () => {
     }, 3000);
   };
 
-  // Handle approval of a donation request
+  const indexOfLastRequest = currentPage * requestsPerPage;
+  const indexOfFirstRequest = indexOfLastRequest - requestsPerPage;
+  const currentRequests = filteredRequests.slice(
+    indexOfFirstRequest,
+    indexOfLastRequest
+  );
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   const handleApprove = async (requestId) => {
     try {
       const token = localStorage.getItem("token");
@@ -332,7 +340,7 @@ const ManageDonationRequests = () => {
             </tr>
           </thead>
           <tbody>
-            {donationRequests.map((request, index) => (
+            {currentRequests.map((request, index) => (
               <tr key={request._id}>
                 <td>{index + 1}</td>
                 <td>{request.schoolId?.schoolName || "N/A"}</td>
@@ -409,6 +417,24 @@ const ManageDonationRequests = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {filteredRequests.length > requestsPerPage && (
+        <div className="d-flex justify-content-center mt-4">
+          <Pagination>
+            {Array.from({
+              length: Math.ceil(filteredRequests.length / requestsPerPage),
+            }).map((_, index) => (
+              <Pagination.Item
+                key={index + 1}
+                active={index + 1 === currentPage}
+                onClick={() => paginate(index + 1)}
+              >
+                {index + 1}
+              </Pagination.Item>
+            ))}
+          </Pagination>
+        </div>
+      )}
     </div>
   );
 };

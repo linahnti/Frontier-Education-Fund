@@ -10,6 +10,7 @@ import {
   InputGroup,
   Row,
   Col,
+  Pagination,
 } from "react-bootstrap";
 import axios from "axios";
 import { API_URL } from "../config";
@@ -23,8 +24,9 @@ const ManageDonations = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [donationsPerPage] = useState(10);
 
-  // Fetch donations from the backend
   useEffect(() => {
     fetchDonations();
   }, []);
@@ -67,7 +69,6 @@ const ManageDonations = () => {
     return matchesSearch && matchesStatus && matchesType;
   });
 
-  // Show feedback for a few seconds
   const showTemporaryFeedback = (message, type = "success") => {
     setFeedback({ message, type });
     setTimeout(() => {
@@ -75,7 +76,15 @@ const ManageDonations = () => {
     }, 3000);
   };
 
-  // Handle donation approval
+  const indexOfLastDonation = currentPage * donationsPerPage;
+  const indexOfFirstDonation = indexOfLastDonation - donationsPerPage;
+  const currentDonations = filteredDonations.slice(
+    indexOfFirstDonation,
+    indexOfLastDonation
+  );
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   const handleApprove = async (donationId) => {
     try {
       const token = localStorage.getItem("token");
@@ -257,7 +266,7 @@ const ManageDonations = () => {
             </tr>
           </thead>
           <tbody>
-            {donations.map((donation, index) => (
+            {currentDonations.map((donation, index) => (
               <tr key={donation._id}>
                 <td>{index + 1}</td>
                 <td>{donation.donorId?.name || "N/A"}</td>
@@ -317,6 +326,24 @@ const ManageDonations = () => {
             ))}
           </tbody>
         </Table>
+      )}
+
+      {filteredDonations.length > donationsPerPage && (
+        <div className="d-flex justify-content-center mt-4">
+          <Pagination>
+            {Array.from({
+              length: Math.ceil(filteredDonations.length / donationsPerPage),
+            }).map((_, index) => (
+              <Pagination.Item
+                key={index + 1}
+                active={index + 1 === currentPage}
+                onClick={() => paginate(index + 1)}
+              >
+                {index + 1}
+              </Pagination.Item>
+            ))}
+          </Pagination>
+        </div>
       )}
     </div>
   );

@@ -1,21 +1,13 @@
 import React, { lazy, Suspense, useState, useEffect } from "react";
-import {
-  Container,
-  Row,
-  Col,
-  Tabs,
-  Tab,
-  Card,
-  Alert,
-  Spinner,
-} from "react-bootstrap";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Container, Row, Col, Card, Alert, Spinner } from "react-bootstrap";
+import { Routes, Route, Navigate } from "react-router-dom";
 import AdminNavbar from "../components/AdminNavbar";
 import { useTheme } from "../contexts/ThemeContext";
 import axios from "axios";
 import { API_URL } from "../config";
 import "../styles/AdminDashboard.css";
 import DonationTrends from "../components/DonationTrends";
+import SchoolRegistrationTrends from "../components/SchoolRegistrationTrends";
 
 // Lazy load management components
 const ManageDonations = lazy(() => import("./ManageDonations"));
@@ -33,6 +25,7 @@ const DashboardOverview = () => {
     totalUsers: 0,
     recentDonations: [],
     monthlyDonations: [],
+    monthlyRegistrations: [],
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -64,6 +57,13 @@ const DashboardOverview = () => {
           (req) => req.status === "Pending"
         ).length;
 
+        // Group school registrations by month
+        const registrationsByMonth = Array(12).fill(0);
+        schoolsRes.data.forEach((school) => {
+          const month = new Date(school.createdAt).getMonth();
+          registrationsByMonth[month]++;
+        });
+
         setStats({
           totalDonations: donationsRes.data.length,
           pendingRequests,
@@ -71,6 +71,7 @@ const DashboardOverview = () => {
           totalUsers: usersRes.data.length,
           recentDonations: donationsRes.data.slice(0, 5),
           monthlyDonations: groupDonationsByMonth(donationsRes.data),
+          monthlyRegistrations: registrationsByMonth,
         });
       } catch (error) {
         console.error("Error fetching dashboard stats:", error);
@@ -82,6 +83,7 @@ const DashboardOverview = () => {
           totalUsers: 0,
           recentDonations: [],
           monthlyDonations: [],
+          monthlyRegistrations: Array(12).fill(0),
         });
       } finally {
         setLoading(false);
@@ -172,7 +174,7 @@ const DashboardOverview = () => {
       </Row>
 
       <Row className="g-4">
-        <Col lg={8}>
+        <Col lg={6}>
           <Card className="h-100">
             <Card.Header>
               <h5 className="mb-0">Donation Trends</h5>
@@ -192,7 +194,22 @@ const DashboardOverview = () => {
             </Card.Body>
           </Card>
         </Col>
-        <Col lg={4}>
+        <Col lg={6}>
+          <Card className="h-100">
+            <Card.Header>
+              <h5 className="mb-0">School Registrations</h5>
+            </Card.Header>
+            <Card.Body>
+              <SchoolRegistrationTrends
+                monthlyRegistrations={stats.monthlyRegistrations}
+              />
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      <Row className="mt-4">
+        <Col>
           <Card className="h-100">
             <Card.Header>
               <h5 className="mb-0">Recent Activities</h5>
@@ -264,7 +281,6 @@ const renderStatCard = (
 );
 
 const AdminDashboard = () => {
-  const location = useLocation();
   const { darkMode } = useTheme();
 
   return (

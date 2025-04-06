@@ -9,6 +9,8 @@ import {
   InputGroup,
   Row,
   Col,
+  Modal,
+  Form,
 } from "react-bootstrap";
 import axios from "axios";
 import { API_URL } from "../config";
@@ -22,6 +24,15 @@ const ManageUsers = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(10);
   const [roleFilter, setRoleFilter] = useState("All");
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    email: "",
+    role: "",
+  });
+  const [selectedDonor, setSelectedDonor] = useState(null);
+  const [donorDonations, setDonorDonations] = useState([]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -44,7 +55,22 @@ const ManageUsers = () => {
     fetchUsers();
   }, []);
 
-  // Filter users based on search query and role filter
+  const fetchDonorDonations = async (donorId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `${API_URL}/api/admin/donors/${donorId}/donations`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setDonorDonations(response.data);
+      setSelectedDonor(donorId);
+    } catch (error) {
+      console.error("Error fetching donor donations:", error);
+    }
+  };
+
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -55,12 +81,58 @@ const ManageUsers = () => {
     return matchesSearch && matchesRole;
   });
 
-  // Pagination logic
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  const handleEditClick = (user) => {
+    setCurrentUser(user);
+    setEditFormData({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditFormChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleEditSubmit = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.put(
+        `${API_URL}/api/admin/users/${currentUser._id}`,
+        editFormData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        // Update the local state
+        setUsers((prevUsers) =>
+          prevUsers.map((user) =>
+            user._id === currentUser._id ? { ...user, ...editFormData } : user
+          )
+        );
+        setShowEditModal(false);
+        showTemporaryFeedback("User updated successfully");
+      }
+    } catch (error) {
+      console.error("Error updating user:", error);
+      showTemporaryFeedback("Error updating user", "danger");
+    }
+  };
 
   if (loading) {
     return (
@@ -119,7 +191,11 @@ const ManageUsers = () => {
       {/* Users Table */}
       <Table striped bordered hover variant="dark" responsive>
         <thead>
-          <tr>
+          <tr
+            onClick={() =>
+              user.role === "Donor" && fetchDonorDonations(user._id)
+            }
+          >
             <th>#</th>
             <th>Name</th>
             <th>Email</th>
@@ -148,7 +224,11 @@ const ManageUsers = () => {
               </td>
               <td>
                 <ButtonGroup className="d-flex flex-wrap gap-2">
-                  <Button variant="outline-warning" size="sm">
+                  <Button
+                    variant="outline-warning"
+                    size="sm"
+                    onClick={() => handleEditClick(user)}
+                  >
                     <i className="bi bi-pencil"></i> Edit
                   </Button>
                   <Button variant="outline-danger" size="sm">
@@ -161,7 +241,42 @@ const ManageUsers = () => {
         </tbody>
       </Table>
 
-      {/* Pagination */}
+      {selectedDonor && (
+        <Modal show={true} onHide={() => setSelectedDonor(null)} size="lg">
+          <Modal.Header closeButton>
+            <Modal.Title>Donor Contributions</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Table striped bordered hover>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>School</th>
+                  <th>Type</th>
+                  <th>Amount/Items</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {donorDonations.map((donation) => (
+                  <tr key={donation._id}>
+                    <td>{new Date(donation.date).toLocaleDateString()}</td>
+                    <td>{donation.schoolName || "N/A"}</td>
+                    <td>{donation.type}</td>
+                    <td>
+                      {donation.type === "money"
+                        ? `KES ${donation.amount}`
+                        : donation.items.join(", ")}
+                    </td>
+                    <td>{donation.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </Modal.Body>
+        </Modal>
+      )}
+
       {filteredUsers.length > usersPerPage && (
         <div className="d-flex justify-content-center mt-4">
           <Pagination>
@@ -180,6 +295,58 @@ const ManageUsers = () => {
           </Pagination>
         </div>
       )}
+
+      <Modal
+        show={showEditModal}
+        onHide={() => setShowEditModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Edit User</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Name</Form.Label>
+              <Form.Control
+                type="text"
+                name="name"
+                value={editFormData.name}
+                onChange={handleEditFormChange}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                name="email"
+                value={editFormData.email}
+                onChange={handleEditFormChange}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Role</Form.Label>
+              <Form.Select
+                name="role"
+                value={editFormData.role}
+                onChange={handleEditFormChange}
+              >
+                <option value="Admin">Admin</option>
+                <option value="Donor">Donor</option>
+                <option value="School">School</option>
+              </Form.Select>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleEditSubmit}>
+            Save Changes
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

@@ -31,6 +31,8 @@ const SchoolsDonationTab = ({
   const [showActiveDonorsModal, setShowActiveDonorsModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Pagination states
   const [donationsCurrentPage, setDonationsCurrentPage] = useState(1);
@@ -40,6 +42,7 @@ const SchoolsDonationTab = ({
   // Function to fetch data
   const fetchData = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem("token");
 
       if (!schoolId) {
@@ -47,44 +50,36 @@ const SchoolsDonationTab = ({
         return;
       }
 
-      // Fetch donations received
-      const donationsResponse = await axios.get(
-        `${API_URL}/api/schools/${schoolId}/donations-received`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      // Fetch all data in parallel
+      const [donationsResponse, requestsResponse, activeDonorsResponse] =
+        await Promise.all([
+          axios.get(`${API_URL}/api/schools/${schoolId}/donations-received`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`${API_URL}/api/schools/${schoolId}/donation-requests`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`${API_URL}/api/schools/${schoolId}/active-donors`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+      console.log("Donations received:", donationsResponse.data);
+      console.log("Donation requests:", requestsResponse.data);
+      console.log("Active donors:", activeDonorsResponse.data);
+
       setDonationsReceived(donationsResponse.data);
-
-      // Fetch all donation requests
-      const requestsResponse = await axios.get(
-        `${API_URL}/api/schools/${schoolId}/donation-requests`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
       setDonationRequests(requestsResponse.data);
-
-      // Fetch active donors
-      const activeDonorsResponse = await axios.get(
-        `${API_URL}/api/schools/${schoolId}/active-donors`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      setActiveDonors(activeDonorsResponse.data.activeDonors);
+      setActiveDonors(activeDonorsResponse.data.activeDonors || []);
+      setError(null);
     } catch (error) {
       console.error("Error fetching data:", error);
+      setError("Failed to load data. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Filter functions
   const getFilteredDonations = () => {
     return donationsReceived.filter((donation) => {
       const statusMatch =
@@ -94,9 +89,10 @@ const SchoolsDonationTab = ({
         donation.donorId?.name
           ?.toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
-        donation.item.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        donation.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        new Date(donation.date).toLocaleDateString().includes(searchTerm);
+        donation.item?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        donation.status?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (donation.date &&
+          new Date(donation.date).toLocaleDateString().includes(searchTerm));
 
       return statusMatch && searchMatch;
     });
@@ -108,11 +104,15 @@ const SchoolsDonationTab = ({
         filterStatus === "All" || request.status === filterStatus;
       const searchMatch =
         searchTerm === "" ||
-        request.donationNeeds.some((need) =>
+        request.donationNeeds?.some((need) =>
           need.toLowerCase().includes(searchTerm.toLowerCase())
         ) ||
-        request.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        new Date(request.date).toLocaleDateString().includes(searchTerm);
+        request.customRequest
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        request.status?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (request.date &&
+          new Date(request.date).toLocaleDateString().includes(searchTerm));
 
       return statusMatch && searchMatch;
     });
@@ -145,11 +145,11 @@ const SchoolsDonationTab = ({
     fetchData(); // Fetch data immediately on mount
 
     // Set up polling to fetch data every 10 seconds
-    const intervalId = setInterval(fetchData, 10000); // 10 seconds
+    const intervalId = setInterval(fetchData, 10000);
 
     // Cleanup interval on component unmount
     return () => clearInterval(intervalId);
-  }, [schoolId]); // Re-run effect if schoolId changes
+  }, [schoolId]);
 
   const cardStyle = darkMode
     ? {
@@ -169,24 +169,45 @@ const SchoolsDonationTab = ({
         height: "100%",
       };
 
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+        <p className="mt-2">Loading data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="alert alert-danger">
+        {error}
+        <Button variant="primary" onClick={fetchData} className="ms-3">
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div>
-      {/* Add the DonationRequest component at the top */}
       <DonationRequest
         user={{ id: schoolId }}
-        loading={false}
+        loading={loading}
         completionPercentage={100}
         profileData={{}}
         showDonationModal={showDonationModal}
         setShowDonationModal={setShowDonationModal}
       />
 
-      {/* Search and Filter UI - Improved styling */}
+      {/* Search and Filter UI */}
       <div className="mb-4">
         <Row>
           <Col md={8}>
             <div className="input-group">
-              <span className="input-group-text" id="search-addon">
+              <span className="input-group-text">
                 <FontAwesomeIcon icon={faSearch} />
               </span>
               <input
@@ -205,7 +226,7 @@ const SchoolsDonationTab = ({
           </Col>
           <Col md={4}>
             <div className="input-group">
-              <span className="input-group-text" id="filter-addon">
+              <span className="input-group-text">
                 <FontAwesomeIcon icon={faFilter} />
               </span>
               <select
@@ -229,34 +250,16 @@ const SchoolsDonationTab = ({
         </Row>
       </div>
 
-      {/* Dashboard Summary Cards - Removed Active Donors card */}
+      {/* Dashboard Summary Cards */}
       <Row className="mb-4">
         <Col md={6}>
           <Card style={{ ...cardStyle, borderLeft: "4px solid #ffc107" }}>
             <Card.Body className="text-center">
-              <div
-                style={{
-                  width: "60px",
-                  height: "60px",
-                  borderRadius: "50%",
-                  margin: "0 auto 15px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: darkMode
-                    ? "rgba(255, 193, 7, 0.2)"
-                    : "rgba(255, 193, 7, 0.1)",
-                  color: "#ffc107",
-                }}
-              >
+              <div className="icon-circle mb-3 mx-auto">
                 <FontAwesomeIcon icon={faHandHoldingHeart} size="lg" />
               </div>
-              <Card.Title className={darkMode ? "text-light" : "text-primary"}>
-                Donations Received
-              </Card.Title>
-              <h3 className={darkMode ? "text-light" : "text-primary"}>
-                KSH {totalDonationAmount.toLocaleString()}
-              </h3>
+              <Card.Title>Donations Received</Card.Title>
+              <h3>KSH {totalDonationAmount.toLocaleString()}</h3>
               <p className="text-muted mb-0">
                 {filteredDonations.length} donations total
               </p>
@@ -266,29 +269,11 @@ const SchoolsDonationTab = ({
         <Col md={6}>
           <Card style={{ ...cardStyle, borderLeft: "4px solid #0d6efd" }}>
             <Card.Body className="text-center">
-              <div
-                style={{
-                  width: "60px",
-                  height: "60px",
-                  borderRadius: "50%",
-                  margin: "0 auto 15px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: darkMode
-                    ? "rgba(13, 110, 253, 0.2)"
-                    : "rgba(13, 110, 253, 0.1)",
-                  color: "#0d6efd",
-                }}
-              >
+              <div className="icon-circle mb-3 mx-auto">
                 <FontAwesomeIcon icon={faHandHoldingHeart} size="lg" />
               </div>
-              <Card.Title className={darkMode ? "text-light" : "text-primary"}>
-                Donation Requests
-              </Card.Title>
-              <h3 className={darkMode ? "text-light" : "text-primary"}>
-                {filteredRequests.length}
-              </h3>
+              <Card.Title>Donation Requests</Card.Title>
+              <h3>{filteredRequests.length}</h3>
               <p className="text-muted mb-0">
                 {filteredRequests.filter((r) => r.status === "Pending").length}{" "}
                 pending requests
@@ -299,7 +284,7 @@ const SchoolsDonationTab = ({
       </Row>
 
       {/* Donations Received Table */}
-      <div id="donations-received-table" className="mb-4">
+      <div className="mb-4">
         <Card style={cardStyle}>
           <Card.Header
             className={
@@ -314,7 +299,7 @@ const SchoolsDonationTab = ({
               striped
               bordered
               hover
-              className={darkMode ? "table-dark" : ""}
+              variant={darkMode ? "dark" : ""}
             >
               <thead
                 className={
@@ -333,7 +318,7 @@ const SchoolsDonationTab = ({
                   paginatedDonations.map((donation, index) => (
                     <tr key={index}>
                       <td>{donation.donorId?.name || "N/A"}</td>
-                      <td>{donation.item}</td>
+                      <td>{donation.item || "N/A"}</td>
                       <td>
                         <span
                           className={`badge ${
@@ -349,7 +334,11 @@ const SchoolsDonationTab = ({
                           {donation.status}
                         </span>
                       </td>
-                      <td>{new Date(donation.date).toLocaleDateString()}</td>
+                      <td>
+                        {donation.date
+                          ? new Date(donation.date).toLocaleDateString()
+                          : "N/A"}
+                      </td>
                     </tr>
                   ))
                 ) : (
@@ -362,7 +351,6 @@ const SchoolsDonationTab = ({
               </tbody>
             </Table>
 
-            {/* Donations Pagination */}
             {donationsTotalPages > 1 && (
               <Pagination className="justify-content-center">
                 <Pagination.Prev
@@ -395,7 +383,7 @@ const SchoolsDonationTab = ({
       </div>
 
       {/* Donation Requests Table */}
-      <div id="donation-requests-table" className="mb-4">
+      <div className="mb-4">
         <Card style={cardStyle}>
           <Card.Header
             className={
@@ -410,7 +398,7 @@ const SchoolsDonationTab = ({
               striped
               bordered
               hover
-              className={darkMode ? "table-dark" : ""}
+              variant={darkMode ? "dark" : ""}
             >
               <thead
                 className={
@@ -418,7 +406,8 @@ const SchoolsDonationTab = ({
                 }
               >
                 <tr>
-                  <th>Donation Need</th>
+                  <th>Donation Needs</th>
+                  <th>Custom Request</th>
                   <th>Status</th>
                   <th>Date Requested</th>
                 </tr>
@@ -427,7 +416,8 @@ const SchoolsDonationTab = ({
                 {paginatedRequests.length > 0 ? (
                   paginatedRequests.map((request, index) => (
                     <tr key={index}>
-                      <td>{request.donationNeeds.join(", ")}</td>
+                      <td>{request.donationNeeds?.join(", ") || "None"}</td>
+                      <td>{request.customRequest || "None"}</td>
                       <td>
                         <span
                           className={`badge ${
@@ -443,12 +433,16 @@ const SchoolsDonationTab = ({
                           {request.status}
                         </span>
                       </td>
-                      <td>{new Date(request.date).toLocaleDateString()}</td>
+                      <td>
+                        {request.date
+                          ? new Date(request.date).toLocaleDateString()
+                          : "N/A"}
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={3} className="text-center">
+                    <td colSpan={4} className="text-center">
                       No requests found
                     </td>
                   </tr>
@@ -456,7 +450,6 @@ const SchoolsDonationTab = ({
               </tbody>
             </Table>
 
-            {/* Requests Pagination */}
             {requestsTotalPages > 1 && (
               <Pagination className="justify-content-center">
                 <Pagination.Prev
@@ -488,7 +481,7 @@ const SchoolsDonationTab = ({
         </Card>
       </div>
 
-      {/* Modal for Active Donors - Keep it here to be used by the header card */}
+      {/* Active Donors Modal */}
       <Modal
         show={showActiveDonorsModal}
         onHide={() => setShowActiveDonorsModal(false)}
@@ -513,7 +506,7 @@ const SchoolsDonationTab = ({
             striped
             bordered
             hover
-            variant={darkMode ? "dark" : undefined}
+            variant={darkMode ? "dark" : ""}
           >
             <thead
               className={
@@ -527,13 +520,21 @@ const SchoolsDonationTab = ({
               </tr>
             </thead>
             <tbody>
-              {activeDonors.map((donor, index) => (
-                <tr key={index}>
-                  <td>{donor.name}</td>
-                  <td>{donor.email}</td>
-                  <td>{donor.donationsMade.length}</td>
+              {activeDonors.length > 0 ? (
+                activeDonors.map((donor, index) => (
+                  <tr key={index}>
+                    <td>{donor.name}</td>
+                    <td>{donor.email}</td>
+                    <td>{donor.donationsMade?.length || 0}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={3} className="text-center">
+                    No active donors found
+                  </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </Table>
         </Modal.Body>

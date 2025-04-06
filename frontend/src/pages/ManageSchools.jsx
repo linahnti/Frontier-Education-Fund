@@ -9,6 +9,7 @@ import {
   Row,
   Col,
   Alert,
+  Pagination,
 } from "react-bootstrap";
 import axios from "axios";
 import { API_URL } from "../config";
@@ -20,6 +21,10 @@ const ManageSchools = () => {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [locationFilter, setLocationFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [schoolsPerPage] = useState(10);
+  const [selectedSchool, setSelectedSchool] = useState(null);
+  const [schoolRequests, setSchoolRequests] = useState([]);
 
   useEffect(() => {
     const fetchSchools = async () => {
@@ -42,6 +47,23 @@ const ManageSchools = () => {
     fetchSchools();
   }, []);
 
+  const fetchSchoolRequests = async (schoolId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `${API_URL}/api/admin/donation-requests`,
+        {
+          params: { schoolId },
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setSchoolRequests(response.data);
+      setSelectedSchool(schoolId);
+    } catch (error) {
+      console.error("Error fetching school requests:", error);
+    }
+  };
+
   const filteredSchools = schools.filter((school) => {
     const matchesSearch =
       school.schoolName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -55,13 +77,17 @@ const ManageSchools = () => {
     return matchesSearch && matchesLocation;
   });
 
+  const indexOfLastSchool = currentPage * schoolsPerPage;
+  const indexOfFirstSchool = indexOfLastSchool - schoolsPerPage;
+  const currentSchools = filteredSchools.slice(
+    indexOfFirstSchool,
+    indexOfLastSchool
+  );
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   const uniqueLocations = [
     ...new Set(schools.map((school) => school.location)),
   ];
-
-  if (loading) {
-    return <p>Loading schools...</p>;
-  }
 
   if (loading) {
     return (
@@ -69,7 +95,7 @@ const ManageSchools = () => {
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
-        <p className="mt-3 text-light">Loading schools...</p>
+        <p className="mt-3">Loading schools...</p>
       </div>
     );
   }
@@ -118,27 +144,26 @@ const ManageSchools = () => {
       {filteredSchools.length === 0 ? (
         <Alert variant="info">No schools match your criteria.</Alert>
       ) : (
-        <Table striped bordered hover>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>School Name</th>
-              <th>Location</th>
-              <th>Contact</th>
-              <th>Principal</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {schools.map((school, index) => (
-              <tr key={school._id}>
-                <td>{index + 1}</td>
-                <td>{school.schoolName}</td>
-                <td>{school.location}</td>
-                <td>{school.contactNumber}</td>
-                <td>{school.principalName}</td>
-                <td>
-                  {/* Use ButtonGroup to align buttons side by side */}
+        <>
+          <Table striped bordered hover>
+            <thead>
+              <tr onClick={() => fetchSchoolRequests(school._id)}>
+                <th>#</th>
+                <th>School Name</th>
+                <th>Location</th>
+                <th>Contact</th>
+                <th>Principal</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentSchools.map((school, index) => (
+                <tr key={school._id}>
+                  <td>{index + 1}</td>
+                  <td>{school.schoolName}</td>
+                  <td>{school.location}</td>
+                  <td>{school.contactNumber}</td>
+                  <td>{school.principalName}</td>
                   <td>
                     <div style={{ display: "flex", gap: "8px" }}>
                       <Button variant="warning" size="sm">
@@ -149,11 +174,65 @@ const ManageSchools = () => {
                       </Button>
                     </div>
                   </td>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+
+          {selectedSchool && (
+            <Modal show={true} onHide={() => setSelectedSchool(null)} size="lg">
+              <Modal.Header closeButton>
+                <Modal.Title>School Requests</Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
+                <Table striped bordered hover>
+                  <thead>
+                    <tr>
+                      <th>Request Date</th>
+                      <th>Items Requested</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {schoolRequests.map((request) => (
+                      <tr key={request._id}>
+                        <td>
+                          {new Date(request.createdAt).toLocaleDateString()}
+                        </td>
+                        <td>
+                          <ul>
+                            {request.donationNeeds.map((item, i) => (
+                              <li key={i}>{item}</li>
+                            ))}
+                          </ul>
+                        </td>
+                        <td>{request.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </Modal.Body>
+            </Modal>
+          )}
+
+          {filteredSchools.length > schoolsPerPage && (
+            <div className="d-flex justify-content-center mt-4">
+              <Pagination>
+                {Array.from({
+                  length: Math.ceil(filteredSchools.length / schoolsPerPage),
+                }).map((_, index) => (
+                  <Pagination.Item
+                    key={index + 1}
+                    active={index + 1 === currentPage}
+                    onClick={() => paginate(index + 1)}
+                  >
+                    {index + 1}
+                  </Pagination.Item>
+                ))}
+              </Pagination>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

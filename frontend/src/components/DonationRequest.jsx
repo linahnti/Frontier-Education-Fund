@@ -10,18 +10,18 @@ const DonationRequest = ({
   loading,
   completionPercentage,
   profileData,
+  showDonationModal,
+  setShowDonationModal,
 }) => {
   const { darkMode } = useTheme();
   const { isProfileComplete } = useProfile();
   const navigate = useNavigate();
-  const [showDonationModal, setShowDonationModal] = useState(false);
   const [showProfileWarningModal, setShowProfileWarningModal] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [message, setMessage] = useState("");
   const [selectedNeeds, setSelectedNeeds] = useState([]);
   const [customRequest, setCustomRequest] = useState("");
 
-  // Handle donation request submission
   const handleDonationRequest = async () => {
     const token = localStorage.getItem("token");
     const currentUser = user;
@@ -32,7 +32,6 @@ const DonationRequest = ({
       return;
     }
 
-    // Use `currentUser.id` instead of `currentUser._id`
     const schoolId = currentUser.id;
 
     if (!schoolId) {
@@ -48,6 +47,14 @@ const DonationRequest = ({
     }
 
     try {
+      const requestBody = {
+        schoolId: schoolId,
+        donationNeeds: selectedNeeds,
+        customRequest: customRequest.trim(),
+      };
+
+      console.log("Sending request body:", requestBody);
+
       const response = await fetch(
         `${API_URL}/api/schools/${schoolId}/donation-needs`,
         {

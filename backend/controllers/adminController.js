@@ -503,6 +503,47 @@ const rejectDonationRequest = async (req, res) => {
   }
 };
 
+const updateUser = async (req, res) => {
+  const { id } = req.params;
+  const { name, email, role } = req.body;
+
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { name, email, role },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      message: "User updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ message: "Error updating user", error });
+  }
+};
+
+const getSchoolRegistrationStats = async (req, res) => {
+  try {
+    const schools = await User.find({ role: "School" });
+    const stats = Array(12).fill(0);
+    
+    schools.forEach(school => {
+      const month = new Date(school.createdAt).getMonth();
+      stats[month]++;
+    });
+
+    res.status(200).json(stats);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching registration stats", error });
+  }
+};
+
 module.exports = {
   getAllDonations,
   getAllSchools,
@@ -515,4 +556,6 @@ module.exports = {
   completeDonationRequest,
   deleteDonationRequest,
   rejectDonationRequest,
+  updateUser,
+  getSchoolRegistrationStats,
 };

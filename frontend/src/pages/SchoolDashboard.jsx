@@ -20,6 +20,7 @@ import SchoolsDonationTab from "../components/SchoolsDonationTab";
 import SchoolsNotifications from "../components/SchoolsNotifications";
 import ReportsTab from "../components/ReportsTab";
 import SupportTab from "../components/SchoolSupport";
+import DonationRequest from "../components/DonationRequest";
 import { API_URL } from "../config";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -53,6 +54,7 @@ const SchoolDashboard = () => {
   const [showDonationModal, setShowDonationModal] = useState(false);
   const [showActiveDonorsModal, setShowActiveDonorsModal] = useState(false);
   const [activeDonors, setActiveDonors] = useState([]);
+  const [showProfileWarningModal, setShowProfileWarningModal] = useState(false);
 
   const fetchStats = async (userId) => {
     try {
@@ -122,6 +124,14 @@ const SchoolDashboard = () => {
       default:
         break;
     }
+  };
+
+  const handlePostDonationClick = () => {
+    if (!user.isProfileComplete) {
+      setShowProfileWarningModal(true);
+      return;
+    }
+    setShowDonationModal(true);
   };
 
   useEffect(() => {
@@ -294,8 +304,6 @@ const SchoolDashboard = () => {
     >
       <Container fluid className="px-4">
         {/* Dashboard Header Section */}
-        {/* Dashboard Header Section */}
-        {/* Dashboard Header Section */}
         <div
           className="mb-4 p-4 rounded"
           style={{
@@ -352,14 +360,12 @@ const SchoolDashboard = () => {
               </p>
             </Col>
 
-            {/* Right side - Actions and profile info */}
             <Col md={4}>
               <div className="d-flex justify-content-end align-items-center gap-3">
-                {/* Ask for Support Button */}
                 <Button
                   variant="warning"
                   className="text-white shadow-sm"
-                  onClick={() => setShowDonationModal(true)}
+                  onClick={() => handlePostDonationClick()}
                   disabled={loading}
                   style={{
                     fontWeight: "600",
@@ -370,7 +376,6 @@ const SchoolDashboard = () => {
                   Ask for Support
                 </Button>
 
-                {/* Profile Completion Badge */}
                 <div className="d-flex align-items-center">
                   <Badge
                     bg={completionPercentage === 100 ? "success" : "warning"}
@@ -692,7 +697,6 @@ const SchoolDashboard = () => {
           </Card.Body>
         </Card>
 
-        {/* Quick Actions Footer */}
         <div className="mt-4 text-center">
           <Card
             style={{
@@ -748,6 +752,14 @@ const SchoolDashboard = () => {
             </Card.Body>
           </Card>
         </div>
+        <DonationRequest
+          user={user}
+          loading={loading}
+          completionPercentage={completionPercentage}
+          profileData={profileData}
+          showDonationModal={showDonationModal}
+          setShowDonationModal={setShowDonationModal}
+        />
       </Container>
     </div>
   );
