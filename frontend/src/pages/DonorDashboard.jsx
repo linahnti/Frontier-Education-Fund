@@ -22,6 +22,7 @@ import ExploreSchools from "../components/ExploreSchools";
 import DonationsTab from "../components/DonationsTab";
 import ReportsTab from "../components/ReportsTab";
 import DonorSupport from "../components/DonorSupport";
+import MessageCenter from "../components/MessageCenter";
 import { API_URL } from "../config";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -34,6 +35,7 @@ import {
   faBell,
   faHeadset,
   faCalendar,
+  faEnvelope,
 } from "@fortawesome/free-solid-svg-icons";
 import "../styles/DonorDashboard.css";
 
@@ -56,6 +58,7 @@ const DonorDashboard = () => {
     pending: 0,
     approved: 0,
   });
+  const [unreadCount, setUnreadCount] = useState(0); // Already present in your code
 
   // Fetch user data from localStorage on component mount
   useEffect(() => {
@@ -164,14 +167,30 @@ const DonorDashboard = () => {
     }
   };
 
-  // Fetch notifications and donations on component mount
+  // Add fetchUnreadMessagesCount function
+  const fetchUnreadMessagesCount = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_URL}/api/messages/unread-count`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      setUnreadCount(data.count);
+    } catch (error) {
+      console.error("Error fetching unread messages count:", error);
+    }
+  };
+
+  // Updated useEffect to fetch notifications, donations, and unread messages count
   useEffect(() => {
     fetchNotifications();
     fetchDonations();
+    fetchUnreadMessagesCount(); // Added call to fetch unread messages count
 
-    // Set up polling to fetch notifications every 10 seconds
+    // Set up polling to fetch notifications and unread messages every 10 seconds
     const interval = setInterval(() => {
       fetchNotifications();
+      fetchUnreadMessagesCount(); // Added periodic fetching of unread messages count
     }, 10000);
 
     // Clean up the interval on component unmount
@@ -528,6 +547,24 @@ const DonorDashboard = () => {
                 notifications={notifications}
                 setNotifications={setNotifications}
               />
+            </div>
+          </Tab>
+          <Tab
+            eventKey="messages"
+            title={
+              <span>
+                <FontAwesomeIcon icon={faEnvelope} className="me-2" />
+                Messages
+                {unreadCount > 0 && (
+                  <Badge bg="danger" pill className="ms-2">
+                    {unreadCount}
+                  </Badge>
+                )}
+              </span>
+            }
+          >
+            <div className="mt-0" style={tabContentStyles}>
+              <MessageCenter userId={user?.id} />
             </div>
           </Tab>
           <Tab

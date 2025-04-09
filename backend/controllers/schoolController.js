@@ -337,6 +337,31 @@ const getSchoolReports = async (req, res) => {
   }
 };
 
+const getDonorsForMessaging = async (req, res) => {
+  const { schoolId } = req.params;
+
+  try {
+    const donors = await User.aggregate([
+      { $match: { role: "Donor" } },
+      { $unwind: "$donationsMade" },
+      {
+        $match: { "donationsMade.schoolId": mongoose.Types.ObjectId(schoolId) },
+      },
+      {
+        $group: {
+          _id: "$_id",
+          name: { $first: "$name" },
+          email: { $first: "$email" },
+        },
+      },
+    ]);
+
+    res.status(200).json(donors);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching donors", error });
+  }
+};
+
 module.exports = {
   updateSchoolNeeds,
   updateDonationNeeds,
@@ -347,4 +372,5 @@ module.exports = {
   getActiveDonors,
   getSchoolNotifications,
   getSchoolReports,
+  getDonorsForMessaging,
 };

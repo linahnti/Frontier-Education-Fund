@@ -283,6 +283,19 @@ const getDonorReports = async (req, res) => {
   }
 };
 
+const getSchoolsForMessaging = async (req, res) => {
+  try {
+    const schools = await User.find({ 
+      role: "School", 
+      isVerified: true 
+    }).select("name email schoolName");
+
+    res.status(200).json(schools);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching schools", error });
+  }
+};
+
 module.exports = {
   approveDonationRequest,
   completeDonation,
@@ -294,4 +307,5 @@ module.exports = {
   deleteNotification,
   getActiveDonors,
   getDonorReports,
+  getSchoolsForMessaging,
 };

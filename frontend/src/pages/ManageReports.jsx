@@ -149,22 +149,22 @@ const ManageReports = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-  
+
       const data = response.data;
       const doc = new jsPDF();
-  
+
       // Set margins and page width
       const margin = 15;
       const pageWidth = doc.internal.pageSize.getWidth() - 2 * margin;
-      
+
       // Get dynamic title based on report type
       const reportTitle = getReportTitle(reportType);
-  
+
       // Add header with dynamic title
       doc.setFontSize(18);
       doc.setTextColor(40, 40, 40);
       doc.text(reportTitle, margin, 20);
-  
+
       // Report details
       doc.setFontSize(10);
       doc.setTextColor(80, 80, 80);
@@ -173,15 +173,15 @@ const ManageReports = () => {
         margin,
         30
       );
-  
+
       if (filterStatus !== "All") {
         doc.text(`Status Filter: ${filterStatus}`, margin, 35);
       }
-  
+
       if (reportType === "users" && filterRole !== "All") {
         doc.text(`Role Filter: ${filterRole}`, margin, 40);
       }
-  
+
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
       doc.text(
@@ -190,54 +190,51 @@ const ManageReports = () => {
         35,
         { align: "right" }
       );
-  
+
       // Improved table drawing function
       const drawTable = (headers, rows, startY) => {
         const columnCount = headers.length;
         let currentY = startY || 45;
-  
+
         // Calculate column widths based on content
         const colWidths = headers.map((header, index) => {
           // Fixed widths for certain columns
           if (header === "#") return 10;
           if (header === "Date" || header === "Status") return 25;
           if (header === "Type") return 20;
-          
+
           // Calculate remaining width for other columns
           const fixedWidths = 10 + 25 + 25 + 20; // Sum of fixed widths
           const remainingWidth = pageWidth - fixedWidths;
           const remainingCols = columnCount - 4; // Number of flexible columns
-          
+
           // Distribute remaining width (give more to Details/Description columns)
           if (header === "Details" || header === "Description") {
             return remainingWidth * 0.5;
           }
-          return remainingWidth * 0.5 / (remainingCols - 1);
+          return (remainingWidth * 0.5) / (remainingCols - 1);
         });
-  
+
         // Draw header row
         doc.setFillColor(70, 130, 180); // Steel blue background
         doc.setTextColor(255, 255, 255); // White text
         doc.setFont("helvetica", "bold");
-        
+
         let xPos = margin;
         headers.forEach((header, index) => {
           doc.rect(xPos, currentY, colWidths[index], 10, "F");
-          doc.text(
-            header,
-            xPos + 2,
-            currentY + 7,
-            { maxWidth: colWidths[index] - 4 }
-          );
+          doc.text(header, xPos + 2, currentY + 7, {
+            maxWidth: colWidths[index] - 4,
+          });
           xPos += colWidths[index];
         });
         currentY += 10;
-  
+
         // Draw data rows
         doc.setFillColor(255, 255, 255);
         doc.setTextColor(0, 0, 0);
         doc.setFont("helvetica", "normal");
-  
+
         rows.forEach((row, rowIndex) => {
           // Alternate row colors for better readability
           if (rowIndex % 2 === 0) {
@@ -245,170 +242,200 @@ const ManageReports = () => {
           } else {
             doc.setFillColor(255, 255, 255); // White
           }
-  
+
           xPos = margin;
           let maxHeight = 10; // Track the tallest cell in this row
-  
+
           // First pass to calculate row height
           row.forEach((cell, colIndex) => {
             const text = String(cell || "N/A");
             const textHeight = doc.getTextDimensions(text, {
-              maxWidth: colWidths[colIndex] - 4
+              maxWidth: colWidths[colIndex] - 4,
             }).h;
             if (textHeight > maxHeight) maxHeight = textHeight;
           });
-  
+
           // Draw cell backgrounds
           doc.rect(margin, currentY, pageWidth, maxHeight, "F");
-  
+
           // Draw cell content
           xPos = margin;
           row.forEach((cell, colIndex) => {
             const text = String(cell || "N/A");
-            doc.text(
-              text,
-              xPos + 2,
-              currentY + 7,
-              { maxWidth: colWidths[colIndex] - 4 }
-            );
+            doc.text(text, xPos + 2, currentY + 7, {
+              maxWidth: colWidths[colIndex] - 4,
+            });
             xPos += colWidths[colIndex];
           });
-  
+
           currentY += maxHeight;
-  
+
           // Add page if needed
           if (currentY > doc.internal.pageSize.getHeight() - 20) {
             doc.addPage();
             currentY = 20;
-            
+
             // Redraw header on new page if needed
             if (headers.length > 0) {
               doc.setFillColor(70, 130, 180);
               doc.setTextColor(255, 255, 255);
               doc.setFont("helvetica", "bold");
-              
+
               xPos = margin;
               headers.forEach((header, index) => {
                 doc.rect(xPos, currentY, colWidths[index], 10, "F");
-                doc.text(
-                  header,
-                  xPos + 2,
-                  currentY + 7,
-                  { maxWidth: colWidths[index] - 4 }
-                );
+                doc.text(header, xPos + 2, currentY + 7, {
+                  maxWidth: colWidths[index] - 4,
+                });
                 xPos += colWidths[index];
               });
               currentY += 10;
-              
+
               doc.setFillColor(255, 255, 255);
               doc.setTextColor(0, 0, 0);
               doc.setFont("helvetica", "normal");
             }
           }
         });
-  
+
         return currentY;
       };
-  
+
       // Generate appropriate table based on report type
       let currentY = 45;
       switch (reportType) {
         case "donations":
-          const donationHeaders = ["#", "Donor", "School", "Type", "Details", "Status", "Date"];
-          const donationRows = (Array.isArray(data) ? data : []).map((donation, index) => [
-            index + 1,
-            donation.donorName || "Anonymous",
-            donation.schoolName || "N/A",
-            donation.type || "N/A",
-            donation.type === "money"
-              ? `KES ${donation.amount || 0}`
-              : (donation.items && Array.isArray(donation.items))
+          const donationHeaders = [
+            "#",
+            "Donor",
+            "School",
+            "Type",
+            "Details",
+            "Status",
+            "Date",
+          ];
+          const donationRows = (Array.isArray(data) ? data : []).map(
+            (donation, index) => [
+              index + 1,
+              donation.donorName || "Anonymous",
+              donation.schoolName || "N/A",
+              donation.type || "N/A",
+              donation.type === "money"
+                ? `KES ${donation.amount || 0}`
+                : donation.items && Array.isArray(donation.items)
                 ? donation.items.join(", ")
                 : "N/A",
-            donation.status || "N/A",
-            donation.date ? new Date(donation.date).toLocaleDateString() : "N/A"
-          ]);
+              donation.status || "N/A",
+              donation.date
+                ? new Date(donation.date).toLocaleDateString()
+                : "N/A",
+            ]
+          );
           currentY = drawTable(donationHeaders, donationRows, currentY);
           break;
-  
+
         case "donors":
-          const donorHeaders = ["#", "Name", "Email", "Type", "Total Donations", "Last Donation"];
-          const donorRows = (Array.isArray(data) ? data : []).map((donor, index) => [
-            index + 1,
-            donor.name || "Unknown",
-            donor.email || "N/A",
-            donor.donorType || "N/A",
-            donor.totalDonations || 0,
-            donor.lastDonation
-              ? new Date(donor.lastDonation).toLocaleDateString()
-              : "N/A"
-          ]);
+          const donorHeaders = [
+            "#",
+            "Name",
+            "Email",
+            "Type",
+            "Total Donations",
+            "Last Donation",
+          ];
+          const donorRows = (Array.isArray(data) ? data : []).map(
+            (donor, index) => [
+              index + 1,
+              donor.name || "Unknown",
+              donor.email || "N/A",
+              donor.donorType || "N/A",
+              donor.totalDonations || 0,
+              donor.lastDonation
+                ? new Date(donor.lastDonation).toLocaleDateString()
+                : "N/A",
+            ]
+          );
           currentY = drawTable(donorHeaders, donorRows, currentY);
           break;
-  
+
         case "schools":
-          const schoolHeaders = ["#", "School", "Location", "Total Donations", "Pending Requests", "Last Donation"];
-          const schoolRows = (Array.isArray(data) ? data : []).map((school, index) => [
-            index + 1,
-            school.name || "Unknown School",
-            school.location || "N/A",
-            school.totalDonations || 0,
-            school.pendingRequests || 0,
-            school.lastDonation
-              ? new Date(school.lastDonation).toLocaleDateString()
-              : "N/A"
-          ]);
+          const schoolHeaders = [
+            "#",
+            "School",
+            "Location",
+            "Total Donations",
+            "Pending Requests",
+            "Last Donation",
+          ];
+          const schoolRows = (Array.isArray(data) ? data : []).map(
+            (school, index) => [
+              index + 1,
+              school.name || "Unknown School",
+              school.location || "N/A",
+              school.totalDonations || 0,
+              school.pendingRequests || 0,
+              school.lastDonation
+                ? new Date(school.lastDonation).toLocaleDateString()
+                : "N/A",
+            ]
+          );
           currentY = drawTable(schoolHeaders, schoolRows, currentY);
           break;
-  
+
         case "financial":
           // Summary section
           doc.setFontSize(12);
           doc.setFont("helvetica", "bold");
           doc.text("Financial Summary:", margin, currentY);
           currentY += 10;
-  
+
           doc.setFontSize(10);
           doc.setFont("helvetica", "normal");
           doc.text(
-            `Total Amount: KES ${data.summary?.totalAmount?.toLocaleString() || 0}`,
+            `Total Amount: KES ${
+              data.summary?.totalAmount?.toLocaleString() || 0
+            }`,
             margin + 5,
             currentY
           );
           currentY += 8;
           doc.text(
-            `Average Donation: KES ${data.summary?.averageDonation?.toLocaleString() || 0}`,
+            `Average Donation: KES ${
+              data.summary?.averageDonation?.toLocaleString() || 0
+            }`,
             margin + 5,
             currentY
           );
           currentY += 15;
-  
+
           // Transactions table
           const financialHeaders = ["#", "Donor", "School", "Amount", "Date"];
-          const financialRows = (data.donations && Array.isArray(data.donations) ? data.donations : []).map((donation, index) => [
+          const financialRows = (
+            data.donations && Array.isArray(data.donations)
+              ? data.donations
+              : []
+          ).map((donation, index) => [
             index + 1,
             donation.donorName || "Anonymous",
             donation.schoolName || "N/A",
             `KES ${donation.amount || 0}`,
-            donation.date ? new Date(donation.date).toLocaleDateString() : "N/A"
+            donation.date
+              ? new Date(donation.date).toLocaleDateString()
+              : "N/A",
           ]);
           currentY = drawTable(financialHeaders, financialRows, currentY);
           break;
-  
+
         case "activity":
           // Summary section
           doc.setFontSize(12);
           doc.setFont("helvetica", "bold");
           doc.text("Activity Summary:", margin, currentY);
           currentY += 10;
-  
+
           doc.setFontSize(10);
           doc.setFont("helvetica", "normal");
-          doc.text(
-            `New Users: ${data.newUsers || 0}`,
-            margin + 5,
-            currentY
-          );
+          doc.text(`New Users: ${data.newUsers || 0}`, margin + 5, currentY);
           currentY += 8;
           doc.text(
             `New Donations: ${data.newDonations || 0}`,
@@ -422,43 +449,65 @@ const ManageReports = () => {
             currentY
           );
           currentY += 15;
-  
+
           // User activity table
           const activityHeaders = ["#", "Name", "Role", "Last Active"];
-          const activityRows = (data.userActivity && Array.isArray(data.userActivity) ? data.userActivity : []).map((user, index) => [
+          const activityRows = (
+            data.userActivity && Array.isArray(data.userActivity)
+              ? data.userActivity
+              : []
+          ).map((user, index) => [
             index + 1,
             user.name || "Unknown",
             user.role || "User",
-            user.lastActive ? new Date(user.lastActive).toLocaleString() : "N/A"
+            user.lastActive
+              ? new Date(user.lastActive).toLocaleString()
+              : "N/A",
           ]);
           currentY = drawTable(activityHeaders, activityRows, currentY);
           break;
-  
+
         case "users":
-          const userHeaders = ["#", "Name", "Email", "Role", "Registered", "Last Login", "Status"];
-          const userRows = (Array.isArray(data) ? data : []).map((user, index) => [
-            index + 1,
-            user.name || "Unknown",
-            user.email || "N/A",
-            user.role || "User",
-            user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A",
-            user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "N/A",
-            user.status || "Active"
-          ]);
+          const userHeaders = [
+            "#",
+            "Name",
+            "Email",
+            "Role",
+            "Registered",
+            "Last Login",
+            "Status",
+          ];
+          const userRows = (Array.isArray(data) ? data : []).map(
+            (user, index) => [
+              index + 1,
+              user.name || "Unknown",
+              user.email || "N/A",
+              user.role || "User",
+              user.createdAt
+                ? new Date(user.createdAt).toLocaleDateString()
+                : "N/A",
+              user.lastLogin
+                ? new Date(user.lastLogin).toLocaleDateString()
+                : "N/A",
+              user.status || "Active",
+            ]
+          );
           currentY = drawTable(userHeaders, userRows, currentY);
           break;
-  
+
         default:
           // Generic table for unknown report types
           const headers = ["#", "Field", "Value"];
           const rows = (Array.isArray(data) ? data : []).map((item, index) => [
             index + 1,
             "Data",
-            typeof item === "object" ? JSON.stringify(item) : String(item || "N/A")
+            typeof item === "object"
+              ? JSON.stringify(item)
+              : String(item || "N/A"),
           ]);
           currentY = drawTable(headers, rows, currentY);
       }
-  
+
       // Add footer
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
@@ -468,8 +517,7 @@ const ManageReports = () => {
         doc.internal.pageSize.getHeight() - 10,
         { align: "center" }
       );
-  
-      // Save with unique name
+
       const fileName = getReportFileName(reportType, "pdf");
       doc.save(fileName);
     } catch (error) {

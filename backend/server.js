@@ -3,18 +3,18 @@ const dotenv = require("dotenv");
 const connectDB = require("./config/db.js");
 const cors = require("cors");
 
-dotenv.config(); // Load environment variables from .env file
-connectDB(); // Connect to MongoDB
+dotenv.config();
+connectDB(); 
 
-const app = express(); // Initialize the Express app
+const app = express(); 
 app.use(
   cors({
     origin: "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true, // Allow cookies & authentication headers
+    credentials: true,
   })
 );
-app.use(express.json()); // Middleware to parse incoming JSON data
+app.use(express.json()); 
 
 // Import Routes
 const userRoutes = require("./routes/userRoutes.js");
@@ -26,6 +26,7 @@ const adminRoutes = require("./routes/adminRoutes.js");
 const adminReportRoutes = require("./routes/adminReportRoutes.js");
 const ticketRoutes = require("./routes/ticketRoutes.js");
 const forgotPasswordRoutes = require("./routes/forgotPasswordRoutes.js");
+const messageRoutes = require("./routes/messageRoutes.js");
 
 // User Routes
 app.use("/api/users", userRoutes);
@@ -37,6 +38,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/admin/reports", adminReportRoutes);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/forgot-password", forgotPasswordRoutes);
+app.use("/api/messages", messageRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

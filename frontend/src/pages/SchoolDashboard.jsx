@@ -21,6 +21,7 @@ import SchoolsNotifications from "../components/SchoolsNotifications";
 import ReportsTab from "../components/ReportsTab";
 import SupportTab from "../components/SchoolSupport";
 import DonationRequest from "../components/DonationRequest";
+import MessageCenter from "../components/MessageCenter";
 import { API_URL } from "../config";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -55,12 +56,12 @@ const SchoolDashboard = () => {
   const [showActiveDonorsModal, setShowActiveDonorsModal] = useState(false);
   const [activeDonors, setActiveDonors] = useState([]);
   const [showProfileWarningModal, setShowProfileWarningModal] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchStats = async (userId) => {
     try {
       const token = localStorage.getItem("token");
 
-      // Fetch donations received with amounts
       const donationsRes = await fetch(
         `${API_URL}/api/schools/${userId}/donations-received`,
         {
@@ -69,12 +70,10 @@ const SchoolDashboard = () => {
       );
       const donationsData = await donationsRes.json();
 
-      // Calculate total donations in KSH
       const totalDonations = donationsData.reduce((sum, donation) => {
         return sum + (donation.amount || 0);
       }, 0);
 
-      // Fetch donation requests
       const requestsRes = await fetch(
         `${API_URL}/api/schools/${userId}/donation-requests`,
         {
@@ -83,7 +82,6 @@ const SchoolDashboard = () => {
       );
       const requestsData = await requestsRes.json();
 
-      // Fetch active donors
       const donorsRes = await fetch(
         `${API_URL}/api/schools/${userId}/active-donors`,
         {
@@ -104,6 +102,19 @@ const SchoolDashboard = () => {
       setActiveDonors(donorsData.activeDonors || []);
     } catch (error) {
       console.error("Error fetching stats:", error);
+    }
+  };
+
+  const fetchUnreadMessagesCount = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_URL}/api/messages/unread-count`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      setUnreadCount(data.count);
+    } catch (error) {
+      console.error("Error fetching unread messages count:", error);
     }
   };
 
@@ -201,7 +212,10 @@ const SchoolDashboard = () => {
 
     const intervalId = setInterval(() => {
       const userId = JSON.parse(localStorage.getItem("user"))?.id;
-      if (userId) fetchStats(userId);
+      if (userId) {
+        fetchStats(userId);
+        fetchUnreadMessagesCount();
+      }
     }, 30000);
 
     return () => clearInterval(intervalId);
@@ -641,17 +655,18 @@ const SchoolDashboard = () => {
                 eventKey="messages"
                 title={
                   <span>
-                    <FontAwesomeIcon
-                      icon={getTabIcon("messages")}
-                      className="me-2"
-                    />
-                    Messaging
+                    <FontAwesomeIcon icon={faEnvelope} className="me-2" />
+                    Messages
+                    {unreadCount > 0 && (
+                      <Badge bg="danger" pill className="ms-2">
+                        {unreadCount}
+                      </Badge>
+                    )}
                   </span>
                 }
               >
                 <div className="p-4">
-                  <h4>Message Center</h4>
-                  <p>Communicate with donors (to be implemented).</p>
+                  <MessageCenter userId={user?.id} />
                 </div>
               </Tab>
 

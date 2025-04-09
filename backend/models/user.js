@@ -49,10 +49,15 @@ const userSchema = new mongoose.Schema(
     },
     isProfileComplete: { type: Boolean, default: false },
     isVerified: { type: Boolean, default: false },
+    unreadMessages: {
+      // Moved inside the schema definition
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
-    discriminatorKey: "role", // Use "role" as the discriminator key
+    discriminatorKey: "role",
   }
 );
 
