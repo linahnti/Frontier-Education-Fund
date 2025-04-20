@@ -9,8 +9,9 @@ import {
   Card,
   ProgressBar,
   Badge,
+  Spinner,
 } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import assets from "../assets/images/assets";
 import { API_URL } from "../config";
@@ -41,8 +42,57 @@ const DonatePage = () => {
   const [step, setStep] = useState(1);
   const { darkMode } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [paymentStatus, setPaymentStatus] = useState(null);
 
-  // Fetch schools on component mount
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const reference = queryParams.get("reference");
+
+    if (reference) {
+      setIsLoading(true);
+      setPaymentStatus("verifying");
+
+      const verifyPayment = async () => {
+        try {
+          const token = localStorage.getItem("token");
+          const response = await axios.get(
+            `${API_URL}/api/paystack/verify?reference=${reference}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (
+            response.data &&
+            response.data.message === "Payment verified successfully"
+          ) {
+            setPaymentStatus("success");
+            setSuccess(
+              "Thank you for your generous donation! Your support will make a real difference."
+            );
+            setTimeout(() => navigate("/donor-dashboard"), 3000);
+          } else {
+            setPaymentStatus("error");
+            setError(
+              "We couldn't verify your payment. Please contact support if funds were deducted."
+            );
+          }
+        } catch (error) {
+          console.error("Error verifying payment:", error);
+          setPaymentStatus("error");
+          setError("Payment verification failed. Please contact support.");
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      verifyPayment();
+    }
+  }, [location.search, navigate]);
+
   useEffect(() => {
     const fetchSchools = async () => {
       setIsLoading(true);
@@ -93,13 +143,6 @@ const DonatePage = () => {
     }
 
     if (step === 3) {
-      if (
-        donationType === "money" &&
-        (!phoneNumber || phoneNumber.trim() === "")
-      ) {
-        setError("Phone number is required for M-Pesa payment.");
-        return false;
-      }
       setError(null);
       return true;
     }
@@ -160,36 +203,55 @@ const DonatePage = () => {
     }
   };
 
-  // Handle M-Pesa STK Push
   const handleMpesaPayment = async () => {
+    const user = JSON.parse(localStorage.getItem("user"));
     if (!validateStep()) return;
-
+  
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
-
+      if (!token) {
+        setError("Authentication required. Please login again.");
+        return;
+      }
+  
+      const payload = {
+        name: user.name, // Ensure this exists in your user object
+        email: user.email, // Ensure this exists in your user object
+        amount: amount,
+        callbackUrl: `${window.location.origin}/payment-complete`,
+        donorId: user.id,
+        schoolId: schoolId,
+        type: donationType,
+      };
+  
+      // Validation check
+      if (!payload.email || !payload.name) {
+        throw new Error("User information incomplete. Please update your profile.");
+      }
+  
       const response = await axios.post(
-        `${API_URL}/api/mpesa/stkpush`,
-        {
-          phoneNumber,
-          amount,
-        },
+        `${API_URL}/api/paystack/initialize`,
+        payload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         }
       );
-
-      if (response.status === 200) {
-        setSuccess(
-          "M-Pesa STK push initiated. Check your phone to complete the payment."
-        );
-        setTimeout(() => handleSubmit({ preventDefault: () => {} }), 100);
+  
+      if (response.data.status === "success") {
+        setSuccess("Payment initiated successfully!");
+        window.location.href = response.data.data.authorizationUrl;
       }
     } catch (error) {
-      console.error("Error initiating M-Pesa payment:", error);
-      setError("Failed to initiate M-Pesa payment. Please try again.");
+      console.error("Payment error:", error.response?.data || error.message);
+      setError(
+        error.response?.data?.message || 
+        error.message || 
+        "Failed to initiate payment. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -513,27 +575,6 @@ const DonatePage = () => {
               </Card.Body>
             </Card>
 
-            {donationType === "money" && (
-              <Form.Group className="mb-4">
-                <Form.Label className="fw-bold">
-                  <FontAwesomeIcon icon={faMobile} className="me-2" />
-                  M-Pesa Phone Number
-                </Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="e.g., 0712345678 or 0112345678"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="form-control-lg"
-                  required
-                />
-                <div className="text-muted mt-2 small">
-                  You'll receive an M-Pesa prompt on this phone to complete the
-                  payment
-                </div>
-              </Form.Group>
-            )}
-
             <Row className="mt-4">
               <Col xs={6}>
                 <Button
@@ -579,6 +620,160 @@ const DonatePage = () => {
     }
   };
 
+  if (paymentStatus === "success") {
+    return (
+      <div
+        style={{
+          backgroundImage: `url(${assets.background1})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "40px 0",
+        }}
+      >
+        <Container>
+          <Row className="justify-content-center">
+            <Col md={10} lg={8} xl={7}>
+              <Card
+                className="shadow-lg text-center p-5"
+                style={{
+                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  borderRadius: "15px",
+                }}
+              >
+                <div className="mb-4">
+                  <div
+                    className="rounded-circle mx-auto d-flex align-items-center justify-content-center"
+                    style={{
+                      width: "100px",
+                      height: "100px",
+                      backgroundColor: "#28a745",
+                      color: "white",
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faHandHoldingUsd} size="3x" />
+                  </div>
+                </div>
+                <h2 className="mb-3">Thank You for Your Donation!</h2>
+                <p className="lead mb-4">
+                  Your generous contribution will make a real difference.
+                </p>
+                <p className="text-muted">
+                  You will be redirected to your dashboard in a few seconds...
+                </p>
+                <Button
+                  variant="primary"
+                  className="mt-3"
+                  onClick={() => navigate("/donor-dashboard")}
+                >
+                  Go to Dashboard Now
+                </Button>
+              </Card>
+            </Col>
+          </Row>
+        </Container>
+      </div>
+    );
+  }
+
+  if (paymentStatus === "verifying") {
+    return (
+      <div
+        style={{
+          backgroundImage: `url(${assets.background1})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "40px 0",
+        }}
+      >
+        <Container>
+          <Row className="justify-content-center">
+            <Col md={10} lg={8} xl={7}>
+              <Card
+                className="shadow-lg text-center p-5"
+                style={{
+                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  borderRadius: "15px",
+                }}
+              >
+                <div className="mb-4">
+                  <Spinner
+                    animation="border"
+                    variant="primary"
+                    className="mb-3"
+                  />
+                </div>
+                <h2>Verifying your payment...</h2>
+                <p>Please wait while we confirm your donation.</p>
+              </Card>
+            </Col>
+          </Row>
+        </Container>
+      </div>
+    );
+  }
+
+  if (paymentStatus === "error") {
+    return (
+      <div
+        style={{
+          backgroundImage: `url(${assets.background1})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "40px 0",
+        }}
+      >
+        <Container>
+          <Row className="justify-content-center">
+            <Col md={10} lg={8} xl={7}>
+              <Card
+                className="shadow-lg"
+                style={{
+                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  borderRadius: "15px",
+                }}
+              >
+                <Card.Body className="p-5 text-center">
+                  <Alert variant="danger">
+                    <h3>Payment Verification Error</h3>
+                    <p>
+                      We couldn't verify your payment. This could be because:
+                    </p>
+                    <ul className="text-start">
+                      <li>The payment was cancelled</li>
+                      <li>
+                        There was a technical issue with the payment processor
+                      </li>
+                      <li>The transaction reference is missing or invalid</li>
+                    </ul>
+                  </Alert>
+                  <Button
+                    variant="primary"
+                    className="mt-3"
+                    onClick={() => navigate("/donor-dashboard")}
+                  >
+                    Return to Dashboard
+                  </Button>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </Container>
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
@@ -603,7 +798,6 @@ const DonatePage = () => {
                 overflow: "hidden",
               }}
             >
-              {/* Header with Progress Bar */}
               <Card.Header
                 className="text-center py-3"
                 style={{
@@ -631,7 +825,6 @@ const DonatePage = () => {
               </Card.Header>
 
               <Card.Body className="p-4">
-                {/* Error and Success Messages */}
                 {error && <Alert variant="danger">{error}</Alert>}
                 {success && <Alert variant="success">{success}</Alert>}
                 {isLoading && (

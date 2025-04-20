@@ -29,6 +29,7 @@ const EmailVerification = lazy(() => import("./components/EmailVerification"));
 const ResendVerification = lazy(() =>
   import("./components/ResendVerification")
 );
+const PaymentComplete = lazy(() => import("./pages/PaymentCompletePage"));
 
 // Loading Component
 const Loading = () => (
@@ -108,6 +109,10 @@ const App = () => {
 
             <Route element={<ProtectedRoute />}>
               <Route path="/donate" element={<Donate />} />
+            </Route>
+
+            <Route element={<PaymentComplete />}>
+              <Route path="/payment-complete" element={<PaymentComplete />} />
             </Route>
           </Route>
 
