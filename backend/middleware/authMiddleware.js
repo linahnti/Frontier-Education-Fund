@@ -7,8 +7,8 @@ const protect = async (req, res, next) => {
   // Check if authorization header exists and starts with "Bearer"
   if (req.headers.authorization?.startsWith("Bearer")) {
     try {
-      token = req.headers.authorization.split(" ")[1]; // Extract token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY); // Verify token
+      token = req.headers.authorization.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
       // Fetch user without password
       const user = await User.findById(decoded.id).select("-password");
@@ -17,8 +17,11 @@ const protect = async (req, res, next) => {
         return res.status(404).json({ message: "User not found" });
       }
 
-      req.user = user; // Attach user data to request
-      next(); // Continue to the next middleware
+      req.user = {
+        id: decoded.id,
+        role: decoded.role,
+      };
+      next();
     } catch (error) {
       console.error("Token validation error:", error.message);
 
@@ -49,7 +52,7 @@ const protect = async (req, res, next) => {
 };
 
 const admin = (req, res, next) => {
-  if (req.user && req.user.role === "Admin") {
+  if (req.user && req.user.role.toLowerCase() === "admin") {
     next();
   } else {
     return res

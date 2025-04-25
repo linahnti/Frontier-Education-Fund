@@ -14,8 +14,8 @@ const getAllDonations = async (req, res) => {
     const donations = donors.flatMap((donor) =>
       donor.donationsMade.map((donation) => ({
         ...donation.toObject(),
-        donorId: donation.donorId, // Include populated donorId
-        schoolId: donation.schoolId, // Include populated schoolId
+        donorId: donation.donorId, 
+        schoolId: donation.schoolId, 
       }))
     );
 

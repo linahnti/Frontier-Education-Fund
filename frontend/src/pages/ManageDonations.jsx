@@ -85,36 +85,6 @@ const ManageDonations = () => {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  const handleApprove = async (donationId) => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.put(
-        `${API_URL}/api/admin/donations/${donationId}/approve`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.status === 200) {
-        // Update the local state directly instead of relying on response
-        setDonations((prevDonations) =>
-          prevDonations.map((donation) =>
-            donation._id === donationId
-              ? { ...donation, status: "Approved" }
-              : donation
-          )
-        );
-        showTemporaryFeedback("Donation approved successfully");
-      }
-    } catch (error) {
-      console.error("Error approving donation:", error);
-      showTemporaryFeedback("Error approving donation", "danger");
-    }
-  };
-
   // Handle donation completion
   const handleComplete = async (donationId) => {
     try {
@@ -217,9 +187,6 @@ const ManageDonations = () => {
                 <Dropdown.Item onClick={() => setStatusFilter("Pending")}>
                   Pending
                 </Dropdown.Item>
-                <Dropdown.Item onClick={() => setStatusFilter("Approved")}>
-                  Approved
-                </Dropdown.Item>
                 <Dropdown.Item onClick={() => setStatusFilter("Completed")}>
                   Completed
                 </Dropdown.Item>
@@ -282,36 +249,27 @@ const ManageDonations = () => {
                     bg={
                       donation.status === "Completed"
                         ? "success"
-                        : donation.status === "Approved"
-                        ? "primary"
+                        : donation.type === "money"
+                        ? "success"
                         : "warning"
                     }
                   >
-                    {donation.status}
+                    {donation.type === "money" ? "Completed" : donation.status}
                   </Badge>
                 </td>
                 <td>
                   <ButtonGroup className="d-flex flex-wrap">
-                    {donation.status === "Pending" && (
-                      <Button
-                        variant="success"
-                        size="sm"
-                        className="m-1"
-                        onClick={() => handleApprove(donation._id)}
-                      >
-                        Approve
-                      </Button>
-                    )}
-                    {donation.status === "Approved" && (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        className="m-1"
-                        onClick={() => handleComplete(donation._id)}
-                      >
-                        Complete
-                      </Button>
-                    )}
+                    {donation.type === "items" &&
+                      donation.status === "Pending" && (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          className="m-1"
+                          onClick={() => handleComplete(donation._id)}
+                        >
+                          Mark as Completed
+                        </Button>
+                      )}
                     <Button
                       variant="danger"
                       size="sm"

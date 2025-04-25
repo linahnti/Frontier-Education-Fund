@@ -44,7 +44,12 @@ router.put(
   admin,
   rejectDonationRequest
 );
-router.delete("/:requestId", protect, admin, deleteDonationRequest);
+router.delete(
+  "/donation-requests/:requestId",
+  protect,
+  admin,
+  deleteDonationRequest
+);
 router.get(
   "/school-registration-stats",
   protect,

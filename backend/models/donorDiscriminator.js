@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const User = require("./user"); // Import the base User model
+const User = require("./user"); 
 
 // Donor schema
 const donorSchema = new mongoose.Schema({
@@ -52,7 +52,7 @@ const donorSchema = new mongoose.Schema({
       items: [{ type: String }],
       status: {
         type: String,
-        enum: ["Pending", "Approved", "Completed", "Rejected"],
+        enum: ["Pending", "Completed"],
         default: "Pending",
       },
       date: { type: Date, default: Date.now },
@@ -100,8 +100,7 @@ const donorSchema = new mongoose.Schema({
   },
   date: { type: Date, default: Date.now },
 });
-// Create Donor discriminator
+
 const Donor = User.discriminator("Donor", donorSchema);
 
-// Export Donor discriminator
 module.exports = Donor;

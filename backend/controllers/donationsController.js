@@ -4,14 +4,12 @@ const createDonation = async (req, res) => {
   const { donorId, schoolId, type, amount, items, preferredDate } = req.body;
 
   try {
-    // Validate the donation amount if the donation type is money
     if (type === "money" && (isNaN(amount) || amount <= 0)) {
       return res.status(400).json({
         message: "Invalid donation amount. Amount must be greater than zero.",
       });
     }
 
-    // Validate items and preferred date for item donations
     if (type === "items") {
       if (!items || !Array.isArray(items) || items.length === 0) {
         return res
@@ -40,12 +38,14 @@ const createDonation = async (req, res) => {
         .json({ message: "School not found or invalid role" });
     }
 
-    // Create donation object based on type
+    // Set status based on donation type
+    const status = type === "money" ? "Completed" : "Pending";
+
     const donation = {
       donorId,
       schoolId,
       type,
-      status: "Pending",
+      status,
       date: new Date(),
     };
 
@@ -54,40 +54,20 @@ const createDonation = async (req, res) => {
     } else if (type === "items") {
       donation.items = items;
       donation.delivery = {
-        address: school.address, // Use the school's address as the delivery address
+        address: school.address,
         preferredDate: new Date(preferredDate),
         status: "Not Started",
       };
     }
 
-    // Add donation to donor's donationsMade
     donor.donationsMade.push(donation);
-
-    donor.notifications.push({
-      message: `Your donation to ${school.schoolName} has been submitted...`,
-      schoolName: school.schoolName,
-      schoolId: school._id,
-      type: "donation_submission",
-      date: new Date(),
-      read: false,
-    });
-
     await donor.save();
 
-    // Add donation to school's donationsReceived
     school.donationsReceived.push({
       donorId,
       item: type === "money" ? `KES ${amount}` : items.join(", "),
-      status: "Pending",
+      status,
       date: new Date(),
-    });
-
-    school.notifications.push({
-      message: `You received a new donation from ${donor.name}.`,
-      type: "new_donation",
-      donorId: donor._id,
-      date: new Date(),
-      read: false,
     });
     await school.save();
 

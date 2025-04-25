@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Button, Table } from "react-bootstrap";
+import { Button, Table, Card, Badge } from "react-bootstrap";
 import { jsPDF } from "jspdf";
 import { useTheme } from "../contexts/ThemeContext";
 import "../styles/ReportsTab.css";
 import assets from "../assets/images/assets";
 import { API_URL } from "../config";
+import DonationSummaryChart from "./DonationSummaryChart";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faDownload } from "@fortawesome/free-solid-svg-icons";
 
 const ReportsTab = ({ userId, role }) => {
   const { darkMode } = useTheme();
@@ -12,7 +15,8 @@ const ReportsTab = ({ userId, role }) => {
   const [requests, setRequests] = useState([]);
   const [userName, setUserName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("All");
+  const [donationFilterStatus, setDonationFilterStatus] = useState("All");
+  const [requestFilterStatus, setRequestFilterStatus] = useState("All");
 
   useEffect(() => {
     const storedUserName = localStorage.getItem("userName");
@@ -61,24 +65,19 @@ const ReportsTab = ({ userId, role }) => {
         const result = await response.json();
 
         if (role === "School") {
-          console.log("School reports data:", result);
-
-          setData([
+          // Process school donations - convert Approved to Received for money donations
+          const processedDonations = [
             ...result.pendingDonations.map((item) => ({
               ...item,
               status: "Pending",
             })),
-            ...result.approvedDonations.map((item) => ({
-              ...item,
-              status: "Approved",
-            })),
-
             ...result.receivedDonations.map((item) => ({
               ...item,
               status: "Received",
             })),
-          ]);
+          ];
 
+          setData(processedDonations);
           setRequests([
             ...result.pendingRequests.map((item) => ({
               ...item,
@@ -93,11 +92,15 @@ const ReportsTab = ({ userId, role }) => {
               status: "Completed",
             })),
           ]);
-
-          console.log("Processed donations:", data);
-          console.log("Processed requests:", requests);
         } else {
-          setData(result.donations || []);
+          // Process donor donations - convert Approved to Completed for money donations
+          const processedDonations = (result.donations || []).map(
+            (donation) => ({
+              ...donation,
+              status: donation.type === "money" ? "Completed" : donation.status,
+            })
+          );
+          setData(processedDonations);
         }
       } catch (error) {
         console.error("Error fetching reports:", error);
@@ -107,61 +110,58 @@ const ReportsTab = ({ userId, role }) => {
     fetchReports();
   }, [userId, role]);
 
-  const getFilteredData = (dataArray, type) => {
-    return dataArray.filter((item) => {
+  const getFilteredDonations = () => {
+    return data.filter((item) => {
       const statusMatch =
-        filterStatus === "All" || item.status === filterStatus;
+        donationFilterStatus === "All" || item.status === donationFilterStatus;
 
-      let searchMatch = true;
-      if (searchTerm.trim() !== "") {
-        const searchTermLower = searchTerm.toLowerCase();
-
-        if (type === "donation") {
-          searchMatch =
-            (item.schoolName &&
-              item.schoolName.toLowerCase().includes(searchTermLower)) ||
-            (item.donorName &&
-              item.donorName.toLowerCase().includes(searchTermLower)) ||
-            (item.item && item.item.toLowerCase().includes(searchTermLower)) ||
-            (item.status &&
-              item.status.toLowerCase().includes(searchTermLower)) ||
-            (item.date &&
-              new Date(item.date).toLocaleDateString().includes(searchTerm)) ||
-            (item.type === "money" &&
-              `KES ${item.amount || 0}`.includes(searchTerm)) ||
-            (item.items &&
-              item.items.join(", ").toLowerCase().includes(searchTermLower));
-        } else {
-          searchMatch =
-            item.donationNeeds?.some((need) =>
-              need.toLowerCase().includes(searchTermLower)
-            ) ||
-            (item.status &&
-              item.status.toLowerCase().includes(searchTermLower)) ||
-            (item.date &&
-              new Date(item.date).toLocaleDateString().includes(searchTerm));
-        }
-      }
+      const searchTermLower = searchTerm.toLowerCase();
+      const searchMatch =
+        searchTerm === "" ||
+        (item.schoolName &&
+          item.schoolName.toLowerCase().includes(searchTermLower)) ||
+        (item.donorName &&
+          item.donorName.toLowerCase().includes(searchTermLower)) ||
+        (item.item && item.item.toLowerCase().includes(searchTermLower)) ||
+        (item.status && item.status.toLowerCase().includes(searchTermLower)) ||
+        (item.date &&
+          new Date(item.date).toLocaleDateString().includes(searchTerm)) ||
+        (item.type === "money" &&
+          `KES ${item.amount || 0}`.includes(searchTerm)) ||
+        (item.items &&
+          item.items.join(", ").toLowerCase().includes(searchTermLower));
 
       return statusMatch && searchMatch;
     });
   };
 
-  const filterDataByStatus = (status) => {
-    return getFilteredData(
-      data.filter((item) => item.status === status),
-      "donation"
-    );
+  const getFilteredRequests = () => {
+    return requests.filter((request) => {
+      const statusMatch =
+        requestFilterStatus === "All" || request.status === requestFilterStatus;
+
+      const searchTermLower = searchTerm.toLowerCase();
+      const searchMatch =
+        searchTerm === "" ||
+        (request.donationNeeds &&
+          request.donationNeeds
+            .join(", ")
+            .toLowerCase()
+            .includes(searchTermLower)) ||
+        (request.status &&
+          request.status.toLowerCase().includes(searchTermLower)) ||
+        (request.date &&
+          new Date(request.date).toLocaleDateString().includes(searchTerm));
+
+      return statusMatch && searchMatch;
+    });
   };
 
   const getReportTitle = (status, reportType) => {
     const entityType = role === "Donor" ? "Donor" : "School";
-
-    if (reportType === "donation") {
-      return `${entityType} Report: ${status} Donations`;
-    } else {
-      return `${entityType} Report: ${status} Donation Requests`;
-    }
+    return reportType === "donation"
+      ? `${entityType} Report: ${status} Donations`
+      : `${entityType} Report: ${status} Requests`;
   };
 
   const getReportSubtitle = (status, reportType) => {
@@ -172,56 +172,48 @@ const ReportsTab = ({ userId, role }) => {
     });
 
     if (reportType === "donation") {
-      if (role === "Donor") {
-        return `Summary of ${status.toLowerCase()} donations made as of ${date}`;
-      } else {
-        return `Summary of ${status.toLowerCase()} donations received as of ${date}`;
-      }
-    } else {
-      return `Summary of ${status.toLowerCase()} donation requests as of ${date}`;
+      return role === "Donor"
+        ? `Summary of ${status.toLowerCase()} donations made as of ${date}`
+        : `Summary of ${status.toLowerCase()} donations received as of ${date}`;
     }
+    return `Summary of ${status.toLowerCase()} donation requests as of ${date}`;
   };
 
-  const downloadPDF = (status) => {
-    const isDonationReport = !status.includes("Requests");
+  const downloadPDF = (reportName) => {
+    const isDonationReport = !reportName.includes("Requests");
+    const status = reportName
+      .replace(" Requests", "")
+      .replace(" Donations", "");
+    const reportType = isDonationReport ? "donation" : "request";
 
-    let dataToExport;
-    let reportType = isDonationReport ? "donation" : "request";
-    const requestStatus = status.split(" ")[0];
-
-    if (isDonationReport) {
-      dataToExport = data.filter((item) => item.status === status);
-    } else {
-      dataToExport = requests.filter(
-        (request) => request.status === requestStatus
-      );
-    }
+    const dataToExport = isDonationReport
+      ? getFilteredDonations().filter((item) => item.status === status)
+      : getFilteredRequests().filter((request) => request.status === status);
 
     const doc = new jsPDF();
 
+    // Add logo
     try {
       const img = new Image();
       img.src = assets.favicon;
-
-      img.onload = function () {
+      img.onload = () => {
         doc.addImage(img, "PNG", 14, 10, 20, 20);
-
-        completeReport();
+        generateReportContent();
       };
-
-      img.onerror = function () {
+      img.onerror = () => {
         console.error("Failed to load logo");
-        completeReport();
+        generateReportContent();
       };
     } catch (error) {
       console.error("Error adding logo:", error);
-      completeReport();
+      generateReportContent();
     }
 
-    function completeReport() {
+    function generateReportContent() {
       const title = getReportTitle(status, reportType);
       const subtitle = getReportSubtitle(status, reportType);
 
+      // Header
       doc.setFontSize(18);
       doc.setTextColor(40, 40, 40);
       doc.text(title, 105, 20, { align: "center" });
@@ -238,12 +230,70 @@ const ReportsTab = ({ userId, role }) => {
       doc.setDrawColor(200, 200, 200);
       doc.line(14, 52, 196, 52);
 
+      // Table configuration
       const tableConfig = isDonationReport
-        ? getDonationTableConfig(role)
-        : getRequestTableConfig();
+        ? role === "Donor"
+          ? {
+              headers: ["School", "Type", "Amount/Items", "Status", "Date"],
+              columnPositions: [14, 60, 90, 140, 170],
+              formatRow: (doc, item, yPos, positions) => {
+                doc.text(item.schoolName || "N/A", positions[0], yPos);
+                doc.text(item.type || "N/A", positions[1], yPos);
+                doc.text(
+                  item.type === "money"
+                    ? `KES ${item.amount || 0}`
+                    : item.items?.join(", ") || "N/A",
+                  positions[2],
+                  yPos
+                );
+                doc.text(item.status, positions[3], yPos);
+                doc.text(
+                  new Date(item.date).toLocaleDateString(),
+                  positions[4],
+                  yPos
+                );
+              },
+            }
+          : {
+              headers: ["Donor", "Item", "Status", "Date"],
+              columnPositions: [14, 70, 120, 160],
+              formatRow: (doc, item, yPos, positions) => {
+                doc.text(item.donorName || "N/A", positions[0], yPos);
+                doc.text(item.item || "N/A", positions[1], yPos);
+                doc.text(item.status, positions[2], yPos);
+                doc.text(
+                  new Date(item.date).toLocaleDateString(),
+                  positions[3],
+                  yPos
+                );
+              },
+            }
+        : {
+            headers: ["Needs", "Status", "Date"],
+            columnPositions: [14, 120, 160],
+            formatRow: (doc, item, yPos, positions) => {
+              const needsText = doc.splitTextToSize(
+                item.donationNeeds?.join(", ") || "N/A",
+                90
+              );
+              doc.text(needsText[0], positions[0], yPos);
+              if (needsText.length > 1) {
+                for (let i = 1; i < needsText.length; i++) {
+                  yPos += 7;
+                  doc.text(needsText[i], positions[0], yPos);
+                }
+              }
+              doc.text(item.status, positions[1], yPos);
+              doc.text(
+                new Date(item.date).toLocaleDateString(),
+                positions[2],
+                yPos
+              );
+            },
+          };
 
+      // Generate table
       let yPos = 60;
-
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 0);
       doc.setFont(undefined, "bold");
@@ -260,13 +310,11 @@ const ReportsTab = ({ userId, role }) => {
 
       if (dataToExport.length === 0) {
         doc.text("No records found", 14, yPos);
-        yPos += 10;
       } else {
         dataToExport.forEach((item, index) => {
           if (yPos > 270) {
             doc.addPage();
             yPos = 20;
-
             doc.setFont(undefined, "bold");
             tableConfig.headers.forEach((header, i) => {
               doc.text(header, tableConfig.columnPositions[i], yPos);
@@ -285,107 +333,32 @@ const ReportsTab = ({ userId, role }) => {
         });
       }
 
-      addReportFooter(doc);
+      // Footer
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      const missionText = [
+        "To ensure quality education for every child by bridging the gap",
+        "between donors and underprivileged schools through a transparent",
+        "platform that fosters impactful change and brighter futures.",
+      ];
+      let missionY = 280;
+      missionText.forEach((line) => {
+        doc.text(line, 105, missionY, { align: "center" });
+        missionY += 5;
+      });
+      doc.setFont(undefined, "italic");
+      doc.text("© 2025 Frontier Education Fund", 105, missionY + 5, {
+        align: "center",
+      });
 
-      const formattedStatus = status.replace(" ", "_");
-      const fileName = isDonationReport
-        ? `${role}_${formattedStatus}_Donations_${Date.now()}.pdf`
-        : `School_${formattedStatus}_Requests_${Date.now()}.pdf`;
-
-      doc.save(fileName);
+      doc.save(`${reportName.replace(" ", "_")}_${Date.now()}.pdf`);
     }
   };
 
-  const getDonationTableConfig = (role) => {
-    if (role === "Donor") {
-      return {
-        headers: ["School Name", "Type", "Amount/Items", "Status", "Date"],
-        columnPositions: [14, 60, 90, 140, 170],
-        formatRow: (doc, item, yPos, positions) => {
-          doc.text(item.schoolName || "N/A", positions[0], yPos);
-          doc.text(item.type || "N/A", positions[1], yPos);
-          doc.text(
-            item.type === "money"
-              ? `KES ${item.amount || 0}`
-              : item.items?.join(", ") || "N/A",
-            positions[2],
-            yPos
-          );
-          doc.text(item.status, positions[3], yPos);
-          doc.text(
-            new Date(item.date).toLocaleDateString(),
-            positions[4],
-            yPos
-          );
-        },
-      };
-    } else {
-      return {
-        headers: ["Donor Name", "Item", "Status", "Date"],
-        columnPositions: [14, 70, 120, 160],
-        formatRow: (doc, item, yPos, positions) => {
-          doc.text(item.donorName || "N/A", positions[0], yPos);
-          doc.text(item.item || "N/A", positions[1], yPos);
-          doc.text(item.status, positions[2], yPos);
-          doc.text(
-            new Date(item.date).toLocaleDateString(),
-            positions[3],
-            yPos
-          );
-        },
-      };
-    }
-  };
-
-  const getRequestTableConfig = () => {
-    return {
-      headers: ["Needs", "Status", "Date"],
-      columnPositions: [14, 120, 160],
-      formatRow: (doc, item, yPos, positions) => {
-        const needsText = doc.splitTextToSize(
-          item.donationNeeds?.join(", ") || "N/A",
-          90
-        );
-
-        doc.text(needsText[0], positions[0], yPos);
-
-        if (needsText.length > 1) {
-          for (let i = 1; i < needsText.length; i++) {
-            yPos += 7;
-            doc.text(needsText[i], positions[0], yPos);
-          }
-        }
-
-        doc.text(item.status, positions[1], yPos);
-        doc.text(new Date(item.date).toLocaleDateString(), positions[2], yPos);
-      },
-    };
-  };
-
-  const addReportFooter = (doc) => {
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-
-    const missionText = [
-      "To ensure quality education for every child by bridging the gap",
-      "between donors and underprivileged schools through a transparent",
-      "platform that fosters impactful change and brighter futures.",
-    ];
-
-    let missionY = 280;
-    missionText.forEach((line) => {
-      doc.text(line, 105, missionY, { align: "center" });
-      missionY += 5;
-    });
-
-    doc.setFont(undefined, "italic");
-    doc.text("© 2025 Frontier Education Fund", 105, missionY + 5, {
-      align: "center",
-    });
-  };
-
-  const renderTable = (status) => {
-    const filteredData = filterDataByStatus(status);
+  const renderDonationTable = (status) => {
+    const filteredData = getFilteredDonations().filter(
+      (item) => item.status === status
+    );
     const title = getReportTitle(status, "donation");
 
     return (
@@ -402,7 +375,7 @@ const ReportsTab = ({ userId, role }) => {
             <tr>
               {role === "Donor" ? (
                 <>
-                  <th>School Name</th>
+                  <th>School</th>
                   <th>Type</th>
                   <th>Amount/Items</th>
                   <th>Status</th>
@@ -410,7 +383,7 @@ const ReportsTab = ({ userId, role }) => {
                 </>
               ) : (
                 <>
-                  <th>Donor Name</th>
+                  <th>Donor</th>
                   <th>Item</th>
                   <th>Status</th>
                   <th>Date</th>
@@ -422,7 +395,7 @@ const ReportsTab = ({ userId, role }) => {
             {filteredData.length === 0 ? (
               <tr>
                 <td colSpan={role === "Donor" ? 5 : 4} className="text-center">
-                  No donations found
+                  No {status.toLowerCase()} donations found
                 </td>
               </tr>
             ) : (
@@ -437,14 +410,30 @@ const ReportsTab = ({ userId, role }) => {
                           ? `KES ${item.amount || 0}`
                           : item.items?.join(", ") || "N/A"}
                       </td>
-                      <td>{item.status}</td>
+                      <td>
+                        <Badge
+                          bg={
+                            item.status === "Completed" ? "success" : "warning"
+                          }
+                        >
+                          {item.status}
+                        </Badge>
+                      </td>
                       <td>{new Date(item.date).toLocaleDateString()}</td>
                     </>
                   ) : (
                     <>
                       <td>{item.donorName || "N/A"}</td>
                       <td>{item.item || "N/A"}</td>
-                      <td>{item.status}</td>
+                      <td>
+                        <Badge
+                          bg={
+                            item.status === "Received" ? "success" : "warning"
+                          }
+                        >
+                          {item.status}
+                        </Badge>
+                      </td>
                       <td>{new Date(item.date).toLocaleDateString()}</td>
                     </>
                   )}
@@ -453,83 +442,102 @@ const ReportsTab = ({ userId, role }) => {
             )}
           </tbody>
         </Table>
-        <Button variant="primary" onClick={() => downloadPDF(status)}>
-          <i className="bi bi-download"></i> Download Report
+        <Button
+          variant="primary"
+          onClick={() => downloadPDF(`${status} Donations`)}
+          className="mt-2"
+        >
+          <FontAwesomeIcon icon={faDownload} className="me-2" />
+          Download Report
         </Button>
       </div>
     );
   };
 
-  const renderDonationRequests = () => {
-    const statuses = ["Pending", "Approved", "Completed"];
+  const renderRequestTable = (status) => {
+    const filteredRequests = getFilteredRequests().filter(
+      (request) => request.status === status
+    );
+    const title = getReportTitle(status, "request");
 
     return (
       <div className="mt-4">
-        <h4>Donation Requests</h4>
-        {statuses.map((status) => {
-          const filteredRequests = getFilteredData(
-            requests.filter((request) => request.status === status),
-            "request"
-          );
-          const title = getReportTitle(status, "request");
-
-          return (
-            <div key={status} className="mb-4">
-              <h5>{title}</h5>
-              <Table
-                striped
-                bordered
-                hover
-                responsive
-                className={darkMode ? "table-dark" : ""}
-              >
-                <thead>
-                  <tr>
-                    <th>Needs</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRequests.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="text-center">
-                        No requests found
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredRequests.map((request, index) => (
-                      <tr key={index}>
-                        <td>{request.donationNeeds?.join(", ") || "N/A"}</td>
-                        <td>{request.status}</td>
-                        <td>{new Date(request.date).toLocaleDateString()}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </Table>
-              <Button
-                variant="primary"
-                onClick={() => downloadPDF(`${status} Requests`)}
-              >
-                <i className="bi bi-download"></i> Download Report
-              </Button>
-            </div>
-          );
-        })}
+        <h4>{title}</h4>
+        <Table
+          striped
+          bordered
+          hover
+          responsive
+          className={darkMode ? "table-dark" : ""}
+        >
+          <thead>
+            <tr>
+              <th>Needs</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredRequests.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="text-center">
+                  No {status.toLowerCase()} requests found
+                </td>
+              </tr>
+            ) : (
+              filteredRequests.map((request, index) => (
+                <tr key={index}>
+                  <td>{request.donationNeeds?.join(", ") || "N/A"}</td>
+                  <td>
+                    <Badge
+                      bg={
+                        request.status === "Completed"
+                          ? "success"
+                          : request.status === "Approved"
+                          ? "primary"
+                          : "warning"
+                      }
+                    >
+                      {request.status}
+                    </Badge>
+                  </td>
+                  <td>{new Date(request.date).toLocaleDateString()}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </Table>
+        <Button
+          variant="primary"
+          onClick={() => downloadPDF(`${status} Requests`)}
+          className="mt-2"
+        >
+          <FontAwesomeIcon icon={faDownload} className="me-2" />
+          Download Report
+        </Button>
       </div>
     );
   };
 
   return (
     <div className="reports-container">
-      {/* Search and Filter UI - Updated styling */}
+      {/* Donation Summary Chart */}
+      <Card className="mb-4">
+        <Card.Header>
+          <h5>Donation Summary</h5>
+        </Card.Header>
+        <Card.Body>
+          <DonationSummaryChart donations={data} />
+        </Card.Body>
+      </Card>
+
+      {/* Search and Filter UI */}
       <div className="search-filter-container mb-4">
         <div className="search-container">
           <input
             type="text"
             className="form-control search-input"
-            placeholder="Search by name, item, amount, status, or date..."
+            placeholder="Search by name, item, needs, amount, status, or date..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
@@ -538,103 +546,72 @@ const ReportsTab = ({ userId, role }) => {
             }}
           />
         </div>
-        <div className="filter-container">
+      </div>
+
+      {/* Donations Section */}
+      <div className="donations-section mb-5">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h4>Your {role === "Donor" ? "Donations" : "Received Donations"}</h4>
           <select
             className={`form-select status-filter ${
               darkMode ? "dark-filter" : ""
             }`}
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            value={donationFilterStatus}
+            onChange={(e) => setDonationFilterStatus(e.target.value)}
+            style={{ width: "200px" }}
           >
             <option value="All">All Statuses</option>
             <option value="Pending">Pending</option>
-            <option value="Approved">Approved</option>
-            <option value="Completed">Completed</option>
-            {role === "School" && <option value="Received">Received</option>}
+            {role === "Donor" ? (
+              <option value="Completed">Completed</option>
+            ) : (
+              <option value="Received">Received</option>
+            )}
           </select>
         </div>
+
+        {donationFilterStatus === "All" ? (
+          <>
+            {renderDonationTable("Pending")}
+            {role === "Donor"
+              ? renderDonationTable("Completed")
+              : renderDonationTable("Received")}
+          </>
+        ) : (
+          renderDonationTable(donationFilterStatus)
+        )}
       </div>
 
-      {/* Conditional rendering based on filterStatus */}
-      {filterStatus === "All" ? (
-        <>
-          {role === "Donor" ? (
+      {/* Requests Section (for Schools) */}
+      {role === "School" && (
+        <div className="requests-section">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h4>Donation Requests</h4>
+            <select
+              className={`form-select status-filter ${
+                darkMode ? "dark-filter" : ""
+              }`}
+              value={requestFilterStatus}
+              onChange={(e) => setRequestFilterStatus(e.target.value)}
+              style={{ width: "200px" }}
+            >
+              <option value="All">All Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+
+          {requestFilterStatus === "All" ? (
             <>
-              {renderTable("Pending")}
-              {renderTable("Approved")}
-              {renderTable("Completed")}
+              {renderRequestTable("Pending")}
+              {renderRequestTable("Approved")}
+              {renderRequestTable("Completed")}
             </>
           ) : (
-            <>
-              {renderTable("Pending")}
-              {renderTable("Approved")}
-              {renderTable("Received")}
-              {renderDonationRequests()}
-            </>
+            renderRequestTable(requestFilterStatus)
           )}
-        </>
-      ) : (
-        <>
-          {filterStatus === "Pending" && renderTable("Pending")}
-          {filterStatus === "Approved" && renderTable("Approved")}
-          {filterStatus === "Completed" && renderTable("Completed")}
-          {filterStatus === "Received" && renderTable("Received")}
-          {/* For donation requests when school */}
-          {role === "School" &&
-            ["Pending", "Approved", "Completed"].includes(filterStatus) && (
-              <div className="mt-4">
-                <h4>Donation Requests - {filterStatus}</h4>
-                <Table
-                  striped
-                  bordered
-                  hover
-                  responsive
-                  className={darkMode ? "table-dark" : ""}
-                >
-                  <thead className={darkMode ? "table-dark" : ""}>
-                    <tr>
-                      <th>Needs</th>
-                      <th>Status</th>
-                      <th>Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {getFilteredData(
-                      requests.filter(
-                        (request) => request.status === filterStatus
-                      ),
-                      "request"
-                    ).length === 0 ? (
-                      <tr>
-                        <td colSpan={3} className="text-center">
-                          No {filterStatus.toLowerCase()} requests found
-                        </td>
-                      </tr>
-                    ) : (
-                      getFilteredData(
-                        requests.filter(
-                          (request) => request.status === filterStatus
-                        ),
-                        "request"
-                      ).map((request, index) => (
-                        <tr key={index}>
-                          <td>{request.donationNeeds?.join(", ") || "N/A"}</td>
-                          <td>{request.status}</td>
-                          <td>{new Date(request.date).toLocaleDateString()}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </Table>
-                <Button
-                  variant="primary"
-                  onClick={() => downloadPDF(`${filterStatus} Requests`)}
-                >
-                  <i className="bi bi-download"></i> Download Report
-                </Button>
-              </div>
-            )}
-        </>
+        </div>
       )}
     </div>
   );

@@ -53,8 +53,13 @@ const DashboardOverview = () => {
             }),
           ]);
 
+        const verifiedPayments = donationsRes.data.filter(
+          (d) => d.type === "money" && d.paymentReference
+        ).length;
+
+        // Calculate pending requests
         const pendingRequests = requestsRes.data.filter(
-          (req) => req.status === "Pending"
+          (request) => request.status === "Pending"
         ).length;
 
         // Group school registrations by month
@@ -66,7 +71,7 @@ const DashboardOverview = () => {
 
         setStats({
           totalDonations: donationsRes.data.length,
-          pendingRequests,
+          pendingRequests, // Now using the properly defined variable
           totalSchools: schoolsRes.data.length,
           totalUsers: usersRes.data.length,
           recentDonations: donationsRes.data.slice(0, 5),

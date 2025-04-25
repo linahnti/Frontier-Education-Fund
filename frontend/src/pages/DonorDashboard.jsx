@@ -11,8 +11,6 @@ import {
   Card,
   Row,
   Col,
-  Form,
-  InputGroup,
 } from "react-bootstrap";
 import "../styles/Modal.css";
 import { useTheme } from "../contexts/ThemeContext";
@@ -56,11 +54,9 @@ const DonorDashboard = () => {
     total: 0,
     completed: 0,
     pending: 0,
-    approved: 0,
   });
-  const [unreadCount, setUnreadCount] = useState(0); // Already present in your code
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  // Fetch user data from localStorage on component mount
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -75,7 +71,6 @@ const DonorDashboard = () => {
     setLoading(false);
   }, []);
 
-  // Fetch notifications from the backend
   const fetchNotifications = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -99,7 +94,6 @@ const DonorDashboard = () => {
       const data = await response.json();
       setNotifications(data.notifications);
 
-      // Calculate the number of new notifications (unread)
       const newNotifications = data.notifications.filter((note) => !note.read);
       setNewNotificationsCount(newNotifications.length);
     } catch (error) {
@@ -107,7 +101,6 @@ const DonorDashboard = () => {
     }
   };
 
-  // Fetch donations from the backend
   const fetchDonations = async () => {
     console.log("fetchDonations function is being called");
     try {
@@ -115,7 +108,6 @@ const DonorDashboard = () => {
       const user = JSON.parse(localStorage.getItem("user"));
       const donorId = user.id;
 
-      // Check if the user is a donor
       if (user.role.toLowerCase() !== "donor") {
         console.log("User is not a donor. Skipping donation fetch.");
         return;
@@ -139,7 +131,7 @@ const DonorDashboard = () => {
       if (data.length > 0) {
         setDonations(data);
 
-        // Calculate donation statistics
+        // Updated donation statistics calculation
         const total = data.length;
         const completed = data.filter(
           (donation) => donation.status === "Completed"
@@ -147,15 +139,11 @@ const DonorDashboard = () => {
         const pending = data.filter(
           (donation) => donation.status === "Pending"
         ).length;
-        const approved = data.filter(
-          (donation) => donation.status === "Approved"
-        ).length;
 
         setDonationStats({
           total,
           completed,
           pending,
-          approved,
         });
       } else {
         setDonations([]);
@@ -167,7 +155,6 @@ const DonorDashboard = () => {
     }
   };
 
-  // Add fetchUnreadMessagesCount function
   const fetchUnreadMessagesCount = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -181,23 +168,19 @@ const DonorDashboard = () => {
     }
   };
 
-  // Updated useEffect to fetch notifications, donations, and unread messages count
   useEffect(() => {
     fetchNotifications();
     fetchDonations();
-    fetchUnreadMessagesCount(); // Added call to fetch unread messages count
+    fetchUnreadMessagesCount();
 
-    // Set up polling to fetch notifications and unread messages every 10 seconds
     const interval = setInterval(() => {
       fetchNotifications();
-      fetchUnreadMessagesCount(); // Added periodic fetching of unread messages count
+      fetchUnreadMessagesCount();
     }, 10000);
 
-    // Clean up the interval on component unmount
     return () => clearInterval(interval);
   }, [donationSubmitted]);
 
-  // Handle navigation with profile completion check
   const handleLinkClick = (e, path) => {
     if (loading || !user) return;
     if (!user.isProfileComplete) {
@@ -208,7 +191,6 @@ const DonorDashboard = () => {
     navigate(path);
   };
 
-  // Handle close modal
   const handleCloseModal = () => {
     setShowModal(false);
   };
@@ -350,7 +332,7 @@ const DonorDashboard = () => {
           </Row>
         </div>
 
-        {/* Updated Donation Button Section */}
+        {/* Donation Button Section */}
         <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
           <div>{/* Any additional header content can go here */}</div>
           <div className="d-flex align-items-center">
@@ -365,9 +347,9 @@ const DonorDashboard = () => {
           </div>
         </div>
 
-        {/* Dashboard Summary Stats */}
+        {/* Updated Dashboard Summary Stats */}
         <Row className="mb-4">
-          <Col md={3}>
+          <Col md={4}>
             <Card style={cardStyles} className="mb-3 dashboard-stat-card">
               <Card.Body className="text-center">
                 <h1
@@ -385,7 +367,7 @@ const DonorDashboard = () => {
               </Card.Body>
             </Card>
           </Col>
-          <Col md={3}>
+          <Col md={4}>
             <Card
               style={{
                 ...cardStyles,
@@ -407,7 +389,7 @@ const DonorDashboard = () => {
               </Card.Body>
             </Card>
           </Col>
-          <Col md={3}>
+          <Col md={4}>
             <Card
               style={{
                 ...cardStyles,
@@ -426,28 +408,6 @@ const DonorDashboard = () => {
                   {donationStats.pending}
                 </h1>
                 <p style={{ fontSize: "1rem", marginBottom: "0" }}>Pending</p>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col md={3}>
-            <Card
-              style={{
-                ...cardStyles,
-                backgroundColor: darkMode ? "#2c3e50" : "#e3f2fd",
-              }}
-              className="mb-3 dashboard-stat-card"
-            >
-              <Card.Body className="text-center">
-                <h1
-                  style={{
-                    fontSize: "2.5rem",
-                    fontWeight: "bold",
-                    color: darkMode ? "#60a5fa" : "#2563eb",
-                  }}
-                >
-                  {donationStats.approved}
-                </h1>
-                <p style={{ fontSize: "1rem", marginBottom: "0" }}>Approved</p>
               </Card.Body>
             </Card>
           </Col>

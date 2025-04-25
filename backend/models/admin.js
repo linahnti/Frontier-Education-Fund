@@ -26,8 +26,8 @@ const createAdmin = async () => {
     name: "Admin",
     email: adminEmail,
     password: hashedPassword,
-    role: "Admin", // Ensure the role is "Admin" (uppercase)
-    // No contactNumber provided
+    role: "Admin", 
+    
   });
 
   try {
@@ -40,15 +40,15 @@ const createAdmin = async () => {
 
 if (!dbURI) {
   console.log("Mongo URI is undefined. Please check your .env file.");
-  process.exit(1); // Stop execution if the URI is not set
+  process.exit(1); 
 }
 
 // Connect to MongoDB and create the admin account
 mongoose
-  .connect(dbURI) // Removed deprecated options
+  .connect(dbURI) 
   .then(() => {
     console.log("Connected to MongoDB");
-    createAdmin(); // Run the function to create the admin account
+    createAdmin(); 
   })
   .catch((err) => {
     console.error("Error connecting to MongoDB", err);

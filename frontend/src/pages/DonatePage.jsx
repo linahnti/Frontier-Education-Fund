@@ -45,6 +45,21 @@ const DonatePage = () => {
   const location = useLocation();
   const [paymentStatus, setPaymentStatus] = useState(null);
 
+  // Theme colors
+  const themeStyles = {
+    textPrimary: darkMode ? "#f8fafc" : "#1e293b",
+    textSecondary: darkMode ? "#e2e8f0" : "#334155",
+    textMuted: darkMode ? "#94a3b8" : "#64748b",
+    bgPrimary: darkMode ? "#1e293b" : "#ffffff",
+    bgSecondary: darkMode ? "#0f172a" : "#f8fafc",
+    borderColor: darkMode ? "#334155" : "#e2e8f0",
+    cardBg: darkMode ? "#1e293b" : "#ffffff",
+    cardSelectedBg: darkMode ? "#1e3a8a" : "#e6f7ff",
+    inputBg: darkMode ? "#1e293b" : "#ffffff",
+    inputBorder: darkMode ? "#334155" : "#cbd5e1",
+    buttonOutline: darkMode ? "outline-light" : "outline-secondary",
+  };
+
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const reference = queryParams.get("reference");
@@ -206,7 +221,7 @@ const DonatePage = () => {
   const handleMpesaPayment = async () => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!validateStep()) return;
-  
+
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -214,22 +229,17 @@ const DonatePage = () => {
         setError("Authentication required. Please login again.");
         return;
       }
-  
+
       const payload = {
-        name: user.name, // Ensure this exists in your user object
-        email: user.email, // Ensure this exists in your user object
+        name: user.name,
+        email: user.email,
         amount: amount,
-        callbackUrl: `${window.location.origin}/payment-complete`,
+        callbackUrl: `${window.location.origin}/donate?paymentSuccess=true`,
         donorId: user.id,
         schoolId: schoolId,
         type: donationType,
       };
-  
-      // Validation check
-      if (!payload.email || !payload.name) {
-        throw new Error("User information incomplete. Please update your profile.");
-      }
-  
+
       const response = await axios.post(
         `${API_URL}/api/paystack/initialize`,
         payload,
@@ -240,7 +250,7 @@ const DonatePage = () => {
           },
         }
       );
-  
+
       if (response.data.status === "success") {
         setSuccess("Payment initiated successfully!");
         window.location.href = response.data.data.authorizationUrl;
@@ -248,9 +258,9 @@ const DonatePage = () => {
     } catch (error) {
       console.error("Payment error:", error.response?.data || error.message);
       setError(
-        error.response?.data?.message || 
-        error.message || 
-        "Failed to initiate payment. Please try again."
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to initiate payment. Please try again."
       );
     } finally {
       setIsLoading(false);
@@ -266,9 +276,17 @@ const DonatePage = () => {
       case 1:
         return (
           <>
-            <h4 className="text-center mb-4">Select a School to Support</h4>
+            <h4
+              className="text-center mb-4"
+              style={{ color: themeStyles.textPrimary }}
+            >
+              Select a School to Support
+            </h4>
             <Form.Group className="mb-4">
-              <Form.Label className="fw-bold">
+              <Form.Label
+                className="fw-bold"
+                style={{ color: themeStyles.textSecondary }}
+              >
                 <FontAwesomeIcon icon={faSchool} className="me-2" />
                 Choose a School
               </Form.Label>
@@ -277,6 +295,11 @@ const DonatePage = () => {
                 onChange={(e) => setSchoolId(e.target.value)}
                 className="form-control-lg"
                 disabled={isLoading}
+                style={{
+                  backgroundColor: themeStyles.inputBg,
+                  color: themeStyles.textPrimary,
+                  borderColor: themeStyles.inputBorder,
+                }}
               >
                 <option value="">Select a school to support</option>
                 {schools.map((school) => (
@@ -285,7 +308,10 @@ const DonatePage = () => {
                   </option>
                 ))}
               </Form.Select>
-              <div className="text-muted mt-2 small">
+              <div
+                className="mt-2 small"
+                style={{ color: themeStyles.textMuted }}
+              >
                 <FontAwesomeIcon icon={faQuestionCircle} className="me-1" />
                 Your donation will directly benefit this school and its students
               </div>
@@ -305,7 +331,10 @@ const DonatePage = () => {
       case 2:
         return (
           <>
-            <h4 className="text-center mb-4">
+            <h4
+              className="text-center mb-4"
+              style={{ color: themeStyles.textPrimary }}
+            >
               <Badge bg="success" className="me-2">
                 School Selected:
               </Badge>
@@ -313,7 +342,12 @@ const DonatePage = () => {
             </h4>
 
             <Form.Group className="mb-4">
-              <Form.Label className="fw-bold">Donation Type</Form.Label>
+              <Form.Label
+                className="fw-bold"
+                style={{ color: themeStyles.textSecondary }}
+              >
+                Donation Type
+              </Form.Label>
               <Row>
                 <Col xs={6}>
                   <Card
@@ -324,11 +358,14 @@ const DonatePage = () => {
                       cursor: "pointer",
                       backgroundColor:
                         donationType === "money"
-                          ? darkMode
-                            ? "#1e3a8a"
-                            : "#e6f7ff"
-                          : "",
+                          ? themeStyles.cardSelectedBg
+                          : themeStyles.cardBg,
+                      borderColor:
+                        donationType === "money"
+                          ? "#3b82f6"
+                          : themeStyles.borderColor,
                       borderWidth: donationType === "money" ? "2px" : "1px",
+                      transition: "all 0.2s ease",
                     }}
                     onClick={() => setDonationType("money")}
                   >
@@ -339,11 +376,18 @@ const DonatePage = () => {
                         className="mb-3"
                         style={{
                           color:
-                            donationType === "money" ? "#2563eb" : "#6c757d",
+                            donationType === "money"
+                              ? "#3b82f6"
+                              : themeStyles.textMuted,
                         }}
                       />
-                      <h5>Money Donation</h5>
-                      <p className="small mb-0">
+                      <h5 style={{ color: themeStyles.textPrimary }}>
+                        Money Donation
+                      </h5>
+                      <p
+                        className="small mb-0"
+                        style={{ color: themeStyles.textMuted }}
+                      >
                         Support with financial contribution
                       </p>
                     </Card.Body>
@@ -358,11 +402,14 @@ const DonatePage = () => {
                       cursor: "pointer",
                       backgroundColor:
                         donationType === "items"
-                          ? darkMode
-                            ? "#1e3a8a"
-                            : "#e6f7ff"
-                          : "",
+                          ? themeStyles.cardSelectedBg
+                          : themeStyles.cardBg,
+                      borderColor:
+                        donationType === "items"
+                          ? "#3b82f6"
+                          : themeStyles.borderColor,
                       borderWidth: donationType === "items" ? "2px" : "1px",
+                      transition: "all 0.2s ease",
                     }}
                     onClick={() => setDonationType("items")}
                   >
@@ -373,11 +420,18 @@ const DonatePage = () => {
                         className="mb-3"
                         style={{
                           color:
-                            donationType === "items" ? "#2563eb" : "#6c757d",
+                            donationType === "items"
+                              ? "#3b82f6"
+                              : themeStyles.textMuted,
                         }}
                       />
-                      <h5>Item Donation</h5>
-                      <p className="small mb-0">
+                      <h5 style={{ color: themeStyles.textPrimary }}>
+                        Item Donation
+                      </h5>
+                      <p
+                        className="small mb-0"
+                        style={{ color: themeStyles.textMuted }}
+                      >
                         Donate books, supplies, or equipment
                       </p>
                     </Card.Body>
@@ -388,7 +442,10 @@ const DonatePage = () => {
 
             {donationType === "money" && (
               <Form.Group className="mb-4">
-                <Form.Label className="fw-bold">
+                <Form.Label
+                  className="fw-bold"
+                  style={{ color: themeStyles.textSecondary }}
+                >
                   <FontAwesomeIcon icon={faMoneyBillWave} className="me-2" />
                   Amount (KES)
                 </Form.Label>
@@ -398,41 +455,25 @@ const DonatePage = () => {
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="Enter donation amount"
                   className="form-control-lg"
+                  style={{
+                    backgroundColor: themeStyles.inputBg,
+                    color: themeStyles.textPrimary,
+                    borderColor: themeStyles.inputBorder,
+                  }}
                   required
                 />
                 <div className="d-flex justify-content-between mt-2">
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    onClick={() => setAmount("500")}
-                    className="flex-grow-1 mx-1"
-                  >
-                    500 KES
-                  </Button>
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    onClick={() => setAmount("1000")}
-                    className="flex-grow-1 mx-1"
-                  >
-                    1,000 KES
-                  </Button>
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    onClick={() => setAmount("2500")}
-                    className="flex-grow-1 mx-1"
-                  >
-                    2,500 KES
-                  </Button>
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    onClick={() => setAmount("5000")}
-                    className="flex-grow-1 mx-1"
-                  >
-                    5,000 KES
-                  </Button>
+                  {[500, 1000, 2500, 5000].map((value) => (
+                    <Button
+                      key={value}
+                      variant={themeStyles.buttonOutline}
+                      size="sm"
+                      onClick={() => setAmount(value.toString())}
+                      className="flex-grow-1 mx-1"
+                    >
+                      {value.toLocaleString()} KES
+                    </Button>
+                  ))}
                 </div>
               </Form.Group>
             )}
@@ -440,7 +481,10 @@ const DonatePage = () => {
             {donationType === "items" && (
               <>
                 <Form.Group className="mb-4">
-                  <Form.Label className="fw-bold">
+                  <Form.Label
+                    className="fw-bold"
+                    style={{ color: themeStyles.textSecondary }}
+                  >
                     <FontAwesomeIcon icon={faBoxOpen} className="me-2" />
                     Items (comma-separated)
                   </Form.Label>
@@ -451,11 +495,19 @@ const DonatePage = () => {
                     onChange={(e) => setItems(e.target.value)}
                     placeholder="e.g., Textbooks, Stationery, Uniforms"
                     className="form-control-lg"
+                    style={{
+                      backgroundColor: themeStyles.inputBg,
+                      color: themeStyles.textPrimary,
+                      borderColor: themeStyles.inputBorder,
+                    }}
                     required
                   />
                 </Form.Group>
                 <Form.Group className="mb-4">
-                  <Form.Label className="fw-bold">
+                  <Form.Label
+                    className="fw-bold"
+                    style={{ color: themeStyles.textSecondary }}
+                  >
                     <FontAwesomeIcon icon={faCalendarAlt} className="me-2" />
                     Preferred Delivery Date
                   </Form.Label>
@@ -464,6 +516,11 @@ const DonatePage = () => {
                     value={preferredDate}
                     onChange={(e) => setPreferredDate(e.target.value)}
                     className="form-control-lg"
+                    style={{
+                      backgroundColor: themeStyles.inputBg,
+                      color: themeStyles.textPrimary,
+                      borderColor: themeStyles.inputBorder,
+                    }}
                     min={new Date().toISOString().split("T")[0]}
                     required
                   />
@@ -474,7 +531,7 @@ const DonatePage = () => {
             <Row className="mt-4">
               <Col xs={6}>
                 <Button
-                  variant="outline-secondary"
+                  variant={themeStyles.buttonOutline}
                   size="lg"
                   className="w-100"
                   onClick={prevStep}
@@ -500,26 +557,56 @@ const DonatePage = () => {
       case 3:
         return (
           <>
-            <h4 className="text-center mb-4">Review & Submit Your Donation</h4>
+            <h4
+              className="text-center mb-4"
+              style={{ color: themeStyles.textPrimary }}
+            >
+              Review & Submit Your Donation
+            </h4>
 
-            <Card className="mb-4">
-              <Card.Header className="bg-light">
-                <h5 className="mb-0">Donation Summary</h5>
+            <Card
+              className="mb-4"
+              style={{
+                backgroundColor: themeStyles.cardBg,
+                borderColor: themeStyles.borderColor,
+              }}
+            >
+              <Card.Header
+                style={{
+                  backgroundColor: themeStyles.bgSecondary,
+                  borderColor: themeStyles.borderColor,
+                }}
+              >
+                <h5 className="mb-0" style={{ color: themeStyles.textPrimary }}>
+                  Donation Summary
+                </h5>
               </Card.Header>
               <Card.Body>
                 <Row className="mb-3">
-                  <Col xs={4} className="text-muted">
+                  <Col xs={4} style={{ color: themeStyles.textMuted }}>
                     School:
                   </Col>
-                  <Col xs={8} className="fw-bold">
+                  <Col
+                    xs={8}
+                    style={{
+                      color: themeStyles.textPrimary,
+                      fontWeight: "bold",
+                    }}
+                  >
                     {getSelectedSchool().schoolName}
                   </Col>
                 </Row>
                 <Row className="mb-3">
-                  <Col xs={4} className="text-muted">
+                  <Col xs={4} style={{ color: themeStyles.textMuted }}>
                     Donation Type:
                   </Col>
-                  <Col xs={8} className="fw-bold">
+                  <Col
+                    xs={8}
+                    style={{
+                      color: themeStyles.textPrimary,
+                      fontWeight: "bold",
+                    }}
+                  >
                     {donationType === "money" ? (
                       <span>
                         <FontAwesomeIcon
@@ -539,10 +626,16 @@ const DonatePage = () => {
 
                 {donationType === "money" && (
                   <Row className="mb-3">
-                    <Col xs={4} className="text-muted">
+                    <Col xs={4} style={{ color: themeStyles.textMuted }}>
                       Amount:
                     </Col>
-                    <Col xs={8} className="fw-bold">
+                    <Col
+                      xs={8}
+                      style={{
+                        color: themeStyles.textPrimary,
+                        fontWeight: "bold",
+                      }}
+                    >
                       {amount} KES
                     </Col>
                   </Row>
@@ -551,10 +644,16 @@ const DonatePage = () => {
                 {donationType === "items" && (
                   <>
                     <Row className="mb-3">
-                      <Col xs={4} className="text-muted">
+                      <Col xs={4} style={{ color: themeStyles.textMuted }}>
                         Items:
                       </Col>
-                      <Col xs={8} className="fw-bold">
+                      <Col
+                        xs={8}
+                        style={{
+                          color: themeStyles.textPrimary,
+                          fontWeight: "bold",
+                        }}
+                      >
                         {items.split(",").map((item, index) => (
                           <Badge bg="info" className="me-1 mb-1" key={index}>
                             {item.trim()}
@@ -563,10 +662,16 @@ const DonatePage = () => {
                       </Col>
                     </Row>
                     <Row className="mb-3">
-                      <Col xs={4} className="text-muted">
+                      <Col xs={4} style={{ color: themeStyles.textMuted }}>
                         Delivery Date:
                       </Col>
-                      <Col xs={8} className="fw-bold">
+                      <Col
+                        xs={8}
+                        style={{
+                          color: themeStyles.textPrimary,
+                          fontWeight: "bold",
+                        }}
+                      >
                         {new Date(preferredDate).toLocaleDateString()}
                       </Col>
                     </Row>
@@ -578,7 +683,7 @@ const DonatePage = () => {
             <Row className="mt-4">
               <Col xs={6}>
                 <Button
-                  variant="outline-secondary"
+                  variant={themeStyles.buttonOutline}
                   size="lg"
                   className="w-100"
                   onClick={prevStep}
@@ -640,7 +745,9 @@ const DonatePage = () => {
               <Card
                 className="shadow-lg text-center p-5"
                 style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  backgroundColor: darkMode
+                    ? "rgba(30, 41, 59, 0.95)"
+                    : "rgba(255, 255, 255, 0.95)",
                   borderRadius: "15px",
                 }}
               >
@@ -657,11 +764,19 @@ const DonatePage = () => {
                     <FontAwesomeIcon icon={faHandHoldingUsd} size="3x" />
                   </div>
                 </div>
-                <h2 className="mb-3">Thank You for Your Donation!</h2>
-                <p className="lead mb-4">
+                <h2
+                  className="mb-3"
+                  style={{ color: darkMode ? "#f8fafc" : "#1e293b" }}
+                >
+                  Thank You for Your Donation!
+                </h2>
+                <p
+                  className="lead mb-4"
+                  style={{ color: darkMode ? "#e2e8f0" : "#334155" }}
+                >
                   Your generous contribution will make a real difference.
                 </p>
-                <p className="text-muted">
+                <p style={{ color: darkMode ? "#94a3b8" : "#64748b" }}>
                   You will be redirected to your dashboard in a few seconds...
                 </p>
                 <Button
@@ -699,7 +814,9 @@ const DonatePage = () => {
               <Card
                 className="shadow-lg text-center p-5"
                 style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  backgroundColor: darkMode
+                    ? "rgba(30, 41, 59, 0.95)"
+                    : "rgba(255, 255, 255, 0.95)",
                   borderRadius: "15px",
                 }}
               >
@@ -710,8 +827,12 @@ const DonatePage = () => {
                     className="mb-3"
                   />
                 </div>
-                <h2>Verifying your payment...</h2>
-                <p>Please wait while we confirm your donation.</p>
+                <h2 style={{ color: darkMode ? "#f8fafc" : "#1e293b" }}>
+                  Verifying your payment...
+                </h2>
+                <p style={{ color: darkMode ? "#e2e8f0" : "#334155" }}>
+                  Please wait while we confirm your donation.
+                </p>
               </Card>
             </Col>
           </Row>
@@ -740,7 +861,9 @@ const DonatePage = () => {
               <Card
                 className="shadow-lg"
                 style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  backgroundColor: darkMode
+                    ? "rgba(30, 41, 59, 0.95)"
+                    : "rgba(255, 255, 255, 0.95)",
                   borderRadius: "15px",
                 }}
               >
@@ -750,7 +873,10 @@ const DonatePage = () => {
                     <p>
                       We couldn't verify your payment. This could be because:
                     </p>
-                    <ul className="text-start">
+                    <ul
+                      className="text-start"
+                      style={{ color: darkMode ? "#1e293b" : "" }}
+                    >
                       <li>The payment was cancelled</li>
                       <li>
                         There was a technical issue with the payment processor
@@ -793,7 +919,9 @@ const DonatePage = () => {
             <Card
               className="shadow-lg"
               style={{
-                backgroundColor: "rgba(255, 255, 255, 0.95)",
+                backgroundColor: darkMode
+                  ? "rgba(30, 41, 59, 0.95)"
+                  : "rgba(255, 255, 255, 0.95)",
                 borderRadius: "15px",
                 overflow: "hidden",
               }}
@@ -834,11 +962,14 @@ const DonatePage = () => {
                 <Form onSubmit={(e) => e.preventDefault()}>{renderStep()}</Form>
               </Card.Body>
 
-              <Card.Footer className="py-3 text-center bg-light">
+              <Card.Footer
+                className="py-3 text-center"
+                style={{ backgroundColor: darkMode ? "#0f172a" : "#f8fafc" }}
+              >
                 <Button
                   variant="link"
                   size="sm"
-                  className="text-muted"
+                  style={{ color: darkMode ? "#94a3b8" : "#64748b" }}
                   onClick={() => navigate("/donor-dashboard")}
                 >
                   <FontAwesomeIcon icon={faArrowLeft} className="me-1" />
@@ -848,7 +979,8 @@ const DonatePage = () => {
                 <Button
                   variant="link"
                   size="sm"
-                  className="text-muted ms-3"
+                  style={{ color: darkMode ? "#94a3b8" : "#64748b" }}
+                  className="ms-3"
                   onClick={() => navigate("/donor-support")}
                 >
                   <FontAwesomeIcon icon={faQuestionCircle} className="me-1" />

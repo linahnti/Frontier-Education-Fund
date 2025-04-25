@@ -85,6 +85,16 @@ const Login = () => {
       console.log("API Response:", response.data);
       console.log("User Role:", user.role);
 
+      localStorage.setItem("token", token);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          id: user.id,
+          name: user.name,
+          role: user.role.toLowerCase(),
+        })
+      );
+
       if (TEST_EMAILS.includes(email)) {
         console.log("Bypassing verification for test account:", email);
         localStorage.setItem("token", token);

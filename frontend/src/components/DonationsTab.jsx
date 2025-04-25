@@ -96,13 +96,12 @@ const DonationsTab = ({ donorId, donations, loading, error }) => {
             value={filterStatus}
             onChange={(e) => {
               setFilterStatus(e.target.value);
-              setCurrentPage(1); // Reset to first page when filtering
+              setCurrentPage(1);
             }}
             className={darkMode ? "bg-dark text-white" : ""}
           >
             <option value="All">All Statuses</option>
             <option value="Pending">Pending</option>
-            <option value="Approved">Approved</option>
             <option value="Completed">Completed</option>
           </Form.Select>
         </div>
@@ -133,11 +132,7 @@ const DonationsTab = ({ donorId, donations, loading, error }) => {
                   <td>
                     <Badge
                       bg={
-                        donation.status === "Completed"
-                          ? "success"
-                          : donation.status === "Approved"
-                          ? "primary"
-                          : "warning"
+                        donation.status === "Completed" ? "success" : "warning"
                       }
                     >
                       {donation.status}
