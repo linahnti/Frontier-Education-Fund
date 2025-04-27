@@ -161,14 +161,8 @@ const getAllSchools = async (req, res) => {
   }
 };
 
-// Get donations received by a school
 const getDonationsReceived = async (req, res) => {
   const { schoolId } = req.params;
-
-  // Validate schoolId
-  if (!schoolId || !mongoose.Types.ObjectId.isValid(schoolId)) {
-    return res.status(400).json({ message: "Invalid school ID" });
-  }
 
   try {
     const school = await User.findById(schoolId).populate({
@@ -180,7 +174,31 @@ const getDonationsReceived = async (req, res) => {
       return res.status(404).json({ message: "School not found" });
     }
 
-    res.status(200).json(school.donationsReceived || []);
+    if (!school.donationsReceived || !Array.isArray(school.donationsReceived)) {
+      return res.status(200).json([]);
+    }
+
+    const processedDonations = school.donationsReceived.map((donation) => {
+      const donationObj = donation.toObject ? donation.toObject() : donation;
+
+      return {
+        ...donationObj,
+        donorName: donationObj.donorId?.name || "Anonymous Donor",
+        // Add the type field to match the donor's view
+        type: donationObj.type || "Unknown",
+        // Display amount for money donations and items list for item donations
+        displayValue:
+          donationObj.type === "money"
+            ? `KES ${donationObj.amount || 0}`
+            : Array.isArray(donationObj.items)
+            ? donationObj.items.join(", ")
+            : "No items specified",
+        status: donationObj.status || "Pending",
+        date: donationObj.date || new Date(),
+      };
+    });
+
+    res.status(200).json(processedDonations);
   } catch (error) {
     console.error("Error fetching donations received:", error);
     res
@@ -286,6 +304,7 @@ const getSchoolReports = async (req, res) => {
           status: d.status,
           date: d.date,
           _id: d._id,
+          type: d.type,
         })),
       approvedDonations: school.donationsReceived
         .filter((d) => d.status === "Approved")

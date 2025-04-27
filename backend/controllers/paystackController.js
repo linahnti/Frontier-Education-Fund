@@ -2,6 +2,9 @@ require("dotenv").config();
 const { StatusCodes } = require("http-status-codes");
 const paystackApi = require("../api/paystackApi");
 const { Donation } = require("../models/donation");
+const User = require("../models/user");
+const Donor = require("../models/donorDiscriminator");
+const School = require("../models/schoolDiscriminator");
 const { BadRequestError } = require("../utils/apiError");
 const { asyncWrapper } = require("../utils/asyncWrapper");
 
@@ -73,46 +76,139 @@ class PaystackController {
       throw new BadRequestError("Missing transaction reference");
     }
 
-    const verification = await paystackApi.verifyPayment(reference);
-    const { data: paymentData } = verification;
+    try {
+      const verification = await paystackApi.verifyPayment(reference);
+      const { data: paymentData } = verification;
 
-    if (paymentData.status !== "success") {
-      throw new BadRequestError(
-        `Payment failed: ${paymentData.gateway_response}`
-      );
-    }
+      console.log("Payment verification data:", paymentData);
 
-    const { metadata } = paymentData;
-    const donation = await Donation.findOneAndUpdate(
-      { paymentReference: reference },
-      {
-        status: "completed",
-        verifiedAt: new Date(),
-        paymentData: {
-          channel: paymentData.channel,
-          currency: paymentData.currency,
-          fees: paymentData.fees,
+      // More lenient status checking - Paystack sometimes uses different status formats
+      const isSuccessful =
+        paymentData.status === "success" ||
+        paymentData.status === "successful" ||
+        (paymentData.data && paymentData.data.status === "success");
+
+      if (!isSuccessful) {
+        throw new BadRequestError(
+          `Payment failed: ${paymentData.gateway_response || "Unknown reason"}`
+        );
+      }
+
+      // Get metadata from the correct location
+      const metadata =
+        paymentData.metadata ||
+        (paymentData.data && paymentData.data.metadata) ||
+        {};
+
+      const donation = await Donation.findOneAndUpdate(
+        { paymentReference: reference },
+        {
+          status: "completed",
+          verifiedAt: new Date(),
+          paymentData: {
+            channel: paymentData.channel,
+            currency: paymentData.currency,
+            fees: paymentData.fees,
+          },
         },
-      },
-      { new: true }
-    );
+        { new: true, upsert: false }
+      );
 
-    if (!donation) {
-      throw new BadRequestError("Donation record not found");
+      if (!donation) {
+        console.log("Donation not found for reference:", reference);
+      }
+
+      const { donorId, schoolId, amount } = metadata;
+
+      const donor = await User.findByIdAndUpdate(
+        donorId,
+        {
+          $push: {
+            donationsMade: {
+              schoolId,
+              type: "money",
+              amount,
+              status: "Completed",
+              date: new Date(),
+              approvalDate: new Date(),
+              completionDate: new Date(),
+            },
+            notifications: {
+              message: `Your donation of KES ${amount} has been successfully processed.`,
+              type: "payment_success",
+              date: new Date(),
+              read: false,
+            },
+          },
+        },
+        { new: true }
+      );
+
+      const school = await User.findByIdAndUpdate(
+        schoolId,
+        {
+          $push: {
+            donationsReceived: {
+              donorId,
+              item: `KES ${amount}`,
+              status: "Completed",
+              date: new Date(),
+              approvalDate: new Date(),
+              completionDate: new Date(),
+            },
+            notifications: {
+              message: `You have received a donation of KES ${amount}.`,
+              type: "donation_received",
+              date: new Date(),
+              read: false,
+            },
+          },
+        },
+        { new: true }
+      );
+
+      // If using discriminators, update the specific donor and school models
+      if (donor && school) {
+        await Donor.findByIdAndUpdate(donorId, {
+          $push: {
+            donationsMade: {
+              schoolId,
+              type: "money",
+              amount,
+              status: "Completed",
+              date: new Date(),
+            },
+          },
+        });
+
+        await School.findByIdAndUpdate(schoolId, {
+          $push: {
+            donationsReceived: {
+              donorId,
+              item: `KES ${amount}`,
+              status: "Completed",
+              date: new Date(),
+            },
+          },
+        });
+      }
+
+      res.status(StatusCodes.OK).json({
+        status: "success",
+        message: "Payment verified successfully",
+        data: {
+          reference,
+          amount: metadata.amount || paymentData.amount,
+          donorId: metadata.donorId,
+          schoolId: metadata.schoolId,
+          type: metadata.type || "money",
+          date: new Date(),
+        },
+      });
+    } catch (error) {
+      console.error("Payment verification error:", error);
+      throw new BadRequestError("Failed to verify payment: " + error.message);
     }
-
-    res.status(StatusCodes.OK).json({
-      status: "success",
-      message: "Payment verified",
-      data: {
-        reference,
-        amount: metadata.amount,
-        donorId: metadata.donorId,
-        schoolId: metadata.schoolId,
-        type: metadata.type,
-        date: new Date(),
-      },
-    });
   });
 }
 

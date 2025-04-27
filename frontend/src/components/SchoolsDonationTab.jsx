@@ -7,6 +7,7 @@ import {
   Modal,
   Button,
   Pagination,
+  Badge,
 } from "react-bootstrap";
 import axios from "axios";
 import DonationRequest from "./DonationRequest";
@@ -17,29 +18,30 @@ import {
   faSearch,
   faFilter,
   faHandHoldingHeart,
+  faMoneyBillWave,
+  faBoxOpen,
 } from "@fortawesome/free-solid-svg-icons";
 
 const SchoolsDonationTab = ({
   schoolId,
   showDonationModal,
   setShowDonationModal,
+  showActiveDonorsModal,
+  setShowActiveDonorsModal,
+  activeDonors,
 }) => {
   const { darkMode } = useTheme();
   const [donationsReceived, setDonationsReceived] = useState([]);
   const [donationRequests, setDonationRequests] = useState([]);
-  const [activeDonors, setActiveDonors] = useState([]);
-  const [showActiveDonorsModal, setShowActiveDonorsModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Pagination states
   const [donationsCurrentPage, setDonationsCurrentPage] = useState(1);
   const [requestsCurrentPage, setRequestsCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Function to fetch data
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -50,27 +52,29 @@ const SchoolsDonationTab = ({
         return;
       }
 
-      // Fetch all data in parallel
-      const [donationsResponse, requestsResponse, activeDonorsResponse] =
-        await Promise.all([
-          axios.get(`${API_URL}/api/schools/${schoolId}/donations-received`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(`${API_URL}/api/schools/${schoolId}/donation-requests`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(`${API_URL}/api/schools/${schoolId}/active-donors`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
+      const [donationsResponse, requestsResponse] = await Promise.all([
+        axios.get(`${API_URL}/api/schools/${schoolId}/donations-received`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(`${API_URL}/api/schools/${schoolId}/donation-requests`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
 
-      console.log("Donations received:", donationsResponse.data);
-      console.log("Donation requests:", requestsResponse.data);
-      console.log("Active donors:", activeDonorsResponse.data);
+      // Process donations to ensure proper display
+      const processedDonations = donationsResponse.data.map((donation) => ({
+        ...donation,
+        donorName: donation.donorId?.name || "Anonymous Donor",
+        displayValue:
+          donation.type === "money"
+            ? `KES ${donation.amount || 0}`
+            : donation.items?.join(", ") || "N/A", // Changed from "Items donation" to "N/A"
+        status: donation.status || "Pending",
+        date: donation.date || new Date(),
+      }));
 
-      setDonationsReceived(donationsResponse.data);
+      setDonationsReceived(processedDonations);
       setDonationRequests(requestsResponse.data);
-      setActiveDonors(activeDonorsResponse.data.activeDonors || []);
       setError(null);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -84,13 +88,17 @@ const SchoolsDonationTab = ({
     return donationsReceived.filter((donation) => {
       const statusMatch =
         filterStatus === "All" || donation.status === filterStatus;
+      const searchTermLower = searchTerm.toLowerCase();
       const searchMatch =
         searchTerm === "" ||
-        donation.donorId?.name
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        donation.item?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        donation.status?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        donation.donorName?.toLowerCase().includes(searchTermLower) ||
+        (donation.type === "money"
+          ? `KES ${donation.amount}`.toLowerCase().includes(searchTermLower)
+          : donation.items
+              ?.join(", ")
+              .toLowerCase()
+              .includes(searchTermLower)) ||
+        donation.status?.toLowerCase().includes(searchTermLower) ||
         (donation.date &&
           new Date(donation.date).toLocaleDateString().includes(searchTerm));
 
@@ -118,7 +126,20 @@ const SchoolsDonationTab = ({
     });
   };
 
-  // Pagination logic
+  // Calculate total donation amount and count
+  const { totalAmount, moneyCount, itemCount } = donationsReceived.reduce(
+    (stats, donation) => {
+      if (donation.type === "money") {
+        stats.totalAmount += donation.amount || 0;
+        stats.moneyCount += 1;
+      } else {
+        stats.itemCount += 1;
+      }
+      return stats;
+    },
+    { totalAmount: 0, moneyCount: 0, itemCount: 0 }
+  );
+
   const paginate = (items, currentPage) => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return items.slice(startIndex, startIndex + itemsPerPage);
@@ -135,19 +156,9 @@ const SchoolsDonationTab = ({
   );
   const requestsTotalPages = Math.ceil(filteredRequests.length / itemsPerPage);
 
-  // Calculate total donation amount in KSH
-  const totalDonationAmount = donationsReceived.reduce((total, donation) => {
-    return total + (donation.amount || 0);
-  }, 0);
-
-  // Fetch data on component mount and set up polling
   useEffect(() => {
-    fetchData(); // Fetch data immediately on mount
-
-    // Set up polling to fetch data every 10 seconds
+    fetchData();
     const intervalId = setInterval(fetchData, 10000);
-
-    // Cleanup interval on component unmount
     return () => clearInterval(intervalId);
   }, [schoolId]);
 
@@ -213,7 +224,7 @@ const SchoolsDonationTab = ({
               <input
                 type="text"
                 className="form-control"
-                placeholder="Search by donor, item, status or date..."
+                placeholder="Search by donor, item, amount, status or date..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{
@@ -252,31 +263,49 @@ const SchoolsDonationTab = ({
 
       {/* Dashboard Summary Cards */}
       <Row className="mb-4">
-        <Col md={6}>
-          <Card style={{ ...cardStyle, borderLeft: "4px solid #ffc107" }}>
+        <Col md={4}>
+          <Card style={{ ...cardStyle, borderLeft: "4px solid #28a745" }}>
             <Card.Body className="text-center">
-              <div className="icon-circle mb-3 mx-auto">
-                <FontAwesomeIcon icon={faHandHoldingHeart} size="lg" />
-              </div>
-              <Card.Title>Donations Received</Card.Title>
-              <h3>KSH {totalDonationAmount.toLocaleString()}</h3>
+              <FontAwesomeIcon
+                icon={faMoneyBillWave}
+                size="lg"
+                className="mb-3 text-success"
+              />
+              <Card.Title>Monetary Donations</Card.Title>
+              <h3>KSH {totalAmount.toLocaleString()}</h3>
+              <p className="text-muted mb-0">{moneyCount} monetary donations</p>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={4}>
+          <Card style={{ ...cardStyle, borderLeft: "4px solid #17a2b8" }}>
+            <Card.Body className="text-center">
+              <FontAwesomeIcon
+                icon={faBoxOpen}
+                size="lg"
+                className="mb-3 text-info"
+              />
+              <Card.Title>Item Donations</Card.Title>
+              <h3>{itemCount}</h3>
               <p className="text-muted mb-0">
-                {filteredDonations.length} donations total
+                {itemCount} item donations received
               </p>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={6}>
-          <Card style={{ ...cardStyle, borderLeft: "4px solid #0d6efd" }}>
+        <Col md={4}>
+          <Card style={{ ...cardStyle, borderLeft: "4px solid #6c757d" }}>
             <Card.Body className="text-center">
-              <div className="icon-circle mb-3 mx-auto">
-                <FontAwesomeIcon icon={faHandHoldingHeart} size="lg" />
-              </div>
-              <Card.Title>Donation Requests</Card.Title>
-              <h3>{filteredRequests.length}</h3>
+              <FontAwesomeIcon
+                icon={faHandHoldingHeart}
+                size="lg"
+                className="mb-3 text-secondary"
+              />
+              <Card.Title>Total Donations</Card.Title>
+              <h3>{donationsReceived.length}</h3>
               <p className="text-muted mb-0">
-                {filteredRequests.filter((r) => r.status === "Pending").length}{" "}
-                pending requests
+                {filteredDonations.filter((d) => d.status === "Pending").length}{" "}
+                pending
               </p>
             </Card.Body>
           </Card>
@@ -308,7 +337,8 @@ const SchoolsDonationTab = ({
               >
                 <tr>
                   <th>Donor</th>
-                  <th>Item</th>
+                  <th>Type</th>
+                  <th>Amount/Items</th>
                   <th>Status</th>
                   <th>Date</th>
                 </tr>
@@ -317,33 +347,38 @@ const SchoolsDonationTab = ({
                 {paginatedDonations.length > 0 ? (
                   paginatedDonations.map((donation, index) => (
                     <tr key={index}>
-                      <td>{donation.donorId?.name || "N/A"}</td>
-                      <td>{donation.item || "N/A"}</td>
+                      <td>{donation.donorName}</td>
                       <td>
-                        <span
-                          className={`badge ${
-                            donation.status === "Pending"
-                              ? "bg-warning"
+                        <Badge
+                          bg={donation.type === "money" ? "success" : "info"}
+                        >
+                          {donation.type}
+                        </Badge>
+                      </td>
+                      <td>
+                        {donation.type === "money"
+                          ? `KES ${donation.amount || 0}`
+                          : donation.items?.join(", ") || "N/A"}
+                      </td>
+                      <td>
+                        <Badge
+                          bg={
+                            donation.status === "Completed"
+                              ? "success"
                               : donation.status === "Approved"
-                              ? "bg-success"
-                              : donation.status === "Rejected"
-                              ? "bg-danger"
-                              : "bg-primary"
-                          }`}
+                              ? "primary"
+                              : "warning"
+                          }
                         >
                           {donation.status}
-                        </span>
+                        </Badge>
                       </td>
-                      <td>
-                        {donation.date
-                          ? new Date(donation.date).toLocaleDateString()
-                          : "N/A"}
-                      </td>
+                      <td>{new Date(donation.date).toLocaleDateString()}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="text-center">
+                    <td colSpan={5} className="text-center">
                       No donations found
                     </td>
                   </tr>
@@ -480,73 +515,6 @@ const SchoolsDonationTab = ({
           </Card.Body>
         </Card>
       </div>
-
-      {/* Active Donors Modal */}
-      <Modal
-        show={showActiveDonorsModal}
-        onHide={() => setShowActiveDonorsModal(false)}
-        contentClassName={darkMode ? "bg-dark text-light" : ""}
-        centered
-        size="lg"
-      >
-        <Modal.Header
-          closeButton
-          closeVariant={darkMode ? "white" : undefined}
-          className={
-            darkMode
-              ? "bg-dark text-light border-secondary"
-              : "bg-primary text-white"
-          }
-        >
-          <Modal.Title>Active Donors</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className={darkMode ? "bg-dark text-light" : ""}>
-          <Table
-            responsive
-            striped
-            bordered
-            hover
-            variant={darkMode ? "dark" : ""}
-          >
-            <thead
-              className={
-                darkMode ? "bg-secondary text-light" : "bg-primary text-white"
-              }
-            >
-              <tr>
-                <th>Donor Name</th>
-                <th>Email</th>
-                <th>Donations Made</th>
-              </tr>
-            </thead>
-            <tbody>
-              {activeDonors.length > 0 ? (
-                activeDonors.map((donor, index) => (
-                  <tr key={index}>
-                    <td>{donor.name}</td>
-                    <td>{donor.email}</td>
-                    <td>{donor.donationsMade?.length || 0}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={3} className="text-center">
-                    No active donors found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
-        </Modal.Body>
-        <Modal.Footer className={darkMode ? "bg-dark border-secondary" : ""}>
-          <Button
-            variant={darkMode ? "outline-light" : "primary"}
-            onClick={() => setShowActiveDonorsModal(false)}
-          >
-            Close
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 };

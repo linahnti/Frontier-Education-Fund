@@ -89,6 +89,7 @@ const approveDonationRequest = async (req, res) => {
 };
 
 // Complete a donation
+// Complete a donation
 const completeDonation = async (req, res) => {
   const { requestId } = req.params;
   const { donorId } = req.body;
@@ -97,34 +98,60 @@ const completeDonation = async (req, res) => {
     // Check if the donor exists
     const donor = await User.findById(donorId);
     if (!donor || donor.role !== "Donor") {
-      // Use capitalized role
       return res.status(404).json({ message: "Donor not found" });
     }
 
-    // Update the donation request status to "Completed"
-    const donationRequest = await DonationRequest.findByIdAndUpdate(
-      requestId,
-      {
-        $set: { status: "Completed" },
-        $push: { donors: { donorId, status: "Completed" } },
-      },
-      { new: true }
-    );
-
+    // Get the donation request
+    const donationRequest = await DonationRequest.findById(requestId);
     if (!donationRequest) {
       return res.status(404).json({ message: "Donation request not found" });
     }
 
+    // Get the school
+    const school = await User.findById(donationRequest.schoolId);
+    if (!school || school.role !== "School") {
+      return res.status(404).json({ message: "School not found" });
+    }
+
+    // Update the donation request status to "Completed"
+    donationRequest.status = "Completed";
+    donationRequest.donors.push({ donorId, status: "Completed" });
+    await donationRequest.save();
+
     // Add the completed donation to the school's donationsReceived array
-    await User.findByIdAndUpdate(donationRequest.schoolId, {
-      $push: {
-        donationsReceived: {
-          donorId,
-          item: donationRequest.donationNeeds[0], // Use the first item in donationNeeds
-          status: "Completed",
-        },
-      },
+    const schoolDonation = {
+      donorId,
+      item: donationRequest.donationNeeds.join(", "),
+      status: "Completed",
+      date: new Date(),
+    };
+    school.donationsReceived.push(schoolDonation);
+
+    // Add notification to school
+    school.notifications.push({
+      message: `Donation request for ${donationRequest.donationNeeds.join(
+        ", "
+      )} has been completed by ${donor.name}`,
+      type: "request_completion",
+      date: new Date(),
+      read: false,
+      donorId: donor._id,
+      donorName: donor.name,
     });
+    await school.save();
+
+    // Add notification to donor
+    donor.notifications.push({
+      message: `You completed the donation request for ${donationRequest.donationNeeds.join(
+        ", "
+      )} to ${school.schoolName || school.name}`,
+      type: "donation_completion",
+      date: new Date(),
+      read: false,
+      schoolId: school._id,
+      schoolName: school.schoolName || school.name,
+    });
+    await donor.save();
 
     res.status(200).json({ message: "Donation marked as completed" });
   } catch (error) {
@@ -157,13 +184,15 @@ const getDonationRequestsForSchool = async (req, res) => {
 // Get donation requests for a donor
 const getDonationRequestsForDonor = async (req, res) => {
   const { donorId } = req.params;
-  console.log("Fetching donations for donor:", donorId); 
+  console.log("Fetching donations for donor:", donorId);
 
   try {
     // Check if the donor exists
     const donor = await User.findById(donorId);
     if (!donor || donor.role !== "Donor") {
-      return res.status(404).json({ message: "Donor not found or invalid role" });
+      return res
+        .status(404)
+        .json({ message: "Donor not found or invalid role" });
     }
 
     // Fetch all donation requests where the donor has participated

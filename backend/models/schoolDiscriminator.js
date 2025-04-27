@@ -16,14 +16,17 @@ const schoolSchema = new mongoose.Schema({
 
   donationsReceived: [
     {
-      donorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Reference to the donor
-      item: { type: String }, // Item donated (e.g., books, desks)
+      donorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      type: { type: String, enum: ["money", "items"], required: true },
+      amount: { type: Number },
+      items: [{ type: [String], default: [] }],
       status: {
         type: String,
         enum: ["Pending", "Approved", "Completed", "Rejected"],
         default: "Pending",
-      }, // Status of the donation
-      date: { type: Date, default: Date.now }, // Date of the donation
+      },
+      date: { type: Date, default: Date.now },
+      paymentReference: { type: String }, // For tracking Paystack payments
     },
   ],
   donationRequests: [
@@ -50,6 +53,8 @@ const schoolSchema = new mongoose.Schema({
           "completion",
           "rejection",
           "new_request",
+          "donation_confirmation",
+          "donation_received",
         ],
       },
       donorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },

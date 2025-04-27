@@ -185,19 +185,30 @@ const DonatePage = () => {
       const token = localStorage.getItem("token");
       const donorId = JSON.parse(localStorage.getItem("user")).id;
 
+      const itemsArray = items
+        .split(",")
+        .map((item) => item.trim())
+        .filter((item) => item);
+
+      // Log what you're sending to help debug
+      console.log("Sending donation data:", {
+        donorId,
+        schoolId,
+        type: donationType,
+        amount: donationType === "money" ? amount : undefined,
+        items: donationType === "items" ? itemsArray : undefined,
+        preferredDate: donationType === "items" ? preferredDate : undefined,
+      });
+
       const response = await axios.post(
         `${API_URL}/api/donations`,
         {
           donorId,
           schoolId,
           type: donationType,
-          amount: donationType === "money" ? amount : null,
-          items:
-            donationType === "items"
-              ? items.split(",").map((item) => item.trim())
-              : null,
-          preferredDate:
-            donationType === "items" ? new Date(preferredDate) : null,
+          amount: donationType === "money" ? Number(amount) : undefined, // Ensure amount is a number
+          items: donationType === "items" ? itemsArray : undefined,
+          preferredDate: donationType === "items" ? preferredDate : undefined,
         },
         {
           headers: {
@@ -212,7 +223,16 @@ const DonatePage = () => {
       }
     } catch (error) {
       console.error("Error submitting donation:", error);
-      setError("Failed to submit donation. Please try again.");
+      // Add more detailed error logging
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+        setError(
+          error.response.data.message ||
+            "Failed to submit donation. Please try again."
+        );
+      } else {
+        setError("Failed to submit donation. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -234,7 +254,7 @@ const DonatePage = () => {
         name: user.name,
         email: user.email,
         amount: amount,
-        callbackUrl: `${window.location.origin}/donate?paymentSuccess=true`,
+        callbackUrl: `${window.location.origin}/payment-complete?source=donation`,
         donorId: user.id,
         schoolId: schoolId,
         type: donationType,

@@ -70,9 +70,19 @@ const SchoolDashboard = () => {
       );
       const donationsData = await donationsRes.json();
 
-      const totalDonations = donationsData.reduce((sum, donation) => {
-        return sum + (donation.amount || 0);
-      }, 0);
+      const donationStats = donationsData.reduce(
+        (stats, donation) => {
+          if (donation.type === "money") {
+            stats.totalAmount += donation.amount || 0;
+            stats.moneyCount += 1;
+          } else {
+            stats.itemCount += 1;
+            stats.itemsList = [...stats.itemsList, ...(donation.items || [])];
+          }
+          return stats;
+        },
+        { totalAmount: 0, moneyCount: 0, itemCount: 0, itemsList: [] }
+      );
 
       const requestsRes = await fetch(
         `${API_URL}/api/schools/${userId}/donation-requests`,
@@ -91,7 +101,10 @@ const SchoolDashboard = () => {
       const donorsData = await donorsRes.json();
 
       setStats({
-        totalDonations,
+        totalDonations: donationStats.totalAmount,
+        totalMoneyDonations: donationStats.moneyCount,
+        totalItemDonations: donationStats.itemCount,
+        itemsList: donationStats.itemsList,
         pendingRequests: requestsData.filter((r) => r.status === "Pending")
           .length,
         completedRequests: requestsData.filter((r) => r.status === "Completed")

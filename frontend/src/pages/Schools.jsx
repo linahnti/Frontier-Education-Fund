@@ -24,6 +24,8 @@ const Schools = () => {
       needs: ["Classrooms", "Textbooks", "Sanitary Towels"],
       status: "High Need",
       joined: "2018-03-15",
+      description:
+        "Supporting girls' education in Turkana, where access to learning resources is limited.",
     },
     {
       id: 2,
@@ -33,6 +35,8 @@ const Schools = () => {
       needs: ["Water Tanks", "Desks", "Security Fence"],
       status: "Critical Need",
       joined: "2017-11-02",
+      description:
+        "Helping students in Mandera access quality education despite harsh environmental conditions.",
     },
     {
       id: 3,
@@ -42,6 +46,8 @@ const Schools = () => {
       needs: ["Science Lab", "Library Books"],
       status: "Moderate Need",
       joined: "2019-05-22",
+      description:
+        "Providing learning materials and infrastructure support for students in Garissa County.",
     },
     {
       id: 4,
@@ -51,12 +57,15 @@ const Schools = () => {
       needs: ["Teachers", "Classrooms", "Food Program"],
       status: "Critical Need",
       joined: "2020-01-10",
+      description:
+        "Supporting refugee education with essential resources and teacher training.",
     },
   ];
 
-  const filteredSchools = filter === "all" 
-    ? schools 
-    : schools.filter(school => school.status.includes(filter));
+  const filteredSchools =
+    filter === "all"
+      ? schools
+      : schools.filter((school) => school.status.includes(filter));
 
   return (
     <Container className={`py-5 ${darkMode ? "text-white" : ""}`}>
@@ -86,11 +95,8 @@ const Schools = () => {
           </Form.Group>
         </Col>
         <Col md={8} className="d-flex align-items-end justify-content-end">
-          <Button variant="warning" className="me-2">
-            <i className="fas fa-download me-2"></i>Export Data
-          </Button>
           <Button variant="primary">
-            <i className="fas fa-plus me-2"></i>Add New School
+            <i className="fas fa-search me-2"></i>Find Schools to Support
           </Button>
         </Col>
       </Row>
@@ -118,11 +124,7 @@ const Schools = () => {
                       <td>{school.students.toLocaleString()}</td>
                       <td>
                         {school.needs.map((need, idx) => (
-                          <Badge
-                            key={idx}
-                            bg="primary"
-                            className="me-1 mb-1"
-                          >
+                          <Badge key={idx} bg="primary" className="me-1 mb-1">
                             {need}
                           </Badge>
                         ))}
@@ -141,7 +143,11 @@ const Schools = () => {
                         </Badge>
                       </td>
                       <td>
-                        <Button variant="outline-primary" size="sm" className="me-2">
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          className="me-2"
+                        >
                           View
                         </Button>
                         <Button variant="outline-success" size="sm">
@@ -158,13 +164,34 @@ const Schools = () => {
       </Row>
 
       <Row className="mt-5">
+        <Col md={12} className="mb-4">
+          <h3 className="text-warning mb-4">Featured Schools</h3>
+          <Row>
+            {schools.slice(0, 3).map((school) => (
+              <Col md={4} key={school.id} className="mb-3">
+                <Card className={`h-100 ${darkMode ? "bg-dark" : ""}`}>
+                  <Card.Body>
+                    <h4 className="text-primary">{school.name}</h4>
+                    <p className="text-muted">{school.description}</p>
+                    <Button variant="outline-warning" size="sm">
+                      Learn More
+                    </Button>
+                  </Card.Body>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </Col>
         <Col md={6}>
           <Card className={`h-100 ${darkMode ? "bg-dark" : ""}`}>
             <Card.Body>
               <Card.Title>School Impact Map</Card.Title>
               <div
                 className="d-flex align-items-center justify-content-center"
-                style={{ height: "300px", backgroundColor: darkMode ? "#333" : "#f8f9fa" }}
+                style={{
+                  height: "300px",
+                  backgroundColor: darkMode ? "#333" : "#f8f9fa",
+                }}
               >
                 <p className="text-muted">Interactive map visualization here</p>
               </div>

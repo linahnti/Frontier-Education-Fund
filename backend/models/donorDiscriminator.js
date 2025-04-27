@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const User = require("./user"); 
+const User = require("./user");
 
 // Donor schema
 const donorSchema = new mongoose.Schema({
@@ -49,19 +49,29 @@ const donorSchema = new mongoose.Schema({
       schoolId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       type: { type: String, enum: ["money", "items"], required: true },
       amount: { type: Number },
-      items: [{ type: String }],
+      items: [{ type: [String], default: [] }],
       status: {
         type: String,
         enum: ["Pending", "Completed"],
         default: "Pending",
       },
       date: { type: Date, default: Date.now },
+      paymentReference: { type: String },
+      delivery: {
+        address: String,
+        preferredDate: Date,
+        status: {
+          type: String,
+          enum: ["Not Started", "In Transit", "Delivered"],
+          default: "Not Started",
+        },
+      },
     },
   ],
   donationRequests: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "DonationRequest", // Reference to the DonationRequest schema
+      ref: "DonationRequest",
     },
   ],
   notifications: [
@@ -84,6 +94,8 @@ const donorSchema = new mongoose.Schema({
           "completion",
           "donation_submission",
           "request_rejection",
+          "donation_confirmation", 
+          "donation_received", 
         ],
       },
     },

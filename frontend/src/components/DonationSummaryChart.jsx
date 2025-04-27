@@ -32,7 +32,7 @@ const DonationSummaryChart = ({ donations }) => {
             (d) => d.type === "money" && d.status === "Completed"
           ).length,
           donations.filter(
-            (d) => d.type === "items" && d.status === "Completed"
+            (d) => d.type === "items" && d.status === "Received" // Changed from "Completed" to "Received" for schools
           ).length,
         ],
         backgroundColor: "#28a745",

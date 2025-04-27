@@ -65,39 +65,53 @@ const ReportsTab = ({ userId, role }) => {
         const result = await response.json();
 
         if (role === "School") {
-          // Process school donations - convert Approved to Received for money donations
           const processedDonations = [
-            ...result.pendingDonations.map((item) => ({
+            ...(result.pendingDonations || []).map((item) => ({
               ...item,
               status: "Pending",
+              item:
+                item.type === "money"
+                  ? `KES ${item.amount}`
+                  : item.items && item.items.length > 0
+                  ? item.items.join(", ")
+                  : "No items specified",
             })),
-            ...result.receivedDonations.map((item) => ({
+            ...(result.receivedDonations || []).map((item) => ({
               ...item,
               status: "Received",
+              item:
+                item.type === "money"
+                  ? `KES ${item.amount}`
+                  : item.items && item.items.length > 0
+                  ? item.items.join(", ")
+                  : "No items specified",
             })),
           ];
 
           setData(processedDonations);
           setRequests([
-            ...result.pendingRequests.map((item) => ({
+            ...(result.pendingRequests || []).map((item) => ({
               ...item,
               status: "Pending",
             })),
-            ...result.approvedRequests.map((item) => ({
+            ...(result.approvedRequests || []).map((item) => ({
               ...item,
               status: "Approved",
             })),
-            ...result.completedRequests.map((item) => ({
+            ...(result.completedRequests || []).map((item) => ({
               ...item,
               status: "Completed",
             })),
           ]);
         } else {
-          // Process donor donations - convert Approved to Completed for money donations
           const processedDonations = (result.donations || []).map(
             (donation) => ({
               ...donation,
               status: donation.type === "money" ? "Completed" : donation.status,
+              displayValue:
+                donation.type === "money"
+                  ? `KES ${donation.amount}`
+                  : donation.items?.join(", ") || "Items donation",
             })
           );
           setData(processedDonations);

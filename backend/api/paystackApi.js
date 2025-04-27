@@ -1,5 +1,7 @@
 require("dotenv").config();
-const { convertObjectFromSnakeToCamelCase } = require("../utils/snakeToCamelCase");
+const {
+  convertObjectFromSnakeToCamelCase,
+} = require("../utils/snakeToCamelCase");
 const BaseApi = require("./baseApi");
 
 const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
@@ -32,16 +34,25 @@ class PaystackApi extends BaseApi {
       throw new Error("Reference is required for verification");
     }
 
-    const response = await this.get(
-      `/transaction/verify/${encodeURIComponent(reference)}`,
-      undefined,
-      this.requestInit
-    );
+    try {
+      const response = await this.get(
+        `/transaction/verify/${encodeURIComponent(reference)}`,
+        undefined,
+        this.requestInit
+      );
 
-    return {
-      status: response.status,
-      data: convertObjectFromSnakeToCamelCase(response.data),
-    };
+      if (!response || response.status === "error") {
+        throw new Error(response?.message || "Verification failed");
+      }
+
+      return {
+        status: response.status || "success",
+        data: convertObjectFromSnakeToCamelCase(response.data || response),
+      };
+    } catch (error) {
+      console.error("Paystack verification API error:", error);
+      throw error;
+    }
   };
 }
 

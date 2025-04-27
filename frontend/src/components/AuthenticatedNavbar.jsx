@@ -1,11 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import assets from "../assets/images/assets";
 import ThemeToggle from "./ThemeToggle";
-import { Dropdown, Badge, Button } from "react-bootstrap";
+import { Dropdown, Button } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faBell,
   faUser,
   faSignOutAlt,
   faCog,
@@ -18,9 +17,6 @@ const AuthenticatedNavbar = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const userRole = user ? user.role : null;
-  const [notifications, setNotifications] = useState([]);
-  // Add this state to track any new notifications
-  const [newNotificationsCount, setNewNotificationsCount] = useState(0);
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -61,7 +57,7 @@ const AuthenticatedNavbar = () => {
       </>
     );
 
-    // Role-specific links
+    // Role-specific dashboard links
     if (userRole === "donor") {
       return (
         <>
@@ -145,66 +141,9 @@ const AuthenticatedNavbar = () => {
           {renderNavLinks()}
         </div>
 
-        {/* Right Section: Theme Toggle, Notifications, User Menu */}
+        {/* Right Section: Theme Toggle and User Menu */}
         <div className="d-flex align-items-center">
           <ThemeToggle className="mx-2 d-flex align-items-center gap-3" />
-
-          {/* Notifications Dropdown */}
-          <Dropdown className="me-3">
-            <Dropdown.Toggle
-              variant="link"
-              id="dropdown-notifications"
-              className="nav-link text-white p-0 position-relative"
-              style={{ background: "none", border: "none" }}
-            >
-              <FontAwesomeIcon icon={faBell} size="lg" />
-              {newNotificationsCount > 0 && (
-                <Badge
-                  bg="danger"
-                  className="position-absolute"
-                  style={{ top: "-5px", right: "-5px", fontSize: "0.6rem" }}
-                  pill
-                >
-                  {newNotificationsCount}
-                </Badge>
-              )}
-            </Dropdown.Toggle>
-
-            <Dropdown.Menu
-              align="end"
-              className="shadow-lg border-0"
-              style={{ minWidth: "300px" }}
-            >
-              <div className="p-2 border-bottom d-flex justify-content-between align-items-center">
-                <h6 className="mb-0">Notifications</h6>
-                <Badge bg="primary" pill>
-                  {notifications.length}
-                </Badge>
-              </div>
-              {notifications.length > 0 ? (
-                notifications.map((notification, index) => (
-                  <Dropdown.Item key={index} className="border-bottom">
-                    <div className="d-flex w-100 justify-content-between">
-                      <p className="mb-1">{notification.message}</p>
-                      <small>{notification.time}</small>
-                    </div>
-                  </Dropdown.Item>
-                ))
-              ) : (
-                <Dropdown.Item className="text-muted text-center">
-                  No new notifications
-                </Dropdown.Item>
-              )}
-              <div className="p-2 border-top text-center">
-                <Link
-                  to="/notifications"
-                  className="btn btn-sm btn-link text-decoration-none"
-                >
-                  View all notifications
-                </Link>
-              </div>
-            </Dropdown.Menu>
-          </Dropdown>
 
           {/* User Menu Dropdown */}
           <Dropdown>

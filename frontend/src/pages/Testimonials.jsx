@@ -8,7 +8,6 @@ import {
   Button,
   Tab,
   Tabs,
-  Badge,
 } from "react-bootstrap";
 import { useTheme } from "../contexts/ThemeContext";
 import assets from "../assets/images/assets";
@@ -70,7 +69,7 @@ const Testimonials = () => {
     if (!testimonials || !testimonials.length) {
       return <p>No testimonials available</p>;
     }
-    
+
     return (
       <Row>
         {testimonials.map((testimonial, idx) => (
@@ -82,7 +81,11 @@ const Testimonials = () => {
                     src={testimonial.image}
                     alt={testimonial.name}
                     className="rounded-circle me-3"
-                    style={{ width: "80px", height: "80px", objectFit: "cover" }}
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      objectFit: "cover",
+                    }}
                   />
                   <div>
                     <h5>{testimonial.name}</h5>
@@ -195,40 +198,4 @@ const Testimonials = () => {
   );
 };
 
-const TestimonialCards = ({ testimonials, darkMode }) => (
-  <Row>
-    {testimonials.map((testimonial, idx) => (
-      <Col key={idx} md={6} className="mb-4">
-        <Card className={`h-100 ${darkMode ? "bg-dark" : ""}`}>
-          <Card.Body className="d-flex flex-column">
-            <div className="d-flex mb-3">
-              <img
-                src={testimonial.image}
-                alt={testimonial.name}
-                className="rounded-circle me-3"
-                style={{ width: "80px", height: "80px", objectFit: "cover" }}
-              />
-              <div>
-                <h5>{testimonial.name}</h5>
-                <p className="text-muted mb-0">{testimonial.role}</p>
-              </div>
-            </div>
-            <blockquote className="mb-4 flex-grow-1">
-              <p className="font-italic">"{testimonial.quote}"</p>
-            </blockquote>
-            <div className="ratio ratio-16x9 mb-3">
-              <div className="d-flex align-items-center justify-content-center bg-secondary">
-                <i className="fas fa-play fa-3x text-white"></i>
-              </div>
-            </div>
-            <Button variant="outline-primary" size="sm">
-              Watch Full Story
-            </Button>
-          </Card.Body>
-        </Card>
-      </Col>
-    ))}
-  </Row>
-);
-
-export default TestimonialCards;
+export default Testimonials;

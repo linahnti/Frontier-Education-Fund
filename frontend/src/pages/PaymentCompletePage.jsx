@@ -23,8 +23,9 @@ const PaymentCompletePage = () => {
         }
 
         const queryParams = new URLSearchParams(location.search);
-        const reference = queryParams.get("reference") || queryParams.get("trxref");
-        
+        const reference =
+          queryParams.get("reference") || queryParams.get("trxref");
+
         if (!reference) {
           setStatus("error");
           setError("Missing payment reference");
@@ -40,36 +41,49 @@ const PaymentCompletePage = () => {
             },
           }
         );
+        console.log("Payment verification response:", response.data);
 
-        if (response.data?.status === "success") {
+        if (
+          response.data?.status === "success" ||
+          (response.data?.data && response.data?.data?.status === "success")
+        ) {
           setStatus("success");
-          setDonationData(response.data.data);
-          
+          setDonationData(response.data.data || response.data);
+
           // Create notification
           try {
             const user = JSON.parse(localStorage.getItem("user"));
-            await axios.post(
-              `${API_URL}/api/notifications`,
-              {
-                userId: user.id,
-                type: "donation_success",
-                title: "Donation Received",
-                message: `Thank you for your donation of ${response.data.data.amount} KES`,
-                read: false,
-              },
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
+
+            if (user && user.id && token) {
+              await axios.post(
+                `${API_URL}/api/notifications`,
+                {
+                  userId: user.id,
+                  type: "donation_success",
+                  title: "Donation Received",
+                  message: `Thank you for your donation of ${
+                    response.data.data.amount || 0
+                  } KES`,
+                  read: false,
                 },
-              }
-            );
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+            } else {
+              console.log(
+                "User data or token missing, skipping notification creation"
+              );
+            }
           } catch (notificationError) {
             console.error("Notification error:", notificationError);
           }
 
           setTimeout(() => {
             navigate("/donor-dashboard", {
-              state: { donationSuccess: true }
+              state: { donationSuccess: true },
             });
           }, 3000);
         } else {
@@ -80,8 +94,8 @@ const PaymentCompletePage = () => {
         console.error("Payment error:", error.response?.data || error);
         setStatus("error");
         setError(
-          error.response?.data?.message || 
-          "Payment verification failed. Please check your payment history."
+          error.response?.data?.message ||
+            "Payment verification failed. Please check your payment history."
         );
       }
     };
@@ -104,8 +118,10 @@ const PaymentCompletePage = () => {
           {status === "success" && (
             <>
               <div className="mb-4">
-                <div className="rounded-circle bg-success d-inline-flex align-items-center justify-content-center" 
-                  style={{ width: "100px", height: "100px" }}>
+                <div
+                  className="rounded-circle bg-success d-inline-flex align-items-center justify-content-center"
+                  style={{ width: "100px", height: "100px" }}
+                >
                   <span className="display-4 text-white">✓</span>
                 </div>
               </div>
@@ -122,8 +138,10 @@ const PaymentCompletePage = () => {
           {status === "error" && (
             <>
               <div className="mb-4">
-                <div className="rounded-circle bg-danger d-inline-flex align-items-center justify-content-center" 
-                  style={{ width: "100px", height: "100px" }}>
+                <div
+                  className="rounded-circle bg-danger d-inline-flex align-items-center justify-content-center"
+                  style={{ width: "100px", height: "100px" }}
+                >
                   <span className="display-4 text-white">✗</span>
                 </div>
               </div>
